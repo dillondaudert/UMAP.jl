@@ -48,7 +48,7 @@ The manifold is also assumed to be locally connected.
 
 The above results in the fuzzy topological representation of a dataset:
 
-**Definition** Let *X* = {**x_1**, ..., **x_N**} be a dataset in `R^d`. Let
+**Definition** Let *X* = {**x_1**, ..., **x_N**} be a dataset in `R^n`. Let
 {(*X*, d_i) | i = 1, ..., N} be a family of extended-pseudo-metric spaces with
 common carrier set X such that
 
@@ -68,4 +68,17 @@ Dimensionality reduction can be performed by finding low dimensional
 representations that closely match the topological structure of the data.
 
 ## Optimizing a low dimensional representation
-...
+For *Y* = {**y_i**, ..., **y_n**} a subset of `R^d` (`d << n`), a low
+dimensional representation of *X*, we know the manifold and manifold metric
+*a priori*, and can compute the fuzzy topological representation directly.
+We still include incorporate the distance to the nearest neighbor as per the
+local connectedness requirement by supplying a parameter that defines the
+expected distance between nearest neighbors in the embedded space.
+The fuzzy simplicial set representations of *X* and *Y* can be compared by
+converting each to a fuzzy set of edges, given by a reference set *A* and a
+membership strength function `mu: A -> [0, 1]`. The sheaf representation is
+translated into a classical fuzzy set by ... .
+Thus the representations of *X* and *Y* are converted into fuzzy sets, and
+compared via the fuzzy set cross entropy. This can be optimized with stochastic
+gradient descent as long as the singular set functor `FinSing` is
+differentiable.
