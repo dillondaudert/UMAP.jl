@@ -1,5 +1,9 @@
 module UMAP
 
-greet() = print("Hello World!")
+using NearestNeighborDescent: DescentGraph
+
+import("umap_.jl")
+
+export UMAP
 
 end # module
