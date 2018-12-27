@@ -5,3 +5,4 @@ version = "0.1.0"
 
 [deps]
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+NearestNeighborDescent = "dd2c4c9e-a32f-5b2f-b342-08c2f244fce8"
