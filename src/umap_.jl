@@ -1,10 +1,10 @@
 # an implementation of Uniform Manifold Approximation and Projection
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
-struct UMAP end
+struct UMAP_ end
 
 """
-    UMAP(X, n_neighbors, n_components, min_dist, n_epochs) -> embedding
+    UMAP_(X, n_neighbors, n_components, min_dist, n_epochs) -> embedding
 
 Embed the data `X` into a `n_components`-dimensional space.
 # Arguments
@@ -18,11 +18,11 @@ embedding dimension.
 - `n_epochs::Integer`: the number of training epochs for embedding
 optimization
 """
-function UMAP(X,
-              n_neighbors::Integer,
-              n_components::Integer,
-              min_dist::AbstractFloat,
-              n_epochs::Integer)
+function UMAP_(X,
+               n_neighbors::Integer,
+               n_components::Integer,
+               min_dist::AbstractFloat,
+               n_epochs::Integer)
     # argument checking
 
     #=

@@ -6,6 +6,6 @@ using LinearAlgebra
 
 import("umap_.jl")
 
-export UMAP
+export UMAP_
 
 end # module
