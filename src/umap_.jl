@@ -25,6 +25,7 @@ function UMAP(X,
               n_epochs::Integer)
     # argument checking
 
+    #=
     # main algorithm
     if length(X) < 4096:
         # compute all pairwise distances
@@ -39,6 +40,7 @@ function UMAP(X,
 
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
+    =#
     return
 end
 
@@ -50,6 +52,7 @@ finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
 function local_fuzzy_simpl_set(X, n_neighbors)
+    #=
     knns, dists = nndescent(X, n_neighbors)
     σ, ρ = smooth_knn_dists(dists, n_neighbors)
 
@@ -57,7 +60,9 @@ function local_fuzzy_simpl_set(X, n_neighbors)
     fs_set = sparse(rows, cols, vals) # sparse matrix M[i, j] = vᵢⱼ where
                                       # vᵢⱼ is the probability that j is in the
                                       # simplicial set of i
-    return dropzeros(fs_set + fs_set' - fs_set .* fs_set')
+    dropzeros(fs_set + fs_set' - fs_set .* fs_set')
+    =#
+    return
 end
 
 """
@@ -70,14 +75,18 @@ and the nearest neighbor (nn_dists) from each point.
 # Arguments
 ...
 """
-function smooth_knn_dists(knn_dists, k::AbstractFloat; n_iter::Integer=64) end
+function smooth_knn_dists(knn_dists, k::AbstractFloat; n_iter::Integer=64) 
+    return
+end
 
 """
     compute_membership_strengths(knns, dists, σ, ρ) -> rows, cols, strengths
 
 Compute the membership strengths for the 1-skeleton of each fuzzy simplicial set.
 """
-function compute_membership_strengths(knns, dists, σ, ρ) end
+function compute_membership_strengths(knns, dists, σ, ρ) 
+    return
+end
 
 """
     simpl_set_embedding(X, fs_set_graph, n_components, n_epochs; <kwargs>) -> embedding
@@ -87,13 +96,17 @@ fuzzy simplicial set 1-skeletons of the data in high and low dimensional
 spaces.
 """
 function simpl_set_embedding(X, fs_set_graph::SparseMatrixCSC, n_components, n_epochs;
-                             init::Symbol=:spectral) end
+                             init::Symbol=:spectral) 
+    return
+end
 
 """
 Optimize an embedding by minimizing the fuzzy set cross entropy between the high and low
 dimensional simplicial sets using stochastic gradient descent.
 """
-function optimize_embedding(head_embedding, tail_embedding, a...) end
+function optimize_embedding(head_embedding, tail_embedding, a...) 
+    return
+end
 
 """
     spectral_layout(graph, dim) -> embedding
@@ -101,7 +114,5 @@ function optimize_embedding(head_embedding, tail_embedding, a...) end
 Initialize the graph layout with spectral embedding.
 """
 function spectral_layout(fs_set_graph::SparseMatrixCSC, dim)
-
-    L = I - 
-
+    return
 end
