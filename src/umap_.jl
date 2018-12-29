@@ -109,10 +109,30 @@ function optimize_embedding(head_embedding, tail_embedding, a...)
 end
 
 """
-    spectral_layout(graph, dim) -> embedding
+    spectral_layout(graph, embed_dim) -> embedding
 
 Initialize the graph layout with spectral embedding.
 """
-function spectral_layout(fs_set_graph::SparseMatrixCSC, dim)
-    return
+function spectral_layout(graph::SparseMatrixCSC, embed_dim)
+    D_ = Diagonal(dropdims(sum(A; dims=2); dims=2))
+    D = inv(sqrt(D_))
+    # normalized laplacian
+    # TODO: remove sparse() when PR #30018 is merged
+    L = sparse(Symmetric(I - D*graph*D))
+    
+    k = embed_dim+1
+    num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L)[1])))
+    # get the 2nd - embed_dim+1th smallest eigenvectors
+    try
+        eigenvals, eigenvecs = eigs(L; nev=k,
+                                       ncv=num_lanczos_vectors,
+                                       which=:SM, 
+                                       tol=1e-4, 
+                                       v0=ones(size(L)[1]),
+                                       max_iters=size(L)[1]*5)
+    catch e
+        error(e)
+    end
+    
+    return eigenvecs[:, 2:embed_dim]
 end
