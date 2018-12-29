@@ -3,8 +3,9 @@ module UMAP
 using NearestNeighborDescent: DescentGraph
 using SparseArrays
 using LinearAlgebra
+using Arpack
 
-import("umap_.jl")
+include("umap_.jl")
 
 export UMAP_
 
