@@ -94,3 +94,14 @@ Optimize an embedding by minimizing the fuzzy set cross entropy between the high
 dimensional simplicial sets using stochastic gradient descent.
 """
 function optimize_embedding(head_embedding, tail_embedding, a...) end
+
+"""
+    spectral_layout(graph, dim) -> embedding
+
+Initialize the graph layout with spectral embedding.
+"""
+function spectral_layout(fs_set_graph::SparseMatrixCSC, dim)
+
+    L = I - 
+
+end
