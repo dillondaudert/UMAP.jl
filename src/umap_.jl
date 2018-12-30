@@ -119,9 +119,10 @@ This fits a smooth curve that approximates an exponential decay offset by `min_d
 function fit_ϕ(min_dist, spread)
     ψ(d) = d > 0. ? exp(-(d - min_dist)/spread) : 1.
     xs = LinRange(0., spread*3, 300)
-    ys = map(ϕ, xs)
+    ys = map(ψ, xs)
     @. curve(x, p) = (1. + p[1]*x^(2*p[2]))^(-1)
-    _, (a, b) = curve_fit(curve, xs, ys, [.5, .5])
+    result = curve_fit(curve, xs, ys, [.5, .5])
+    a, b = result.param
     return a, b
 end
 
