@@ -13,6 +13,12 @@ git-tree-sha1 = "055eb2690182ebc31087859c3dd8598371d3ef9e"
 uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
 version = "0.5.3"
 
+[[DataStructures]]
+deps = ["InteractiveUtils", "OrderedCollections", "Random", "Serialization", "Test"]
+git-tree-sha1 = "8fc6e166e24fda04b2b648d4260cdad241788c54"
+uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+version = "0.14.0"
+
 [[Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -49,10 +55,18 @@ deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[NearestNeighborDescent]]
-deps = ["Distances", "Random", "Test"]
-git-tree-sha1 = "13c211b8025e312dac936e5a737e2cd175b46f91"
-uuid = "dd2c4c9e-a32f-5b2f-b342-08c2f244fce8"
+deps = ["DataStructures", "Distances", "Random"]
+git-tree-sha1 = "0e494e7dd1455b4cbb895bd998c6c0e2085f40c8"
+repo-rev = "master"
+repo-url = "https://github.com/dillondaudert/NearestNeighborDescent.jl.git"
+uuid = "1dd1f7d0-b91d-11e8-266b-d34208f3077b"
 version = "0.1.1"
+
+[[OrderedCollections]]
+deps = ["Random", "Serialization", "Test"]
+git-tree-sha1 = "85619a3f3e17bb4761fe1b1fd47f0e979f964d5b"
+uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+version = "1.0.2"
 
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
