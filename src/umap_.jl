@@ -75,7 +75,7 @@ and the nearest neighbor (nn_dists) from each point.
 # Arguments
 ...
 """
-function smooth_knn_dists(knn_dists, k::AbstractFloat; n_iter::Integer=64) 
+function smooth_knn_dists(knn_dists, k::AbstractFloat; n_iter::Integer=64)
     return
 end
 
@@ -84,7 +84,7 @@ end
 
 Compute the membership strengths for the 1-skeleton of each fuzzy simplicial set.
 """
-function compute_membership_strengths(knns, dists, σ, ρ) 
+function compute_membership_strengths(knns, dists, σ, ρ)
     return
 end
 
@@ -96,7 +96,7 @@ fuzzy simplicial set 1-skeletons of the data in high and low dimensional
 spaces.
 """
 function simpl_set_embedding(X, fs_set_graph::SparseMatrixCSC, n_components, n_epochs;
-                             init::Symbol=:spectral) 
+                             init::Symbol=:spectral)
     return
 end
 
@@ -104,8 +104,25 @@ end
 Optimize an embedding by minimizing the fuzzy set cross entropy between the high and low
 dimensional simplicial sets using stochastic gradient descent.
 """
-function optimize_embedding(head_embedding, tail_embedding, a...) 
+function optimize_embedding(head_embedding, tail_embedding, alpha=1.0)
+    # fit ϕ, ψ
+    #
     return
+end
+
+"""
+    fit_ϕ(min_dist, spread) -> a, b
+
+Find a smooth approximation to the membership function of points embedded in ℜᵈ.
+This fits a smooth curve that approximates an exponential decay offset by `min_dist`.
+"""
+function fit_ϕ(min_dist, spread)
+    ψ(d) = d > 0. ? exp(-(d - min_dist)/spread) : 1.
+    xs = LinRange(0., spread*3, 300)
+    ys = map(ϕ, xs)
+    @. curve(x, p) = (1. + p[1]*x^(2*p[2]))^(-1)
+    _, (a, b) = curve_fit(curve, xs, ys, [.5, .5])
+    return a, b
 end
 
 """
@@ -119,7 +136,7 @@ function spectral_layout(graph::SparseMatrixCSC, embed_dim)
     # normalized laplacian
     # TODO: remove sparse() when PR #30018 is merged
     L = sparse(Symmetric(I - D*graph*D))
-    
+
     k = embed_dim+1
     num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L)[1])))
     local layout
@@ -127,8 +144,8 @@ function spectral_layout(graph::SparseMatrixCSC, embed_dim)
         # get the 2nd - embed_dim+1th smallest eigenvectors
         eigenvals, eigenvecs = eigs(L; nev=k,
                                        ncv=num_lanczos_vectors,
-                                       which=:SM, 
-                                       tol=1e-4, 
+                                       which=:SM,
+                                       tol=1e-4,
                                        v0=ones(size(L)[1]),
                                        maxiter=size(L)[1]*5)
         layout = eigenvecs[:, 2:k]
