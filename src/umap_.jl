@@ -114,7 +114,7 @@ end
 Initialize the graph layout with spectral embedding.
 """
 function spectral_layout(graph::SparseMatrixCSC, embed_dim)
-    D_ = Diagonal(dropdims(sum(A; dims=2); dims=2))
+    D_ = Diagonal(dropdims(sum(graph; dims=2); dims=2))
     D = inv(sqrt(D_))
     # normalized laplacian
     # TODO: remove sparse() when PR #30018 is merged
@@ -122,17 +122,21 @@ function spectral_layout(graph::SparseMatrixCSC, embed_dim)
     
     k = embed_dim+1
     num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L)[1])))
-    # get the 2nd - embed_dim+1th smallest eigenvectors
+    local layout
     try
+        # get the 2nd - embed_dim+1th smallest eigenvectors
         eigenvals, eigenvecs = eigs(L; nev=k,
                                        ncv=num_lanczos_vectors,
                                        which=:SM, 
                                        tol=1e-4, 
                                        v0=ones(size(L)[1]),
-                                       max_iters=size(L)[1]*5)
+                                       maxiter=size(L)[1]*5)
+        layout = eigenvecs[:, 2:k]
     catch e
-        error(e)
+        print(e)
+        print("Error occured in spectral_layout;
+               falling back to random layout.")
+        layout = 20 .* rand(Float64, size(L)[1], embed_dim) .- 10
     end
-    
-    return eigenvecs[:, 2:embed_dim]
+    return layout
 end
