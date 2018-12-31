@@ -101,13 +101,57 @@ function simpl_set_embedding(X, fs_set_graph::SparseMatrixCSC, n_components, n_e
 end
 
 """
+    optimize_embedding(graph, embedding, min_dist, spread, alpha, n_epochs) -> embedding
+
 Optimize an embedding by minimizing the fuzzy set cross entropy between the high and low
 dimensional simplicial sets using stochastic gradient descent.
+
+# Arguments
+- `graph`: a sparse matrix of shape (n_samples, n_samples)
+- `embedding`: a dense matrix of shape (n_components, n_samples)
+# Keyword Arguments
+- `neg_sample_rate::Integer=5`: the number of negative samples per positive sample
 """
-function optimize_embedding(head_embedding, tail_embedding, alpha=1.0)
-    # fit ϕ, ψ
-    #
-    return
+function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread;
+                            neg_sample_rate::Integer=5)
+    a, b = fit_ϕ(min_dist, spread)
+    
+    clip(x) = x < -4. ? -4. : (x > 4. ? 4. : x)
+    
+    alpha = initial_alpha
+    for e in 1:n_epochs
+        
+        for i in 1:size(graph)[2] 
+            for ind in nzrange(graph, i)
+                j = rowvals(graph)[ind]
+                p = nonzeros(graph)[ind]
+                if rand() <= p
+                    # calculate distance between embedding[:, i] and embedding[:, j]
+                    sdist = sum((embedding[:, i] .- embedding[:, j]).^2)
+                    delta = (r = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)) > 0. ? r : 0.
+                    @. embedding[:, i] += alpha * clip(delta * (embedding[:, i] - embedding[:, j]))
+                    
+                    for _ in 1:neg_sample_rate
+                        k = rand(1:size(graph)[2])
+                        sdist = sum((embedding[:, i] .- embedding[:, k]).^2)
+                        if sdist > 0
+                            delta = (2. * b) / (0.001 + sdist)*(1. + a*sdist^b)
+                        elseif i == k
+                            continue
+                        else
+                            delta = 0.
+                        end
+                        # TODO: set negative gradients to positive 4.
+                        @. embedding[:, i] += alpha * clip(delta * (embedding[:, i] - embedding[:, k]))
+                    end
+                    
+                end
+            end
+        end
+        alpha = initial_alpha*(1. - e/n_epochs)
+    end
+    
+    return embedding
 end
 
 """
@@ -149,12 +193,12 @@ function spectral_layout(graph::SparseMatrixCSC, embed_dim)
                                        tol=1e-4,
                                        v0=ones(size(L)[1]),
                                        maxiter=size(L)[1]*5)
-        layout = eigenvecs[:, 2:k]
+        layout = permutedims(eigenvecs[:, 2:k])
     catch e
         print(e)
         print("Error occured in spectral_layout;
                falling back to random layout.")
-        layout = 20 .* rand(Float64, size(L)[1], embed_dim) .- 10
+        layout = 20 .* rand(Float64, embed_dim, size(L)[1]) .- 10
     end
     return layout
 end

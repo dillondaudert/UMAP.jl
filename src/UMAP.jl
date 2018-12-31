@@ -1,9 +1,10 @@
 module UMAP
 
 using NearestNeighborDescent: DescentGraph
+using LsqFit: curve_fit
 using SparseArrays
 using LinearAlgebra
-using Arpack
+using Arpack: eigs
 
 include("umap_.jl")
 
