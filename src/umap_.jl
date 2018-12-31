@@ -121,7 +121,7 @@ function fit_ϕ(min_dist, spread)
     xs = LinRange(0., spread*3, 300)
     ys = map(ψ, xs)
     @. curve(x, p) = (1. + p[1]*x^(2*p[2]))^(-1)
-    result = curve_fit(curve, xs, ys, [.5, .5])
+    result = curve_fit(curve, xs, ys, [1., 1.])
     a, b = result.param
     return a, b
 end
