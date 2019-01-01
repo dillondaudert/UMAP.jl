@@ -158,7 +158,7 @@ function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist
         expansion = 10. / maximum(X_embed)
         @. X_embed = (X_embed*expansion) + randn(size(X_embed))*0.0001
     elseif init == :random
-        X_embed = 20. .* rand(size(graph, 1), n_components) .- 10.
+        X_embed = 20. .* rand(n_components, size(graph, 1)) .- 10.
     end
     # refine embedding with SGD
     X_embed = optimize_embedding(graph, X_embed, n_epochs, 1.0, min_dist, 1.0)
