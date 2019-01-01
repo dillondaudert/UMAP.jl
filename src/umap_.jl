@@ -177,7 +177,7 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
     a, b = fit_ϕ(min_dist, spread)
 
     clip(x) = x < -4. ? -4. : (x > 4. ? 4. : x)
-
+    grad = Array{eltype(embedding)}(undef, size(embedding[:,1]))
     alpha = initial_alpha
     for e in 1:n_epochs
 
@@ -189,7 +189,7 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
                     # calculate distance between embedding[:, i] and embedding[:, j]
                     sdist = sum((embedding[:, i] .- embedding[:, j]).^2)
                     delta = (r = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)) > 0. ? r : 0.
-                    grad = clip.(delta .* (embedding[:, i] .- embedding[:, j]))
+                    grad .= clip.(delta .* (embedding[:, i] .- embedding[:, j]))
                     embedding[:, i] .+= alpha .* grad
                     embedding[:, j] .-= alpha .* grad 
 
@@ -205,12 +205,11 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
                         end
                         # set negative gradients to positive 4.
                         if delta > 0.
-                            grad = clip.(delta .* (embedding[:,i] - embedding[:, k]))
+                            grad .= clip.(delta .* (embedding[:,i] - embedding[:, k]))
                         else
-                            grad = 4. .* ones(size(embedding[:,i]))
+                            grad .= 4.
                         end
                         embedding[:, i] .+= alpha .* grad
-                        embedding[:, k] .-= alpha .* grad
                     end
 
                 end
