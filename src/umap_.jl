@@ -149,9 +149,14 @@ spaces.
 """
 function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist, n_epochs;
                                   init::Symbol=:spectral)
+    
     X_embed = spectral_layout(graph, n_components)
+    # expand 
+    expansion = 10. / maximum(X_embed)
+    @. X_embed = (X_embed*expansion) + randn(size(X_embed))*0.0001
     # refine embedding with SGD
     X_embed = optimize_embedding(graph, X_embed, n_epochs, 1.0, min_dist, 1.0)
+    
     return X_embed
 end
 
@@ -196,8 +201,13 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
                         else
                             delta = 0.
                         end
-                        # TODO: set negative gradients to positive 4.
-                        @. embedding[:, i] += alpha * clip(delta * (embedding[:, i] - embedding[:, k]))
+                        # set negative gradients to positive 4.
+                        if delta > 0.
+                            grad = clip.(delta .* (embedding[:,i] - embedding[:, k]))
+                        else
+                            grad = 4. .* ones(size(embedding[:,i]))
+                        end
+                        @. embedding[:, i] += alpha * grad
                     end
 
                 end
