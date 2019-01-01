@@ -4,11 +4,28 @@
     B = dropzeros(A + A' - A .* A')
     
     @testset "constructor" begin
-        @test_skip UMAP_()
+        @testset "argument validation tests" begin
+            @test_throws ArgumentError UMAP_([[1.]], 0, 0)
+            @test_throws ArgumentError UMAP_([[1.], [1.]], 1, 0)
+            @test_throws ArgumentError UMAP_([[1.], [1.]], 1, 2)
+            @test_throws ArgumentError UMAP_([[1., 1., 1.], 
+                    [1., 1., 1.]], 1, 2, 0.)
+        end
+        @testset "simple constructor tests" begin
+            data = [rand(20) for _ in 1:100]
+            k = 5
+            umap_struct = UMAP_(data, k, 2)
+            @test size(umap_struct.graph) == (100, 100)
+            @test issymmetric(umap_struct.graph)
+            @test size(umap_struct.embedding) == (2, 100)
+        end
     end
     
-    @testset "local_fuzzy_simpl_set" begin
-        @test_skip local_fuzzy_simpl_set()
+    @testset "fuzzy_simpl_set" begin
+        data = [rand(20) for _ in 1:500]
+        k = 5
+        umap_graph = fuzzy_simplicial_set(data, k)
+        @test issymmetric(umap_graph)
     end
     
     @testset "smooth_knn_dists" begin
