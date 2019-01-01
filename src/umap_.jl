@@ -7,7 +7,7 @@ struct UMAP_
 end
 
 """
-    UMAP_(X, n_neighbors, n_components, min_dist, n_epochs) -> embedding
+    UMAP_(X, n_neighbors, n_components, min_dist, n_epochs)
 
 Embed the data `X` into a `n_components`-dimensional space.
 # Arguments
@@ -82,7 +82,7 @@ function smooth_knn_dists(knn_dists::AbstractMatrix, k::AbstractFloat;
     σs = zeros(size(knn_dists)[2])
 
     for i in 1:size(knn_dists)[2]
-        ⁠σs[i] = smooth_knn_dist(knn_dists[:, i], k, niter, ρs[i], ktol)
+        σs[i] = smooth_knn_dist(knn_dists[:, i], k, niter, ρs[i], ktol)
     end
     return ρs, σs
 end
@@ -105,6 +105,8 @@ function smooth_knn_dist(dists::AbstractVector, k, niter, ρ, ktol)
                 mid *= 2.
             else
                 mid = (lo + hi) / 2.
+            end
+        end
     end
     # TODO: set according to min k dist scale
     return mid
@@ -115,13 +117,17 @@ end
 
 Compute the membership strengths for the 1-skeleton of each fuzzy simplicial set.
 """
-function compute_membership_strengths(knns::AbstractMatrix, dists::AbstractMatrix, σ, ρ)
+function compute_membership_strengths(knns::AbstractMatrix, dists::AbstractMatrix, ρs, σs)
     # set dists[i, j]
     rows = sizehint!(Int[], length(knns))
     cols = sizehint!(Int[], length(knns))
     vals = sizehint!(Float64[], length(knns))
-    for i in 1:size(knns)(2), j in 1:size(knns)[1]
-        d = exp(-max(dists[j, i] - ρs[i], 0.)/σs[i])
+    for i in 1:size(knns)[2], j in 1:size(knns)[1]
+        if i == knns[j, i] # dist to self
+            d = 0.
+        else
+            d = exp(-max(dists[j, i] - ρs[i], 0.)/σs[i])
+        end
         append!(cols, i)
         append!(rows, knns[j, i])
         append!(vals, d)
