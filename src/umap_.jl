@@ -21,17 +21,20 @@ embedding dimension.
 - `n_epochs::Integer`: the number of training epochs for embedding
 optimization
 """
-function UMAP_(X,
+function UMAP_(X::Vector{V},
                n_neighbors::Integer,
                n_components::Integer,
-               min_dist::AbstractFloat,
-               n_epochs::Integer)
+               min_dist::AbstractFloat=1.,
+               n_epochs::Integer=300) where {V <: AbstractVector}
     # argument checking
-
-
+    length(X) > n_neighbors > 0|| throw(ArgumentError("length(X) must be greater than n_neighbors and n_neighbors must be greater than 0"))
+    length(X[1]) > n_components > 1 || throw(ArgumentError("n_components must be greater than 0 and less than the dimensionality of the data"))
+    min_dist > 0. || throw(ArgumentError("min_dist must be greater than 0"))
+    n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 1"))
+    
 
     # main algorithm
-    umap_graph = fuzzy_simpl_set(X, n_neighbors)
+    umap_graph = fuzzy_simplicial_set(X, n_neighbors)
 
     embedding = simplicial_set_embedding(umap_graph, n_components, min_dist, n_epochs)
 
@@ -48,15 +51,17 @@ Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simpl_set(X, n_neighbors)
+function fuzzy_simplicial_set(X, n_neighbors)
     #if length(X) < 4096:
         # compute all pairwise distances
-    knns, dists = nndescent(X, n_neighbors)
+    knngraph = DescentGraph(X, n_neighbors)
+    knns, dists = getindex.(knngraph.graph, 1), getindex.(knngraph.graph, 2)
 
-    σ, ρ = smooth_knn_dists(dists, n_neighbors)
+    σs, ρs = smooth_knn_dists(dists, n_neighbors)
 
-    rows, cols, vals = compute_membership_strengths(knns, dists, σ, ρ)
-    fs_set = sparse(rows, cols, vals) # sparse matrix M[i, j] = vᵢⱼ where
+    rows, cols, vals = compute_membership_strengths(knns, dists, σs, ρs)
+    fs_set = sparse(rows, cols, vals, size(knns)[2], size(knns)[2]) 
+                                      # sparse matrix M[i, j] = vᵢⱼ where
                                       # vᵢⱼ is the probability that j is in the
                                       # simplicial set of i
     return dropzeros(fs_set + fs_set' - fs_set .* fs_set')
@@ -146,7 +151,7 @@ function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist
                                   init::Symbol=:spectral)
     X_embed = spectral_layout(graph, n_components)
     # refine embedding with SGD
-    X_embed = optimize_embedding(graph, X_embed, n_epochs, alpha, min_dist, spread)
+    X_embed = optimize_embedding(graph, X_embed, n_epochs, 1.0, min_dist, 1.0)
     return X_embed
 end
 
