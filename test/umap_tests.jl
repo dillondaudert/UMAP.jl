@@ -42,9 +42,10 @@
                      4. 6. 6.;
                      5. 6. 10.]
         rhos, sigmas = smooth_knn_dists(knn_dists,
-                                        6)
+                                        6; niter=128)
         @test rhos == [1., 2., 3.]
-        @test all([psum(knn_dists[:,i], rhos[i], sigmas[i]) for i in 1:3] .- log2(6) .< 1e-5)
+        diffs = [psum(knn_dists[:,i], rhos[i], sigmas[i]) for i in 1:3] .- log2(6)
+        @test all(diffs .< 1e-5)
     end
     
     @testset "compute_membership_strengths" begin
