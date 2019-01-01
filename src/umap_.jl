@@ -72,7 +72,7 @@ and the nearest neighbor (nn_dists) from each point.
 # Keyword Arguments
 ...
 """
-function smooth_knn_dists(knn_dists::AbstractMatrix, k::AbstractFloat;
+function smooth_knn_dists(knn_dists::AbstractMatrix, k::Real;
                           niter::Integer=64,
                           local_connectivity::Integer=1,
                           bandwidth::AbstractFloat=1.,
