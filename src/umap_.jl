@@ -189,7 +189,9 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
                     # calculate distance between embedding[:, i] and embedding[:, j]
                     sdist = sum((embedding[:, i] .- embedding[:, j]).^2)
                     delta = (r = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)) > 0. ? r : 0.
-                    @. embedding[:, i] += alpha * clip(delta * (embedding[:, i] - embedding[:, j]))
+                    @. grad = clip(delta * (embedding[:, i] - embedding[:, j]))
+                    embedding[:, i] .+= alpha .* grad
+                    embedding[:, j] .-= alpha .* grad 
 
                     for _ in 1:neg_sample_rate
                         k = rand(1:size(graph)[2])
@@ -207,7 +209,8 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
                         else
                             grad = 4. .* ones(size(embedding[:,i]))
                         end
-                        @. embedding[:, i] += alpha * grad
+                        embedding[:, i] .+= alpha .* grad
+                        embedding[:, k] .-= alpha .* grad
                     end
 
                 end
