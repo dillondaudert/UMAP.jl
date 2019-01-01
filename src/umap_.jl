@@ -248,7 +248,7 @@ end
 
 Initialize the graph layout with spectral embedding.
 """
-function spectral_layout(graph::SparseMatrixCSC, embed_dim)
+function spectral_layout(graph::SparseMatrixCSC{T}, embed_dim::Integer) where {T<:AbstractFloat}
     D_ = Diagonal(dropdims(sum(graph; dims=2); dims=2))
     D = inv(sqrt(D_))
     # normalized laplacian
@@ -266,12 +266,12 @@ function spectral_layout(graph::SparseMatrixCSC, embed_dim)
                                        tol=1e-4,
                                        v0=ones(size(L)[1]),
                                        maxiter=size(L)[1]*5)
-        layout = permutedims(eigenvecs[:, 2:k])
+        layout = permutedims(eigenvecs[:, 2:k])::Array{T, 2}
     catch e
         print(e)
         print("Error occured in spectral_layout;
                falling back to random layout.")
-        layout = 20 .* rand(Float64, embed_dim, size(L)[1]) .- 10
+        layout = 20 .* rand(T, embed_dim, size(L)[1]) .- 10
     end
     return layout
 end
