@@ -1,7 +1,10 @@
 # an implementation of Uniform Manifold Approximation and Projection
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
-struct UMAP_ end
+struct UMAP_
+    graph
+    embedding
+end
 
 """
     UMAP_(X, n_neighbors, n_components, min_dist, n_epochs) -> embedding
@@ -25,44 +28,38 @@ function UMAP_(X,
                n_epochs::Integer)
     # argument checking
 
-    #=
-    # main algorithm
-    if length(X) < 4096:
-        # compute all pairwise distances
-    else:
-        # approximate knn distances
 
-    fs_set_graph = local_fuzzy_simpl_set(X, n_neighbors)
-    # initialize low-d embedding with spectral embedding
-    X_embed = spectral_embed(topological_repr, n_components)
-    # refine embedding with SGD
-    X_embed = optim_embed(topological_repr, X_embed, min_dist, n_epochs)
+
+    # main algorithm
+    umap_graph = fuzzy_simpl_set(X, n_neighbors)
+
+    embedding = simplicial_set_embedding(umap_graph, n_components, min_dist, n_epochs)
 
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
-    =#
-    return
+
+    return UMAP_(umap_graph, embedding)
 end
 
 """
-    local_fuzzy_simpl_set(X, n_neighbors) -> fuzzy_simpl_set::SparseMatrixCSC
+    fuzzy_simpl_set(X, n_neighbors) -> graph::SparseMatrixCSC
 
 Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function local_fuzzy_simpl_set(X, n_neighbors)
-    #=
+function fuzzy_simpl_set(X, n_neighbors)
+    #if length(X) < 4096:
+        # compute all pairwise distances
     knns, dists = nndescent(X, n_neighbors)
+
     σ, ρ = smooth_knn_dists(dists, n_neighbors)
 
     rows, cols, vals = compute_membership_strengths(knns, dists, σ, ρ)
     fs_set = sparse(rows, cols, vals) # sparse matrix M[i, j] = vᵢⱼ where
                                       # vᵢⱼ is the probability that j is in the
                                       # simplicial set of i
-    dropzeros(fs_set + fs_set' - fs_set .* fs_set')
-    =#
-    return
+    return dropzeros(fs_set + fs_set' - fs_set .* fs_set')
 end
 
 """
@@ -72,32 +69,79 @@ Compute the distances to the nearest neighbors for a continuous value `k`. Retur
 the approximated distances to the kth nearest neighbor (`knn_dists`)
 and the nearest neighbor (nn_dists) from each point.
 
-# Arguments
+# Keyword Arguments
 ...
 """
-function smooth_knn_dists(knn_dists, k::AbstractFloat; n_iter::Integer=64)
-    return
+function smooth_knn_dists(knn_dists::AbstractMatrix, k::AbstractFloat;
+                          niter::Integer=64,
+                          local_connectivity::Integer=1,
+                          bandwidth::AbstractFloat=1.,
+                          ktol = 1e-5)
+    minimum_nonzero(dists) = minimum(dists[dists .> 0.])
+    ρs = [minimum_nonzero(knn_dists[:, i]) for i in 1:size(knn_dists)[2]]
+    σs = zeros(size(knn_dists)[2])
+
+    for i in 1:size(knn_dists)[2]
+        ⁠σs[i] = smooth_knn_dist(knn_dists[:, i], k, niter, ρs[i], ktol)
+    end
+    return ρs, σs
+end
+
+function smooth_knn_dist(dists::AbstractVector, k, niter, ρ, ktol)
+    target = log2(k)
+    lo, mid, hi = 0., 1., Inf
+    #psum(dists, ρ) = sum(exp.(-max.(dists .- ρ, 0.)/mid))
+    for n in 1:niter
+        psum = sum(exp.(-max.(dists .- ρ, 0.)/mid))
+        if abs(psum - target) < ktol
+            break
+        end
+        if psum > target
+            hi = mid
+            mid = (lo + hi)/2.
+        else
+            lo = mid
+            if hi == Inf
+                mid *= 2.
+            else
+                mid = (lo + hi) / 2.
+    end
+    # TODO: set according to min k dist scale
+    return mid
 end
 
 """
-    compute_membership_strengths(knns, dists, σ, ρ) -> rows, cols, strengths
+    compute_membership_strengths(knns, dists, σ, ρ) -> rows, cols, vals
 
 Compute the membership strengths for the 1-skeleton of each fuzzy simplicial set.
 """
-function compute_membership_strengths(knns, dists, σ, ρ)
-    return
+function compute_membership_strengths(knns::AbstractMatrix, dists::AbstractMatrix, σ, ρ)
+    # set dists[i, j]
+    rows = sizehint!(Int[], length(knns))
+    cols = sizehint!(Int[], length(knns))
+    vals = sizehint!(Float64[], length(knns))
+    for i in 1:size(knns)(2), j in 1:size(knns)[1]
+        d = exp(-max(dists[j, i] - ρs[i], 0.)/σs[i])
+        append!(cols, i)
+        append!(rows, knns[j, i])
+        append!(vals, d)
+    end
+    return rows, cols, vals
 end
 
 """
-    simpl_set_embedding(X, fs_set_graph, n_components, n_epochs; <kwargs>) -> embedding
+    simplicial_set_embedding(graph, n_components, n_epochs; <kwargs>) -> embedding
 
 Create an embedding by minimizing the fuzzy set cross entropy between the
 fuzzy simplicial set 1-skeletons of the data in high and low dimensional
 spaces.
 """
-function simpl_set_embedding(X, fs_set_graph::SparseMatrixCSC, n_components, n_epochs;
-                             init::Symbol=:spectral)
-    return
+function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist, n_epochs;
+                                  init::Symbol=:spectral)
+    X_embed = spectral_layout(graph, n_components)
+    # refine embedding with SGD
+    X_embed = optimize_embedding(graph, X_embed, n_epochs, alpha, min_dist, spread)
+    return X_embed
 end
 
 """
@@ -115,13 +159,13 @@ dimensional simplicial sets using stochastic gradient descent.
 function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread;
                             neg_sample_rate::Integer=5)
     a, b = fit_ϕ(min_dist, spread)
-    
+
     clip(x) = x < -4. ? -4. : (x > 4. ? 4. : x)
-    
+
     alpha = initial_alpha
     for e in 1:n_epochs
-        
-        for i in 1:size(graph)[2] 
+
+        for i in 1:size(graph)[2]
             for ind in nzrange(graph, i)
                 j = rowvals(graph)[ind]
                 p = nonzeros(graph)[ind]
@@ -130,7 +174,7 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
                     sdist = sum((embedding[:, i] .- embedding[:, j]).^2)
                     delta = (r = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)) > 0. ? r : 0.
                     @. embedding[:, i] += alpha * clip(delta * (embedding[:, i] - embedding[:, j]))
-                    
+
                     for _ in 1:neg_sample_rate
                         k = rand(1:size(graph)[2])
                         sdist = sum((embedding[:, i] .- embedding[:, k]).^2)
@@ -144,13 +188,13 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
                         # TODO: set negative gradients to positive 4.
                         @. embedding[:, i] += alpha * clip(delta * (embedding[:, i] - embedding[:, k]))
                     end
-                    
+
                 end
             end
         end
         alpha = initial_alpha*(1. - e/n_epochs)
     end
-    
+
     return embedding
 end
 
