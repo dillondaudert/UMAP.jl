@@ -1,6 +1,6 @@
 using Test
 using SparseArrays
 using LinearAlgebra
-using UMAP: spectral_layout, optimize_embedding
+using UMAP: compute_membership_strengths, spectral_layout, optimize_embedding
 
 include("umap_tests.jl")
