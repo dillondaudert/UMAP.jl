@@ -25,7 +25,8 @@ function UMAP_(X::Vector{V},
                n_neighbors::Integer,
                n_components::Integer,
                min_dist::AbstractFloat=1.,
-               n_epochs::Integer=300) where {V <: AbstractVector}
+               n_epochs::Integer=300;
+               init::Symbol=:spectral) where {V <: AbstractVector}
     # argument checking
     length(X) > n_neighbors > 0|| throw(ArgumentError("length(X) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     length(X[1]) > n_components > 1 || throw(ArgumentError("n_components must be greater than 0 and less than the dimensionality of the data"))
@@ -36,7 +37,8 @@ function UMAP_(X::Vector{V},
     # main algorithm
     umap_graph = fuzzy_simplicial_set(X, n_neighbors)
 
-    embedding = simplicial_set_embedding(umap_graph, n_components, min_dist, n_epochs)
+    embedding = simplicial_set_embedding(umap_graph, n_components, min_dist, n_epochs; 
+                                         init=init)
 
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
@@ -150,10 +152,14 @@ spaces.
 function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist, n_epochs;
                                   init::Symbol=:spectral)
     
-    X_embed = spectral_layout(graph, n_components)
-    # expand 
-    expansion = 10. / maximum(X_embed)
-    @. X_embed = (X_embed*expansion) + randn(size(X_embed))*0.0001
+    if init == :spectral
+        X_embed = spectral_layout(graph, n_components)
+        # expand 
+        expansion = 10. / maximum(X_embed)
+        @. X_embed = (X_embed*expansion) + randn(size(X_embed))*0.0001
+    elseif init == :random
+        X_embed = 20. .* rand(size(graph, 1), n_components) .- 10.
+    end
     # refine embedding with SGD
     X_embed = optimize_embedding(graph, X_embed, n_epochs, 1.0, min_dist, 1.0)
     
