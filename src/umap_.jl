@@ -79,9 +79,9 @@ and the nearest neighbor (nn_dists) from each point.
 # Keyword Arguments
 ...
 """
-function smooth_knn_dists(knn_dists::AbstractMatrix, k::Real;
+function smooth_knn_dists(knn_dists::AbstractMatrix, k::Integer;
                           niter::Integer=64,
-                          local_connectivity::Integer=1,
+                          local_connectivity::AbstractFloat=1.,
                           bandwidth::AbstractFloat=1.,
                           ktol = 1e-5)
     minimum_nonzero(dists) = minimum(dists[dists .> 0.])
