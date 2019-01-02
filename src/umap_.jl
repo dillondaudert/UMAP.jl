@@ -27,7 +27,8 @@ function UMAP_(X::Vector{V},
                min_dist::AbstractFloat=1.,
                n_epochs::Integer=300;
                init::Symbol=:spectral,
-               learning_rate::AbstractFloat=1.) where {V <: AbstractVector}
+               learning_rate::AbstractFloat=1.,
+               neg_sample_rate::Integer=1) where {V <: AbstractVector}
     # argument checking
     length(X) > n_neighbors > 0|| throw(ArgumentError("length(X) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     length(X[1]) > n_components > 1 || throw(ArgumentError("n_components must be greater than 0 and less than the dimensionality of the data"))
@@ -39,7 +40,7 @@ function UMAP_(X::Vector{V},
     umap_graph = fuzzy_simplicial_set(X, n_neighbors)
 
     embedding = simplicial_set_embedding(umap_graph, n_components, min_dist, n_epochs; 
-                                         init=init, alpha=learning_rate)
+                                         init=init, alpha=learning_rate, neg_sample_rate=neg_sample_rate)
 
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
@@ -159,7 +160,8 @@ fuzzy simplicial set 1-skeletons of the data in high and low dimensional
 spaces.
 """
 function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist, n_epochs;
-                                  init::Symbol=:spectral, alpha::AbstractFloat=1.0)
+                                  init::Symbol=:spectral, alpha::AbstractFloat=1.0,
+                                  neg_sample_rate::Integer=5)
     
     if init == :spectral
         X_embed = spectral_layout(graph, n_components)
@@ -171,7 +173,7 @@ function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist
         X_embed = 20. .* rand(n_components, size(graph, 1)) .- 10.
     end
     # refine embedding with SGD
-    X_embed = optimize_embedding(graph, X_embed, n_epochs, alpha, min_dist, 1.0)
+    X_embed = optimize_embedding(graph, X_embed, n_epochs, alpha, min_dist, 1.0; neg_sample_rate=neg_sample_rate)
     
     return X_embed
 end
