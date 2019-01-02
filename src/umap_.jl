@@ -1,34 +1,64 @@
 # an implementation of Uniform Manifold Approximation and Projection
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
-struct UMAP_
-    graph
-    embedding
+struct UMAP_{S, T}
+    graph::AbstractMatrix{S}
+    embedding::AbstractMatrix{T}
+    
+    function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{T}) where {S, T}
+        issymmetric(graph) || throw(MethodError("UMAP_ constructor expected graph to be a symmetric matrix"))
+        new{S, T}(graph, embedding)
+    end
 end
 
 """
-    UMAP_(X, n_neighbors, n_components, min_dist, n_epochs)
+    UMAP_(X[, n_neighbors=15, n_components=2]; <kwargs>)
 
-Embed the data `X` into a `n_components`-dimensional space.
-# Arguments
-- `X`: the dataset to embed
-- `n_neighbors::Integer`: the size of the local neighborhood. Larger values
-capture more global structure in the data, while smaller values capture
-more local structure
-- `n_components::Integer`: the dimensionality of the embedding space
-- `min_dist::AbstractFloat`: the minimum spacing of points in the
-embedding dimension.
-- `n_epochs::Integer`: the number of training epochs for embedding
-optimization
+Embed the data `X` into a `n_components`-dimensional space. `n_neighbors` controls
+how many neighbors to consider as locally connected. Larger values capture more 
+global structure in the data, while small values capture more local structure.
+
+# Keyword Arguments
+- `metric::SemiMetric = Euclidean()`: the metric to calculate distance in the input space
+- `n_epochs::Integer = 300`: the number of training epochs for embedding optimization
+- `learning_rate::AbstractFloat = 1.`: the initial learning rate during optimization
+- `init::Symbol = :spectral`: how to initialize the output embedding; valid options 
+are `:spectral` and `:random`
+- `min_dist::AbstractFloat = 0.1`: the minimum spacing of points in the output embedding
+- `spread::AbstractFloat = 1.0`: the effective scale of embedded points. Determines how
+clustered embedded points are in combination with `min_dist`.
+- `set_operation_ratio::AbstractFloat = 1.0`: interpolates between fuzzy set union and 
+fuzzy set intersection when constructing the UMAP graph (global fuzzy simplicial set).
+The value of this parameter should be between 1.0 and 0.0: 1.0 indicates pure fuzzy union,
+while 0.0 indicates pure fuzzy intersection.
+- `local_connectivity::Integer = 1`: the number of nearest neighbors that should be assumed
+to be locally connected. The higher this value, the more connected the manifold becomes. This
+should not be set higher than the intrinsic dimension of the manifold.
+- `repulsion_strength::AbstractFloat = 1.0`: the weighting of negative samples during the
+optimization process. 
+- `neg_sample_rate::Integer = 5`: the number of negative samples to select for each positive 
+sample. Higher values will increase computational cost but result in slightly more accuracy.
+- `a::AbstractFloat = nothing`: this controls the embedding. By default, this is determined
+automatically by `min_dist` and `spread`.
+- `b::AbstractFloat = nothing`: this controls the embedding. By default, this is determined
+automatically by `min_dist` and `spread`.
 """
 function UMAP_(X::Vector{V},
-               n_neighbors::Integer,
-               n_components::Integer,
-               min_dist::AbstractFloat=1.,
-               n_epochs::Integer=300;
-               init::Symbol=:spectral,
-               learning_rate::AbstractFloat=1.,
-               neg_sample_rate::Integer=1) where {V <: AbstractVector}
+               n_neighbors::Integer = 15,
+               n_components::Integer = 2;
+               metric::SemiMetric = Euclidean(),
+               n_epochs::Integer = 300;
+               learning_rate::AbstractFloat = 1.,
+               init::Symbol = :spectral,
+               min_dist::AbstractFloat = 0.1,
+               spread::AbstractFloat = 1.0,
+               set_operation_ratio::AbstractFloat = 1.0,
+               local_connectivity::Integer = 1,
+               repulsion_strength::AbstractFloat = 1.0,
+               neg_sample_rate::Integer = 5,
+               a::Union{AbstractFloat, Nothing} = nothing,
+               b::Union{AbstractFloat, Nothing} = nothing
+               ) where {V <: AbstractVector}
     # argument checking
     length(X) > n_neighbors > 0|| throw(ArgumentError("length(X) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     length(X[1]) > n_components > 1 || throw(ArgumentError("n_components must be greater than 0 and less than the dimensionality of the data"))
