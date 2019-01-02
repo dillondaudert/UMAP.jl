@@ -1,9 +1,10 @@
 module UMAP
 
+using Distances: Euclidean, SemiMetric
 using NearestNeighborDescent: DescentGraph
 using LsqFit: curve_fit
-using SparseArrays
-using LinearAlgebra
+using SparseArrays: SparseMatrixCSC, sparse, dropzeros, nzrange, rowvals, nonzeros
+using LinearAlgebra: Symmetric, Diagonal, issymmetric, I
 using Arpack: eigs
 
 include("umap_.jl")
