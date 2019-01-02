@@ -195,15 +195,15 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
     alpha = initial_alpha
     for e in 1:n_epochs
 
-        for i in 1:size(graph)[2]
+        @views @fastmath @inbounds for i in 1:size(graph)[2]
             for ind in nzrange(graph, i)
                 j = rowvals(graph)[ind]
                 p = nonzeros(graph)[ind]
                 if rand() <= p
                     # calculate distance between embedding[:, i] and embedding[:, j]
-                    @views sdist = sum((embedding[:, i] .- embedding[:, j]).^2)
+                    sdist = sum((embedding[:, i] .- embedding[:, j]).^2)
                     delta = (r = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)) > 0. ? r : 0.
-                    grad .= clip.(delta .* (@view embedding[:, i] .- @view embedding[:, j]))
+                    grad .= clip.(delta .* (embedding[:, i] .- embedding[:, j]))
                     embedding[:, i] .+= alpha .* grad
                     embedding[:, j] .-= alpha .* grad 
 
