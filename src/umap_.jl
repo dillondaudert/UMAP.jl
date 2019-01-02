@@ -124,16 +124,19 @@ end
 
 Compute the membership strengths for the 1-skeleton of each fuzzy simplicial set.
 """
-function compute_membership_strengths(knns::AbstractMatrix, dists::AbstractMatrix, ρs, σs)
+function compute_membership_strengths(knns::AbstractMatrix{S}, 
+                                      dists::AbstractMatrix{T}, 
+                                      ρs::Vector{T}, 
+                                      σs::Vector{T}) where {S <: Integer, T}
     # set dists[i, j]
-    rows = sizehint!(Int[], length(knns))
-    cols = sizehint!(Int[], length(knns))
-    vals = sizehint!(Float64[], length(knns))
+    rows = sizehint!(S[], length(knns))
+    cols = sizehint!(S[], length(knns))
+    vals = sizehint!(T[], length(knns))
     for i in 1:size(knns)[2], j in 1:size(knns)[1]
-        if i == knns[j, i] # dist to self
+        @inbounds if i == knns[j, i] # dist to self
             d = 0.
         else
-            d = exp(-max(dists[j, i] - ρs[i], 0.)/σs[i])
+            @inbounds d = exp(-max(dists[j, i] - ρs[i], 0.)/σs[i])
         end
         append!(cols, i)
         append!(rows, knns[j, i])
