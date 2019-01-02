@@ -203,7 +203,11 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
                 if rand() <= p
                     # calculate distance between embedding[:, i] and embedding[:, j]
                     sdist = sum((embedding[:, i] .- embedding[:, j]).^2)
-                    delta = (r = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)) > 0. ? r : 0.
+                    if sdist > 0.
+                        delta = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)
+                    else
+                        delta = 0.
+                    end
                     grad .= clip.(delta .* (embedding[:, i] .- embedding[:, j]))
                     embedding[:, i] .+= alpha .* grad
                     embedding[:, j] .-= alpha .* grad 
