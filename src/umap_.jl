@@ -26,7 +26,8 @@ function UMAP_(X::Vector{V},
                n_components::Integer,
                min_dist::AbstractFloat=1.,
                n_epochs::Integer=300;
-               init::Symbol=:spectral) where {V <: AbstractVector}
+               init::Symbol=:spectral,
+               learning_rate::AbstractFloat=1.) where {V <: AbstractVector}
     # argument checking
     length(X) > n_neighbors > 0|| throw(ArgumentError("length(X) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     length(X[1]) > n_components > 1 || throw(ArgumentError("n_components must be greater than 0 and less than the dimensionality of the data"))
@@ -104,7 +105,7 @@ end
     lo, mid, hi = 0., 1., Inf
     #psum(dists, ρ) = sum(exp.(-max.(dists .- ρ, 0.)/mid))
     for n in 1:niter
-        psum = sum(exp.(-max.(dists .- ρ, 0.)/mid))
+        psum = sum(exp.(-max.(dists .- ρ, 0.)./mid))
         if abs(psum - target) < ktol
             break
         end
