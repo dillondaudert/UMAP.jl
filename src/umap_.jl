@@ -47,7 +47,7 @@ function UMAP_(X::Vector{V},
                n_neighbors::Integer = 15,
                n_components::Integer = 2;
                metric::SemiMetric = Euclidean(),
-               n_epochs::Integer = 300;
+               n_epochs::Integer = 300,
                learning_rate::AbstractFloat = 1.,
                init::Symbol = :spectral,
                min_dist::AbstractFloat = 0.1,
