@@ -5,16 +5,16 @@
     
     @testset "constructor" begin
         @testset "argument validation tests" begin
-            @test_throws ArgumentError UMAP_([[1.]], 0, 0)
-            @test_throws ArgumentError UMAP_([[1.], [1.]], 1, 0)
-            @test_throws ArgumentError UMAP_([[1.], [1.]], 1, 2)
+            @test_throws ArgumentError UMAP_([[1.]], 0) # n_neighbors error
+            @test_throws ArgumentError UMAP_([[1.], [1.]], 1, 0) # n_comps error
+            @test_throws ArgumentError UMAP_([[1.], [1.]], 1, 2) # n_comps error
             @test_throws ArgumentError UMAP_([[1., 1., 1.], 
-                    [1., 1., 1.]], 1, 2, 0.)
+                    [1., 1., 1.]], 1, 2; min_dist = 0.) # min_dist error
         end
         @testset "simple constructor tests" begin
             data = [rand(20) for _ in 1:100]
             k = 5
-            umap_struct = UMAP_(data, k, 2)
+            umap_struct = UMAP_(data)
             @test size(umap_struct.graph) == (100, 100)
             @test issymmetric(umap_struct.graph)
             @test size(umap_struct.embedding) == (2, 100)
