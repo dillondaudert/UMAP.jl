@@ -32,7 +32,7 @@ function UMAP_(X::Vector{V},
     length(X) > n_neighbors > 0|| throw(ArgumentError("length(X) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     length(X[1]) > n_components > 1 || throw(ArgumentError("n_components must be greater than 0 and less than the dimensionality of the data"))
     min_dist > 0. || throw(ArgumentError("min_dist must be greater than 0"))
-    n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 1"))
+    #n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 1"))
     
 
     # main algorithm
@@ -167,6 +167,7 @@ function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist
         expansion = 10. / maximum(X_embed)
         @. X_embed = (X_embed*expansion) + randn(size(X_embed))*0.0001
     elseif init == :random
+        print("using random initialization")
         X_embed = 20. .* rand(n_components, size(graph, 1)) .- 10.
     end
     # refine embedding with SGD
