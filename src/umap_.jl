@@ -57,7 +57,12 @@ function fuzzy_simplicial_set(X, n_neighbors)
     #if length(X) < 4096:
         # compute all pairwise distances
     knngraph = DescentGraph(X, n_neighbors)
-    knns, dists = getindex.(knngraph.graph, 1), getindex.(knngraph.graph, 2)
+    knns = Array{Int}(undef, size(knngraph.graph))
+    dists = Array{Float64}(undef, size(knngraph.graph))
+    for index in CartesianIndices(knngraph.graph)
+        @inbounds knns[index] = knngraph.graph[index][1]
+        @inbounds dists[index] = knngraph.graph[index][2]
+    end
 
     σs, ρs = smooth_knn_dists(dists, n_neighbors)
 
@@ -66,7 +71,7 @@ function fuzzy_simplicial_set(X, n_neighbors)
                                       # sparse matrix M[i, j] = vᵢⱼ where
                                       # vᵢⱼ is the probability that j is in the
                                       # simplicial set of i
-    return dropzeros(fs_set + fs_set' - fs_set .* fs_set')
+    return dropzeros(fs_set .+ fs_set' .- fs_set .* fs_set')
 end
 
 """
@@ -79,22 +84,22 @@ and the nearest neighbor (nn_dists) from each point.
 # Keyword Arguments
 ...
 """
-function smooth_knn_dists(knn_dists::AbstractMatrix, k::Integer;
+function smooth_knn_dists(knn_dists::AbstractMatrix{S}, k::Integer;
                           niter::Integer=64,
                           local_connectivity::AbstractFloat=1.,
                           bandwidth::AbstractFloat=1.,
-                          ktol = 1e-5)
-    minimum_nonzero(dists) = minimum(dists[dists .> 0.])
-    ρs = [minimum_nonzero(knn_dists[:, i]) for i in 1:size(knn_dists)[2]]
-    σs = zeros(size(knn_dists)[2])
+                          ktol = 1e-5) where {S <: Real}
+    @inline minimum_nonzero(dists) = minimum(dists[dists .> 0.])
+    ρs = S[minimum_nonzero(knn_dists[:, i]) for i in 1:size(knn_dists)[2]]
+    σs = zeros(S, size(knn_dists)[2])
 
     for i in 1:size(knn_dists)[2]
-        σs[i] = smooth_knn_dist(knn_dists[:, i], k, niter, ρs[i], ktol)
+        @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], k, niter, ρs[i], ktol)
     end
     return ρs, σs
 end
 
-function smooth_knn_dist(dists::AbstractVector, k, niter, ρ, ktol)
+@fastmath function smooth_knn_dist(dists::AbstractVector, k, niter, ρ, ktol)
     target = log2(k)
     lo, mid, hi = 0., 1., Inf
     #psum(dists, ρ) = sum(exp.(-max.(dists .- ρ, 0.)/mid))
