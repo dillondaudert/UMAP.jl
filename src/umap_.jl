@@ -39,7 +39,7 @@ function UMAP_(X::Vector{V},
     umap_graph = fuzzy_simplicial_set(X, n_neighbors)
 
     embedding = simplicial_set_embedding(umap_graph, n_components, min_dist, n_epochs; 
-                                         init=init)
+                                         init=init, alpha=learning_rate)
 
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
@@ -159,7 +159,7 @@ fuzzy simplicial set 1-skeletons of the data in high and low dimensional
 spaces.
 """
 function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist, n_epochs;
-                                  init::Symbol=:spectral)
+                                  init::Symbol=:spectral, alpha::AbstractFloat=1.0)
     
     if init == :spectral
         X_embed = spectral_layout(graph, n_components)
@@ -171,7 +171,7 @@ function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist
         X_embed = 20. .* rand(n_components, size(graph, 1)) .- 10.
     end
     # refine embedding with SGD
-    X_embed = optimize_embedding(graph, X_embed, n_epochs, 1.0, min_dist, 1.0)
+    X_embed = optimize_embedding(graph, X_embed, n_epochs, alpha, min_dist, 1.0)
     
     return X_embed
 end
