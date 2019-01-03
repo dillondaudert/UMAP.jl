@@ -204,29 +204,34 @@ function optimize_embedding(graph,
     a, b = fit_ϕ(min_dist, spread)
 
     clip(x) = x < -4. ? -4. : (x > 4. ? 4. : x)
-    grad = Array{eltype(embedding)}(undef, size(embedding, 1))
     alpha = initial_alpha
     for e in 1:n_epochs
 
-        @views @fastmath @inbounds for i in 1:size(graph)[2]
+        @fastmath @inbounds for i in 1:size(graph)[2]
             for ind in nzrange(graph, i)
                 j = rowvals(graph)[ind]
                 p = nonzeros(graph)[ind]
                 if rand() <= p
                     # NOTE: this currently allocates a temporary array before the sum 
-                    sdist = sum((embedding[:, i] .- embedding[:, j]).^2)
+                    @views sdist = evaluate(SquaredEuclidean(), embedding[:, i], embedding[:, j]))
                     if sdist > 0.
                         delta = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)
                     else
                         delta = 0.
                     end
-                    grad .= clip.(delta .* (embedding[:, i] .- embedding[:, j]))
-                    embedding[:, i] .+= alpha .* grad
-                    embedding[:, j] .-= alpha .* grad
+                    @simd for d in size(embedding, 1)
+                        grad = clip(delta * (embedding[d,i] - embedding[d,j]))
+                        embedding[d,i] += alpha * grad
+                        embedding[d,j] -= alpha * grad
+                    end
+                    #@views grad .= clip.(delta .* (embedding[:, i] .- embedding[:, j]))
+                    #embedding[:, i] .+= alpha .* grad
+                    #embedding[:, j] .-= alpha .* grad
 
                     for _ in 1:neg_sample_rate
                         k = rand(1:size(graph)[2])
-                        sdist = sum((embedding[:, i] .- embedding[:, k]).^2)
+                        @views sdist = evaluate(SquaredEuclidean(), 
+                                                embedding[:, i], embedding[:, k]))
                         if sdist > 0
                             delta = (2. * gamma * b) / (0.001 + sdist)*(1. + a*sdist^b)
                         elseif i == k
@@ -234,13 +239,20 @@ function optimize_embedding(graph,
                         else
                             delta = 0.
                         end
-                        # set negative gradients to positive 4.
-                        if delta > 0.
-                            grad .= clip.(delta .* (embedding[:,i] .- embedding[:, k]))
-                        else
-                            grad .= 4.
+                        @simd for d in size(embedding, 1)
+                            if delta > 0.
+                                grad = clip(delta * (embedding[d, i] - embedding[d, k]))
+                            else
+                                grad = 4.
+                            end
+                            embedding[d, i] += alpha * grad
                         end
-                        embedding[:, i] .+= alpha .* grad
+                        #if delta > 0.
+                        #    grad .= clip.(delta .* (embedding[:,i] .- embedding[:, k]))
+                        #else
+                        #    grad .= 4.
+                        #end
+                        #embedding[:, i] .+= alpha .* grad
                     end
 
                 end
