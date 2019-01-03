@@ -1,6 +1,6 @@
 module UMAP
 
-using Distances: evaluate, Euclidean, SquaredEuclidean, SemiMetric
+using Distances: evaluate, Euclidean, SqEuclidean, SemiMetric
 using NearestNeighborDescent: DescentGraph
 using LsqFit: curve_fit
 using SparseArrays: SparseMatrixCSC, sparse, dropzeros, nzrange, rowvals, nonzeros

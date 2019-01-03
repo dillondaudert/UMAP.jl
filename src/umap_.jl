@@ -213,7 +213,7 @@ function optimize_embedding(graph,
                 p = nonzeros(graph)[ind]
                 if rand() <= p
                     # NOTE: this currently allocates a temporary array before the sum 
-                    @views sdist = evaluate(SquaredEuclidean(), embedding[:, i], embedding[:, j]))
+                    @views sdist = evaluate(SqEuclidean(), embedding[:, i], embedding[:, j]))
                     if sdist > 0.
                         delta = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)
                     else
@@ -230,7 +230,7 @@ function optimize_embedding(graph,
 
                     for _ in 1:neg_sample_rate
                         k = rand(1:size(graph)[2])
-                        @views sdist = evaluate(SquaredEuclidean(), 
+                        @views sdist = evaluate(SqEuclidean(), 
                                                 embedding[:, i], embedding[:, k]))
                         if sdist > 0
                             delta = (2. * gamma * b) / (0.001 + sdist)*(1. + a*sdist^b)
