@@ -85,5 +85,6 @@
     @testset "spectral_layout" begin
         layout = spectral_layout(B, 5)
         @test layout isa Array{Float64, 2}
+        @inferred spectral_layout(B, 5)
     end
 end
