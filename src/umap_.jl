@@ -1,13 +1,13 @@
 # an implementation of Uniform Manifold Approximation and Projection
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
-struct UMAP_{S, T}
+struct UMAP_{S}
     graph::AbstractMatrix{S}
-    embedding::AbstractMatrix{T}
+    embedding::AbstractMatrix{S}
 
-    function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{T}) where {S, T}
+    function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{S}) where {S<:AbstractFloat}
         issymmetric(graph) || throw(MethodError("UMAP_ constructor expected graph to be a symmetric matrix"))
-        new{S, T}(graph, embedding)
+        new{S}(graph, embedding)
     end
 end
 
@@ -55,11 +55,11 @@ function UMAP_(X::Vector{V},
     #n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 1"))
 
     # main algorithm
-    graph = fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity)
+    graph = fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_operation_ratio)
 
     embedding = initialize_embedding(graph, n_components, Val(init))
 
-    embedding = optimize_embedding(graph, embedding, n_epochs, alpha, min_dist, spread, neg_sample_rate)
+    embedding = optimize_embedding(graph, embedding, n_epochs, alpha, min_dist, spread, repulsion_strength, neg_sample_rate)
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
 
@@ -73,12 +73,13 @@ Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity)
+function fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_operation_ratio)
     #if length(X) < 4096:
         # compute all pairwise distances
     knngraph = DescentGraph(X, n_neighbors, metric)
-    knns = Array{Int}(undef, size(knngraph.graph))
-    dists = Array{Float64}(undef, size(knngraph.graph))
+    knngraph.graph::Matrix{Tuple{S,T}} where {S,T}
+    knns = Array{S}(undef, size(knngraph.graph))
+    dists = Array{T}(undef, size(knngraph.graph))
     for index in CartesianIndices(knngraph.graph)
         @inbounds knns[index] = knngraph.graph[index][1]
         @inbounds dists[index] = knngraph.graph[index][2]
@@ -192,7 +193,13 @@ dimensional simplicial sets using stochastic gradient descent.
 - `embedding`: a dense matrix of shape (n_components, n_samples)
 - `neg_sample_rate::Integer`: the number of negative samples per positive sample
 """
-function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread,
+function optimize_embedding(graph,
+                            embedding,
+                            n_epochs,
+                            initial_alpha,
+                            min_dist,
+                            spread,
+                            gamma,
                             neg_sample_rate)
     a, b = fit_ϕ(min_dist, spread)
 
@@ -266,7 +273,8 @@ end
 
 Initialize the graph layout with spectral embedding.
 """
-function spectral_layout(graph::SparseMatrixCSC{T}, embed_dim::Integer) where {T<:AbstractFloat}
+function spectral_layout(graph::SparseMatrixCSC{T},
+                         embed_dim::Integer) where {T<:AbstractFloat}
     D_ = Diagonal(dropdims(sum(graph; dims=2); dims=2))
     D = inv(sqrt(D_))
     # normalized laplacian
