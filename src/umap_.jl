@@ -202,6 +202,7 @@ function optimize_embedding(graph,
                             gamma,
                             neg_sample_rate)
     a, b = fit_ϕ(min_dist, spread)
+    @show a, b
 
     clip(x) = x < -4. ? -4. : (x > 4. ? 4. : x)
     grad = Array{eltype(embedding)}(undef, size(embedding, 1))
@@ -259,7 +260,7 @@ Find a smooth approximation to the membership function of points embedded in ℜ
 This fits a smooth curve that approximates an exponential decay offset by `min_dist`.
 """
 function fit_ϕ(min_dist, spread)
-    ψ(d) = d > 0. ? exp(-(d - min_dist)/spread) : 1.
+    ψ(d) = d >= min_dist ? exp(-(d - min_dist)/spread) : 1.
     xs = LinRange(0., spread*3, 300)
     ys = map(ψ, xs)
     @. curve(x, p) = (1. + p[1]*x^(2*p[2]))^(-1)
