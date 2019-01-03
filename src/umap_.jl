@@ -63,7 +63,7 @@ function UMAP_(X::Vector{V},
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
 
-    return UMAP_(umap_graph, embedding)
+    return UMAP_(graph, embedding)
 end
 
 """
