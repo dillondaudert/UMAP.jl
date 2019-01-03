@@ -202,7 +202,6 @@ function optimize_embedding(graph,
                             gamma,
                             neg_sample_rate)
     a, b = fit_ϕ(min_dist, spread)
-    @show a, b
 
     clip(x) = x < -4. ? -4. : (x > 4. ? 4. : x)
     grad = Array{eltype(embedding)}(undef, size(embedding, 1))
@@ -264,7 +263,7 @@ function fit_ϕ(min_dist, spread)
     xs = LinRange(0., spread*3, 300)
     ys = map(ψ, xs)
     @. curve(x, p) = (1. + p[1]*x^(2*p[2]))^(-1)
-    result = curve_fit(curve, xs, ys, [1., 1.])
+    result = curve_fit(curve, xs, ys, [1., 1.], lower=[0., -Inf])
     a, b = result.param
     return a, b
 end
