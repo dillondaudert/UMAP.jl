@@ -224,9 +224,6 @@ function optimize_embedding(graph,
                         embedding[d,i] += alpha * grad
                         embedding[d,j] -= alpha * grad
                     end
-                    #@views grad .= clip.(delta .* (embedding[:, i] .- embedding[:, j]))
-                    #embedding[:, i] .+= alpha .* grad
-                    #embedding[:, j] .-= alpha .* grad
 
                     for _ in 1:neg_sample_rate
                         k = rand(1:size(graph)[2])
@@ -247,12 +244,6 @@ function optimize_embedding(graph,
                             end
                             embedding[d, i] += alpha * grad
                         end
-                        #if delta > 0.
-                        #    grad .= clip.(delta .* (embedding[:,i] .- embedding[:, k]))
-                        #else
-                        #    grad .= 4.
-                        #end
-                        #embedding[:, i] .+= alpha .* grad
                     end
 
                 end
