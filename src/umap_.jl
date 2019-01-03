@@ -4,7 +4,7 @@
 struct UMAP_{S, T}
     graph::AbstractMatrix{S}
     embedding::AbstractMatrix{T}
-    
+
     function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{T}) where {S, T}
         issymmetric(graph) || throw(MethodError("UMAP_ constructor expected graph to be a symmetric matrix"))
         new{S, T}(graph, embedding)
@@ -15,7 +15,7 @@ end
     UMAP_(X[, n_neighbors=15, n_components=2]; <kwargs>)
 
 Embed the data `X` into a `n_components`-dimensional space. `n_neighbors` controls
-how many neighbors to consider as locally connected. Larger values capture more 
+how many neighbors to consider as locally connected. Larger values capture more
 global structure in the data, while small values capture more local structure.
 
 # Keyword Arguments
@@ -27,7 +27,7 @@ global structure in the data, while small values capture more local structure.
 - `spread::AbstractFloat = 1.0`: the effective scale of embedded points. Determines how clustered embedded points are in combination with `min_dist`.
 - `set_operation_ratio::AbstractFloat = 1.0`: interpolates between fuzzy set union and fuzzy set intersection when constructing the UMAP graph (global fuzzy simplicial set). The value of this parameter should be between 1.0 and 0.0: 1.0 indicates pure fuzzy union, while 0.0 indicates pure fuzzy intersection.
 - `local_connectivity::Integer = 1`: the number of nearest neighbors that should be assumed to be locally connected. The higher this value, the more connected the manifold becomes. This should not be set higher than the intrinsic dimension of the manifold.
-- `repulsion_strength::AbstractFloat = 1.0`: the weighting of negative samples during the optimization process. 
+- `repulsion_strength::AbstractFloat = 1.0`: the weighting of negative samples during the optimization process.
 - `neg_sample_rate::Integer = 5`: the number of negative samples to select for each positive sample. Higher values will increase computational cost but result in slightly more accuracy.
 - `a::AbstractFloat = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 - `b::AbstractFloat = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
@@ -53,14 +53,13 @@ function UMAP_(X::Vector{V},
     length(X[1]) > n_components > 1 || throw(ArgumentError("n_components must be greater than 0 and less than the dimensionality of the data"))
     min_dist > 0. || throw(ArgumentError("min_dist must be greater than 0"))
     #n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 1"))
-    
 
     # main algorithm
-    umap_graph = fuzzy_simplicial_set(X, n_neighbors)
+    graph = fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity)
 
-    embedding = simplicial_set_embedding(umap_graph, n_components, min_dist, n_epochs; 
-                                         init=init, alpha=learning_rate, neg_sample_rate=neg_sample_rate)
+    embedding = initialize_embedding(graph, n_components, Val(init))
 
+    embedding = optimize_embedding(graph, embedding, n_epochs, alpha, min_dist, spread, neg_sample_rate)
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
 
@@ -68,16 +67,16 @@ function UMAP_(X::Vector{V},
 end
 
 """
-    fuzzy_simpl_set(X, n_neighbors) -> graph::SparseMatrixCSC
+    fuzzy_simplicial_set(X, n_neighbors) -> graph::SparseMatrixCSC
 
 Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simplicial_set(X, n_neighbors)
+function fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity)
     #if length(X) < 4096:
         # compute all pairwise distances
-    knngraph = DescentGraph(X, n_neighbors)
+    knngraph = DescentGraph(X, n_neighbors, metric)
     knns = Array{Int}(undef, size(knngraph.graph))
     dists = Array{Float64}(undef, size(knngraph.graph))
     for index in CartesianIndices(knngraph.graph)
@@ -85,10 +84,10 @@ function fuzzy_simplicial_set(X, n_neighbors)
         @inbounds dists[index] = knngraph.graph[index][2]
     end
 
-    σs, ρs = smooth_knn_dists(dists, n_neighbors)
+    σs, ρs = smooth_knn_dists(dists, n_neighbors, local_connectivity)
 
     rows, cols, vals = compute_membership_strengths(knns, dists, σs, ρs)
-    fs_set = sparse(rows, cols, vals, size(knns)[2], size(knns)[2]) 
+    fs_set = sparse(rows, cols, vals, size(knns)[2], size(knns)[2])
                                       # sparse matrix M[i, j] = vᵢⱼ where
                                       # vᵢⱼ is the probability that j is in the
                                       # simplicial set of i
@@ -105,23 +104,22 @@ and the nearest neighbor (nn_dists) from each point.
 # Keyword Arguments
 ...
 """
-function smooth_knn_dists(knn_dists::AbstractMatrix{S}, k::Integer;
+function smooth_knn_dists(knn_dists::AbstractMatrix{S}, k::Integer, local_connectivity::AbstractFloat;
                           niter::Integer=64,
-                          local_connectivity::AbstractFloat=1.,
                           bandwidth::AbstractFloat=1.,
                           ktol = 1e-5) where {S <: Real}
     @inline minimum_nonzero(dists) = minimum(dists[dists .> 0.])
     ρs = S[minimum_nonzero(knn_dists[:, i]) for i in 1:size(knn_dists)[2]]
-    σs = zeros(S, size(knn_dists)[2])
+    σs = Array{S}(undef, size(knn_dists)[2])
 
     for i in 1:size(knn_dists)[2]
-        @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], k, niter, ρs[i], ktol)
+        @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], ρs[i], k, local_connectivity, bandwidth, niter, ktol)
     end
     return ρs, σs
 end
 
-@fastmath function smooth_knn_dist(dists::AbstractVector, k, niter, ρ, ktol)
-    target = log2(k)
+@fastmath function smooth_knn_dist(dists::AbstractVector, ρ, k, local_connectivity, bandwidth, niter, ktol)
+    target = log2(k)*bandwidth
     lo, mid, hi = 0., 1., Inf
     #psum(dists, ρ) = sum(exp.(-max.(dists .- ρ, 0.)/mid))
     for n in 1:niter
@@ -150,9 +148,9 @@ end
 
 Compute the membership strengths for the 1-skeleton of each fuzzy simplicial set.
 """
-function compute_membership_strengths(knns::AbstractMatrix{S}, 
-                                      dists::AbstractMatrix{T}, 
-                                      ρs::Vector{T}, 
+function compute_membership_strengths(knns::AbstractMatrix{S},
+                                      dists::AbstractMatrix{T},
+                                      ρs::Vector{T},
                                       σs::Vector{T}) where {S <: Integer, T}
     # set dists[i, j]
     rows = sizehint!(S[], length(knns))
@@ -171,34 +169,20 @@ function compute_membership_strengths(knns::AbstractMatrix{S},
     return rows, cols, vals
 end
 
-"""
-    simplicial_set_embedding(graph, n_components, n_epochs; <kwargs>) -> embedding
+function initialize_embedding(graph, n_components, ::Val{:spectral})
+    embed = spectral_layout(graph, n_components)
+    # expand
+    expansion = 10. / maximum(embed)
+    @. embed = (embed*expansion) + randn(size(embed))*0.0001
+    return embed
+end
 
-Create an embedding by minimizing the fuzzy set cross entropy between the
-fuzzy simplicial set 1-skeletons of the data in high and low dimensional
-spaces.
-"""
-function simplicial_set_embedding(graph::SparseMatrixCSC, n_components, min_dist, n_epochs;
-                                  init::Symbol=:spectral, alpha::AbstractFloat=1.0,
-                                  neg_sample_rate::Integer=5)
-    
-    if init == :spectral
-        X_embed = spectral_layout(graph, n_components)
-        # expand 
-        expansion = 10. / maximum(X_embed)
-        @. X_embed = (X_embed*expansion) + randn(size(X_embed))*0.0001
-    elseif init == :random
-        print("using random initialization")
-        X_embed = 20. .* rand(n_components, size(graph, 1)) .- 10.
-    end
-    # refine embedding with SGD
-    X_embed = optimize_embedding(graph, X_embed, n_epochs, alpha, min_dist, 1.0; neg_sample_rate=neg_sample_rate)
-    
-    return X_embed
+function initialize_embedding(graph, n_components, ::Val{:random})
+    return 20. .* rand(n_components, size(graph, 1)) .- 10.
 end
 
 """
-    optimize_embedding(graph, embedding, min_dist, spread, alpha, n_epochs) -> embedding
+    optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread) -> embedding
 
 Optimize an embedding by minimizing the fuzzy set cross entropy between the high and low
 dimensional simplicial sets using stochastic gradient descent.
@@ -206,11 +190,10 @@ dimensional simplicial sets using stochastic gradient descent.
 # Arguments
 - `graph`: a sparse matrix of shape (n_samples, n_samples)
 - `embedding`: a dense matrix of shape (n_components, n_samples)
-# Keyword Arguments
-- `neg_sample_rate::Integer=5`: the number of negative samples per positive sample
+- `neg_sample_rate::Integer`: the number of negative samples per positive sample
 """
-function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread;
-                            neg_sample_rate::Integer=5)
+function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread,
+                            neg_sample_rate)
     a, b = fit_ϕ(min_dist, spread)
 
     clip(x) = x < -4. ? -4. : (x > 4. ? 4. : x)
@@ -232,7 +215,7 @@ function optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist,
                     end
                     grad .= clip.(delta .* (embedding[:, i] .- embedding[:, j]))
                     embedding[:, i] .+= alpha .* grad
-                    embedding[:, j] .-= alpha .* grad 
+                    embedding[:, j] .-= alpha .* grad
 
                     for _ in 1:neg_sample_rate
                         k = rand(1:size(graph)[2])
