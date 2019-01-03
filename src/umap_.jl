@@ -213,7 +213,7 @@ function optimize_embedding(graph,
                 j = rowvals(graph)[ind]
                 p = nonzeros(graph)[ind]
                 if rand() <= p
-                    # calculate distance between embedding[:, i] and embedding[:, j]
+                    # NOTE: this currently allocates a temporary array before the sum 
                     sdist = sum((embedding[:, i] .- embedding[:, j]).^2)
                     if sdist > 0.
                         delta = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)
