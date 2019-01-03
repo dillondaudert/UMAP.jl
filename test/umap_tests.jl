@@ -24,16 +24,21 @@
     @testset "fuzzy_simpl_set" begin
         data = [rand(20) for _ in 1:500]
         k = 5
-        umap_graph = fuzzy_simplicial_set(data, k)
+        umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.)
         @test issymmetric(umap_graph)
     end
     
     @testset "smooth_knn_dists" begin
         dists = [0., 1., 2., 3., 4., 5.]
         rho = 1
-        sigma = smooth_knn_dist(dists, 6, 100, rho, 1e-5)
+        k = 6
+        local_connectivity = 1
+        bandwidth = 1.
+        niter = 64
+        ktol = 1e-5
+        sigma = smooth_knn_dist(dists, rho, k, local_connectivity, bandwidth, niter, ktol)
         psum(ds, r, s) = sum(exp.(-max.(ds .- r, 0.) ./ s))
-        @test psum(dists, rho, sigma) - log2(6) < 1e-5
+        @test psum(dists, rho, sigma) - log2(k)*bandwidth < ktol
         
         knn_dists = [0. 0. 0.;
                      1. 2. 3.;
@@ -41,8 +46,7 @@
                      3. 4. 5.;
                      4. 6. 6.;
                      5. 6. 10.]
-        rhos, sigmas = smooth_knn_dists(knn_dists,
-                                        6; niter=128)
+        rhos, sigmas = smooth_knn_dists(knn_dists, k, local_connectivity)
         @test rhos == [1., 2., 3.]
         diffs = [psum(knn_dists[:,i], rhos[i], sigmas[i]) for i in 1:3] .- log2(6)
         @test all(diffs .< 1e-5)
@@ -68,7 +72,13 @@
     
     @testset "optimize_embedding" begin
         layout = spectral_layout(B, 5)
-        embedding = optimize_embedding(B, layout, 1, 1., 1., 1.)
+        n_epochs = 1
+        initial_alpha = 1.
+        min_dist = 1.
+        spread = 1.
+        gamma = 1.
+        neg_sample_rate = 5
+        embedding = optimize_embedding(B, layout, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate)
         @test embedding isa Array{Float64, 2}
     end
     

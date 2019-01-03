@@ -1,4 +1,5 @@
 using Test
+using Distances: Euclidean
 using SparseArrays
 using LinearAlgebra
 using UMAP
