@@ -80,7 +80,7 @@ function fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_op
     knngraph.graph::Matrix{Tuple{S,T}} where {S,T}
     knns = Array{S}(undef, size(knngraph.graph))
     dists = Array{T}(undef, size(knngraph.graph))
-    for index in CartesianIndices(knngraph.graph)
+    for index in eachindex(knngraph.graph)
         @inbounds knns[index] = knngraph.graph[index][1]
         @inbounds dists[index] = knngraph.graph[index][2]
     end
