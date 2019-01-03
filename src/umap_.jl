@@ -59,7 +59,7 @@ function UMAP_(X::Vector{V},
 
     embedding = initialize_embedding(graph, n_components, Val(init))
 
-    embedding = optimize_embedding(graph, embedding, n_epochs, alpha, min_dist, spread, repulsion_strength, neg_sample_rate)
+    embedding = optimize_embedding(graph, embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate)
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
 
@@ -77,9 +77,9 @@ function fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_op
     #if length(X) < 4096:
         # compute all pairwise distances
     knngraph = DescentGraph(X, n_neighbors, metric)
-    knngraph.graph::Matrix{Tuple{S,T}} where {S,T}
-    knns = Array{S}(undef, size(knngraph.graph))
-    dists = Array{T}(undef, size(knngraph.graph))
+    knngraph.graph::Matrix{Tuple{S,T}} where {S<:Integer,T<:AbstractFloat}
+    knns = Array{typeof(knngraph.graph[1][1])}(undef, size(knngraph.graph))
+    dists = Array{typeof(knngraph.graph[1][2])}(undef, size(knngraph.graph))
     for index in eachindex(knngraph.graph)
         @inbounds knns[index] = knngraph.graph[index][1]
         @inbounds dists[index] = knngraph.graph[index][2]
@@ -105,7 +105,7 @@ and the nearest neighbor (nn_dists) from each point.
 # Keyword Arguments
 ...
 """
-function smooth_knn_dists(knn_dists::AbstractMatrix{S}, k::Integer, local_connectivity::AbstractFloat;
+function smooth_knn_dists(knn_dists::AbstractMatrix{S}, k::Integer, local_connectivity::Integer;
                           niter::Integer=64,
                           bandwidth::AbstractFloat=1.,
                           ktol = 1e-5) where {S <: Real}
