@@ -225,7 +225,7 @@ function optimize_embedding(graph,
     epoch_of_next_sample = copy(epochs_per_sample)
     epoch_of_next_negative_sample = copy(epochs_per_negative_sample)
     for e in 1:n_epochs
-        #shuffle!(indices)
+        shuffle!(indices)
         @fastmath @inbounds for ind in indices
 #            p = graph[i, j]
 #            if rand() <= p
@@ -242,11 +242,6 @@ function optimize_embedding(graph,
                     embedding[d,i] += alpha * grad
                     embedding[d,j] -= alpha * grad
                 end
-                if i == 0
-                # DEBUG SDIST
-                sdist2 = evaluate(SqEuclidean(), embedding[:, i], embedding[:, j])
-                print(i, " ~ ", round(sqrt(sdist2)-sqrt(sdist); digits=2)," ~ ", j, "\n")
-                end
 
                 epoch_of_next_sample[ind] += epochs_per_sample[ind]
                                     
@@ -258,9 +253,6 @@ function optimize_embedding(graph,
                                             embedding[:, i], embedding[:, k])
                     if sdist > 0
                         delta = (2. * gamma * b) / ((0.001 + sdist)*(1. + a*sdist^b))
-                        if i == 0
-                        print("\n(delta: ",round(delta; digits=2),")  ")
-                        end
                     elseif i == k
                         continue
                     else
@@ -273,10 +265,6 @@ function optimize_embedding(graph,
                             grad = 4.
                         end
                         embedding[d, i] += alpha * grad
-                    end
-                    if i == 0
-                    sdist2 = evaluate(SqEuclidean(), embedding[:, i], embedding[:, k])
-                    print(i, " ~ ", round(sqrt(sdist2)-sqrt(sdist); digits=2)," ~ ", k, "\n")
                     end
                 end
                 epoch_of_next_negative_sample[ind] += n_neg_samples * epochs_per_negative_sample[ind]
