@@ -244,7 +244,7 @@ function optimize_embedding(graph,
                         @views sdist = evaluate(SqEuclidean(), 
                                                 embedding[:, i], embedding[:, k])
                         if sdist > 0
-                            delta = (2. * gamma * b) / (0.001 + sdist)*(1. + a*sdist^b)
+                            delta = (2. * gamma * b) / ((0.001 + sdist)*(1. + a*sdist^b))
                         elseif i == k
                             continue
                         else
