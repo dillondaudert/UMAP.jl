@@ -243,7 +243,7 @@ function optimize_embedding(graph,
                     embedding[d,j] -= alpha * grad
                 end
 
-                epochs_of_next_sample[ind] += epochs_per_sample[ind]
+                epoch_of_next_sample[ind] += epochs_per_sample[ind]
                                     
                 n_neg_samples = round(Int, e - epoch_of_next_negative_sample[ind]) / epochs_per_negative_sample[ind]
                                     
