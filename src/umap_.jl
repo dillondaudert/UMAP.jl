@@ -66,6 +66,17 @@ function UMAP_(X::Vector{V},
     return UMAP_(graph, embedding)
 end
 
+function pairwise_knn(X::Vector{V}, n_neighbors, metric) where {V <: AbstractVector}
+    pairwise_dists = [Array{eltype(V)}(undef, length(X)) for _ in 1:length(X)]
+    @inbounds for i in 1:length(X), j in 1:length(X)
+        pairwise_dists[i][j] = evaluate(metric, X[i], X[j])
+    end
+    # get indices of closest neighbors (array of array of indices)
+    knns = [p[2:n_neighbors+1] for p in sortperm.(pairwise_dists)]
+    dists = [pairwise_dists[i][knns[i]] for i in 1:length(knns)]
+    return hcat(knns...), hcat(dists...)    
+end
+
 """
     fuzzy_simplicial_set(X, n_neighbors) -> graph::SparseMatrixCSC
 
@@ -73,16 +84,19 @@ Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_operation_ratio)
-    #if length(X) < 4096:
+function fuzzy_simplicial_set(X::Vector{V}, n_neighbors, metric, local_connectivity, set_operation_ratio) where {V <: AbstractVector}
+    if length(X) < 4096
         # compute all pairwise distances
-    knngraph = DescentGraph(X, n_neighbors, metric)
-    knngraph.graph::Matrix{Tuple{S,T}} where {S<:Integer,T<:AbstractFloat}
-    knns = Array{typeof(knngraph.graph[1][1])}(undef, size(knngraph.graph))
-    dists = Array{typeof(knngraph.graph[1][2])}(undef, size(knngraph.graph))
-    for index in eachindex(knngraph.graph)
-        @inbounds knns[index] = knngraph.graph[index][1]
-        @inbounds dists[index] = knngraph.graph[index][2]
+        knns, dists = pairwise_knn(X, n_neighbors, metric)
+    else
+        knngraph = DescentGraph(X, n_neighbors, metric)
+        knngraph.graph::Matrix{Tuple{S,T}} where {S<:Integer,T<:AbstractFloat}
+        knns = Array{typeof(knngraph.graph[1][1])}(undef, size(knngraph.graph))
+        dists = Array{typeof(knngraph.graph[1][2])}(undef, size(knngraph.graph))
+        for index in eachindex(knngraph.graph)
+            @inbounds knns[index] = knngraph.graph[index][1]
+            @inbounds dists[index] = knngraph.graph[index][2]
+        end
     end
 
     σs, ρs = smooth_knn_dists(dists, n_neighbors, local_connectivity)
