@@ -239,7 +239,7 @@ function optimize_embedding(graph,
                 end
 
                 for _ in 1:neg_sample_rate
-                    k = rand(1:size(graph, 2)
+                    k = rand(1:size(graph, 2))
                     @views sdist = evaluate(SqEuclidean(), 
                                             embedding[:, i], embedding[:, k])
                     if sdist > 0
