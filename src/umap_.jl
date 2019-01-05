@@ -233,7 +233,7 @@ function optimize_embedding(graph,
                     else
                         delta = 0.
                     end
-                    @simd for d in size(embedding, 1)
+                    @simd for d in 1:size(embedding, 1)
                         grad = clip(delta * (embedding[d,i] - embedding[d,j]))
                         embedding[d,i] += alpha * grad
                         embedding[d,j] -= alpha * grad
@@ -250,7 +250,7 @@ function optimize_embedding(graph,
                         else
                             delta = 0.
                         end
-                        @simd for d in size(embedding, 1)
+                        @simd for d in 1:size(embedding, 1)
                             if delta > 0.
                                 grad = clip(delta * (embedding[d, i] - embedding[d, k]))
                             else
