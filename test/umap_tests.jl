@@ -96,4 +96,13 @@
         @test knns == true_knns
         @test dists == true_dists
     end
+    
+    @testset "make_epochs_per_sample" begin
+        weights = sparse([0. .4; .8 .2])
+        n_epochs = 5
+        epochs_per_sample = make_epochs_per_sample(weights, n_epochs)
+        true_epochs_per_sample = sparse([0. 2.; 1. 4.])
+        @test epochs_per_sample == true_epochs_per_sample
+    end
+    
 end

@@ -220,12 +220,17 @@ function optimize_embedding(graph,
     clip(x) = x < -4. ? -4. : (x > 4. ? 4. : x)
     alpha = initial_alpha
     indices = findall(!iszero, graph)
+    epochs_per_sample = make_epochs_per_sample(graph, n_epochs)
+    epochs_per_negative_sample = epochs_per_sample ./ neg_sample_rate
+    epoch_of_next_sample = copy(epochs_per_sample)
+    epoch_of_next_negative_sample = copy(epochs_per_negative_sample)
     for e in 1:n_epochs
         shuffle!(indices)
         @fastmath @inbounds for ind in indices
-            i, j = ind.I
-            p = graph[i, j]
-            if rand() <= p
+#            p = graph[i, j]
+#            if rand() <= p
+            if epoch_of_next_sample[ind] <= e
+                i, j = ind.I
                 @views sdist = evaluate(SqEuclidean(), embedding[:, i], embedding[:, j])
                 if sdist > 0.
                     delta = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)
@@ -238,7 +243,11 @@ function optimize_embedding(graph,
                     embedding[d,j] -= alpha * grad
                 end
 
-                for _ in 1:neg_sample_rate
+                epochs_of_next_sample[ind] += epochs_per_sample[ind]
+                                    
+                n_neg_samples = round(Int, e - epoch_of_next_negative_sample[ind]) / epochs_per_negative_sample[ind]
+                                    
+                for _ in 1:n_neg_samples
                     k = rand(1:size(graph, 2))
                     @views sdist = evaluate(SqEuclidean(), 
                                             embedding[:, i], embedding[:, k])
@@ -258,6 +267,7 @@ function optimize_embedding(graph,
                         embedding[d, i] += alpha * grad
                     end
                 end
+                epoch_of_next_negative_sample[ind] += n_neg_samples * epochs_per_negative_sample[ind]
             end
         end
         alpha = initial_alpha*(1. - e/n_epochs)
