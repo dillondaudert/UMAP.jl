@@ -49,8 +49,8 @@ function UMAP_(X::AbstractMatrix{S},
                b::Union{AbstractFloat, Nothing} = nothing
                ) where {S <: AbstractFloat, V <: AbstractVector}
     # argument checking
-    length(X) > n_neighbors > 0|| throw(ArgumentError("length(X) must be greater than n_neighbors and n_neighbors must be greater than 0"))
-    length(X[1]) > n_components > 1 || throw(ArgumentError("n_components must be greater than 0 and less than the dimensionality of the data"))
+    size(X, 2) > n_neighbors > 0|| throw(ArgumentError("size(X, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
+    size(X, 1) > n_components > 1 || throw(ArgumentError("size(X, 1) must be greater than n_components and n_components must be greater than 1"))
     min_dist > 0. || throw(ArgumentError("min_dist must be greater than 0"))
     #n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 1"))
 
@@ -292,7 +292,7 @@ function spectral_layout(graph::SparseMatrixCSC{T},
     L = sparse(Symmetric(I - D*graph*D))
 
     k = embed_dim+1
-    num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L)[1])))
+    num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L, 1))))
     local layout
     try
         # get the 2nd - embed_dim+1th smallest eigenvectors
@@ -300,13 +300,13 @@ function spectral_layout(graph::SparseMatrixCSC{T},
                                        ncv=num_lanczos_vectors,
                                        which=:SM,
                                        tol=1e-4,
-                                       v0=ones(size(L)[1]),
-                                       maxiter=size(L)[1]*5)
+                                       v0=ones(T, size(L, 1)),
+                                       maxiter=size(L, 1)*5)
         layout = permutedims(eigenvecs[:, 2:k])::Array{T, 2}
     catch e
-        print(e)
+        print("\n", e, "\n")
         print("Error occured in spectral_layout;
-               falling back to random layout.")
+               falling back to random layout.\n")
         layout = 20 .* rand(T, embed_dim, size(L)[1]) .- 10
     end
     return layout
