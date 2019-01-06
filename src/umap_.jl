@@ -12,7 +12,7 @@ struct UMAP_{S}
 end
 
 """
-    UMAP_(X[, n_neighbors=15, n_components=2]; <kwargs>)
+    UMAP_(X::AbstractMatrix[, n_neighbors=15, n_components=2]; <kwargs>)
 
 Embed the data `X` into a `n_components`-dimensional space. `n_neighbors` controls
 how many neighbors to consider as locally connected. Larger values capture more
@@ -32,7 +32,7 @@ global structure in the data, while small values capture more local structure.
 - `a::AbstractFloat = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 - `b::AbstractFloat = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 """
-function UMAP_(X::Vector{V},
+function UMAP_(X::AbstractMatrix{S},
                n_neighbors::Integer = 15,
                n_components::Integer = 2;
                metric::SemiMetric = Euclidean(),
@@ -47,7 +47,7 @@ function UMAP_(X::Vector{V},
                neg_sample_rate::Integer = 5,
                a::Union{AbstractFloat, Nothing} = nothing,
                b::Union{AbstractFloat, Nothing} = nothing
-               ) where {V <: AbstractVector}
+               ) where {S <: AbstractFloat, V <: AbstractVector}
     # argument checking
     length(X) > n_neighbors > 0|| throw(ArgumentError("length(X) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     length(X[1]) > n_components > 1 || throw(ArgumentError("n_components must be greater than 0 and less than the dimensionality of the data"))
@@ -66,17 +66,6 @@ function UMAP_(X::Vector{V},
     return UMAP_(graph, embedding)
 end
 
-function pairwise_knn(X::Vector{V}, n_neighbors, metric) where {V <: AbstractVector}
-    pairwise_dists = [Array{eltype(V)}(undef, length(X)) for _ in 1:length(X)]
-    @inbounds for i in 1:length(X), j in 1:length(X)
-        pairwise_dists[i][j] = evaluate(metric, X[i], X[j])
-    end
-    # get indices of closest neighbors (array of array of indices)
-    knns = [p[2:n_neighbors+1] for p in sortperm.(pairwise_dists)]
-    dists = [pairwise_dists[i][knns[i]] for i in 1:length(knns)]
-    return hcat(knns...), hcat(dists...)    
-end
-
 """
     fuzzy_simplicial_set(X, n_neighbors) -> graph::SparseMatrixCSC
 
@@ -84,8 +73,12 @@ Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simplicial_set(X::Vector{V}, n_neighbors, metric, local_connectivity, set_operation_ratio) where {V <: AbstractVector}
-    if length(X) < 4096
+function fuzzy_simplicial_set(X::AbstractMatrix, 
+                              n_neighbors, 
+                              metric, 
+                              local_connectivity, 
+                              set_operation_ratio) where {V <: AbstractVector}
+    if size(X, 2) < 4096
         # compute all pairwise distances
         knns, dists = pairwise_knn(X, n_neighbors, metric)
     else
