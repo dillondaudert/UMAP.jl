@@ -5,24 +5,29 @@
     
     @testset "constructor" begin
         @testset "argument validation tests" begin
+            data = rand(5, 10)
             @test_throws ArgumentError UMAP_([[1.]], 0) # n_neighbors error
             @test_throws ArgumentError UMAP_([[1.], [1.]], 1, 0) # n_comps error
             @test_throws ArgumentError UMAP_([[1.], [1.]], 1, 2) # n_comps error
             @test_throws ArgumentError UMAP_([[1., 1., 1.], 
                     [1., 1., 1.]], 1, 2; min_dist = 0.) # min_dist error
         end
-        @testset "simple constructor tests" begin
-            data = [rand(20) for _ in 1:100]
-            k = 5
-            umap_struct = UMAP_(data)
-            @test size(umap_struct.graph) == (100, 100)
-            @test issymmetric(umap_struct.graph)
-            @test size(umap_struct.embedding) == (2, 100)
-        end
+    end
+    
+    @testset "input type stability tests" begin
+        data = rand(5, 100)
+        umap_ = UMAP_(data)
+        @test umap_ isa UMAP_{Float64}
+        @test size(umap_.graph) == (100, 100)
+        @test size(umap_.embedding) == (2, 100)
+
+        data = rand(Float32, 5, 100)
+        umap_ = UMAP_(data)
+        @test umap_ isa UMAP_{Float32}
     end
     
     @testset "fuzzy_simpl_set" begin
-        data = [rand(20) for _ in 1:500]
+        data = rand(20, 500)
         k = 5
         umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.)
         @test issymmetric(umap_graph)
@@ -89,7 +94,7 @@
     end
     
     @testset "pairwise_knn tests" begin
-        data = [[0., 0.], [0., 1.5], [0., 2.]]
+        data = [0. 0. 0.; 0. 1.5 2.]
         true_knns = [2 3 2; 3 1 1]
         true_dists = [1.5 .5 .5; 2. 1.5 2.]
         knns, dists = pairwise_knn(data, 2, Euclidean())
