@@ -12,7 +12,7 @@ struct UMAP_{S}
 end
 
 """
-    UMAP_(X[, n_neighbors=15, n_components=2]; <kwargs>)
+    UMAP_(X::AbstractMatrix[, n_neighbors=15, n_components=2]; <kwargs>)
 
 Embed the data `X` into a `n_components`-dimensional space. `n_neighbors` controls
 how many neighbors to consider as locally connected. Larger values capture more
@@ -32,7 +32,7 @@ global structure in the data, while small values capture more local structure.
 - `a::AbstractFloat = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 - `b::AbstractFloat = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 """
-function UMAP_(X::Vector{V},
+function UMAP_(X::AbstractMatrix{S},
                n_neighbors::Integer = 15,
                n_components::Integer = 2;
                metric::SemiMetric = Euclidean(),
@@ -47,10 +47,10 @@ function UMAP_(X::Vector{V},
                neg_sample_rate::Integer = 5,
                a::Union{AbstractFloat, Nothing} = nothing,
                b::Union{AbstractFloat, Nothing} = nothing
-               ) where {V <: AbstractVector}
+               ) where {S <: AbstractFloat, V <: AbstractVector}
     # argument checking
-    length(X) > n_neighbors > 0|| throw(ArgumentError("length(X) must be greater than n_neighbors and n_neighbors must be greater than 0"))
-    length(X[1]) > n_components > 1 || throw(ArgumentError("n_components must be greater than 0 and less than the dimensionality of the data"))
+    size(X, 2) > n_neighbors > 0|| throw(ArgumentError("size(X, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
+    size(X, 1) > n_components > 1 || throw(ArgumentError("size(X, 1) must be greater than n_components and n_components must be greater than 1"))
     min_dist > 0. || throw(ArgumentError("min_dist must be greater than 0"))
     #n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 1"))
 
@@ -73,16 +73,23 @@ Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_operation_ratio)
-    #if length(X) < 4096:
+function fuzzy_simplicial_set(X::AbstractMatrix, 
+                              n_neighbors, 
+                              metric, 
+                              local_connectivity, 
+                              set_operation_ratio) where {V <: AbstractVector}
+    if size(X, 2) < 4096
         # compute all pairwise distances
-    knngraph = DescentGraph(X, n_neighbors, metric)
-    knngraph.graph::Matrix{Tuple{S,T}} where {S<:Integer,T<:AbstractFloat}
-    knns = Array{typeof(knngraph.graph[1][1])}(undef, size(knngraph.graph))
-    dists = Array{typeof(knngraph.graph[1][2])}(undef, size(knngraph.graph))
-    for index in eachindex(knngraph.graph)
-        @inbounds knns[index] = knngraph.graph[index][1]
-        @inbounds dists[index] = knngraph.graph[index][2]
+        knns, dists = pairwise_knn(X, n_neighbors, metric)
+    else
+        knngraph = DescentGraph(X, n_neighbors, metric)
+        knngraph.graph::Matrix{Tuple{S,T}} where {S<:Integer,T<:AbstractFloat}
+        knns = Array{typeof(knngraph.graph[1][1])}(undef, size(knngraph.graph))
+        dists = Array{typeof(knngraph.graph[1][2])}(undef, size(knngraph.graph))
+        for index in eachindex(knngraph.graph)
+            @inbounds knns[index] = knngraph.graph[index][1]
+            @inbounds dists[index] = knngraph.graph[index][2]
+        end
     end
 
     σs, ρs = smooth_knn_dists(dists, n_neighbors, local_connectivity)
@@ -219,7 +226,7 @@ function optimize_embedding(graph,
                     else
                         delta = 0.
                     end
-                    @simd for d in size(embedding, 1)
+                    @simd for d in 1:size(embedding, 1)
                         grad = clip(delta * (embedding[d,i] - embedding[d,j]))
                         embedding[d,i] += alpha * grad
                         embedding[d,j] -= alpha * grad
@@ -230,13 +237,13 @@ function optimize_embedding(graph,
                         @views sdist = evaluate(SqEuclidean(), 
                                                 embedding[:, i], embedding[:, k])
                         if sdist > 0
-                            delta = (2. * gamma * b) / (0.001 + sdist)*(1. + a*sdist^b)
+                            delta = (2. * gamma * b) / ((0.001 + sdist)*(1. + a*sdist^b))
                         elseif i == k
                             continue
                         else
                             delta = 0.
                         end
-                        @simd for d in size(embedding, 1)
+                        @simd for d in 1:size(embedding, 1)
                             if delta > 0.
                                 grad = clip(delta * (embedding[d, i] - embedding[d, k]))
                             else
@@ -285,7 +292,7 @@ function spectral_layout(graph::SparseMatrixCSC{T},
     L = sparse(Symmetric(I - D*graph*D))
 
     k = embed_dim+1
-    num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L)[1])))
+    num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L, 1))))
     local layout
     try
         # get the 2nd - embed_dim+1th smallest eigenvectors
@@ -293,13 +300,13 @@ function spectral_layout(graph::SparseMatrixCSC{T},
                                        ncv=num_lanczos_vectors,
                                        which=:SM,
                                        tol=1e-4,
-                                       v0=ones(size(L)[1]),
-                                       maxiter=size(L)[1]*5)
+                                       v0=ones(T, size(L, 1)),
+                                       maxiter=size(L, 1)*5)
         layout = permutedims(eigenvecs[:, 2:k])::Array{T, 2}
     catch e
-        print(e)
+        print("\n", e, "\n")
         print("Error occured in spectral_layout;
-               falling back to random layout.")
+               falling back to random layout.\n")
         layout = 20 .* rand(T, embed_dim, size(L)[1]) .- 10
     end
     return layout
