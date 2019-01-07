@@ -10,6 +10,6 @@ using Arpack: eigs
 include("utils.jl")
 include("umap_.jl")
 
-export UMAP_
+export umap, UMAP_
 
 end # module
