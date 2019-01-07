@@ -1,6 +1,7 @@
 # an implementation of Uniform Manifold Approximation and Projection
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
+# NOTE: unused for now
 struct UMAP_{S}
     graph::AbstractMatrix{S}
     embedding::AbstractMatrix{S}
@@ -11,8 +12,9 @@ struct UMAP_{S}
     end
 end
 
+
 """
-    UMAP_(X::AbstractMatrix[, n_neighbors=15, n_components=2]; <kwargs>)
+    umap(X::AbstractMatrix[, n_neighbors=15, n_components=2]; <kwargs>) -> embedding
 
 Embed the data `X` into a `n_components`-dimensional space. `n_neighbors` controls
 how many neighbors to consider as locally connected. Larger values capture more
@@ -32,6 +34,12 @@ global structure in the data, while small values capture more local structure.
 - `a::AbstractFloat = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 - `b::AbstractFloat = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 """
+function umap(args...; kwargs...)
+    # this is just a convenience function for now
+    return UMAP_(args; kwargs...).embedding
+end
+
+
 function UMAP_(X::AbstractMatrix{S},
                n_neighbors::Integer = 15,
                n_components::Integer = 2;
