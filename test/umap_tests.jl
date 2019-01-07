@@ -2,18 +2,18 @@
 @testset "all tests" begin
     A = sprand(10000, 10000, 0.001)
     B = dropzeros(A + A' - A .* A')
-    
+
     @testset "constructor" begin
         @testset "argument validation tests" begin
             data = rand(5, 10)
-            @test_throws ArgumentError UMAP_([1. 1.], 0) # n_neighbors error
-            @test_throws ArgumentError UMAP_([1. 1.], 1, 0) # n_comps error
-            @test_throws ArgumentError UMAP_([1. 1.], 1, 2) # n_comps error
-            @test_throws ArgumentError UMAP_([1. 1.; 1. 1.; 1. 1.],
-                1, 2; min_dist = 0.) # min_dist error
+            @test_throws ArgumentError UMAP_([1. 1.]; n_neighbors=0) # n_neighbors error
+            @test_throws ArgumentError UMAP_([1. 1.], 0; n_neighbors=1) # n_comps error
+            @test_throws ArgumentError UMAP_([1. 1.], 2; n_neighbors=1) # n_comps error
+            @test_throws ArgumentError UMAP_([1. 1.; 1. 1.; 1. 1.];
+                    n_neighbors=1, min_dist = 0.) # min_dist error
         end
     end
-    
+
     @testset "input type stability tests" begin
         data = rand(5, 100)
         umap_ = UMAP_(data)
@@ -24,7 +24,7 @@
         data = rand(Float32, 5, 100)
         @test_skip UMAP_(data) isa UMAP_{Float32}
     end
-    
+
     @testset "fuzzy_simpl_set" begin
         data = rand(20, 500)
         k = 5
@@ -34,7 +34,7 @@
         umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.)
         @test eltype(umap_graph) == Float32
     end
-    
+
     @testset "smooth_knn_dists" begin
         dists = [0., 1., 2., 3., 4., 5.]
         rho = 1
@@ -46,7 +46,7 @@
         sigma = smooth_knn_dist(dists, rho, k, local_connectivity, bandwidth, niter, ktol)
         psum(ds, r, s) = sum(exp.(-max.(ds .- r, 0.) ./ s))
         @test psum(dists, rho, sigma) - log2(k)*bandwidth < ktol
-        
+
         knn_dists = [0. 0. 0.;
                      1. 2. 3.;
                      2. 4. 5.;
@@ -58,7 +58,7 @@
         diffs = [psum(knn_dists[:,i], rhos[i], sigmas[i]) for i in 1:3] .- log2(6)
         @test all(diffs .< 1e-5)
     end
-    
+
     @testset "compute_membership_strengths" begin
         knns = [1 2 3; 2 1 2]
         dists = [0. 0. 0.; 2. 2. 3.]
@@ -72,7 +72,7 @@
         @test cols == true_cols
         @test vals == true_vals
     end
-    
+
     @testset "optimize_embedding" begin
         layout = spectral_layout(B, 5)
         n_epochs = 1
@@ -84,14 +84,14 @@
         embedding = optimize_embedding(B, layout, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate)
         @test embedding isa Array{Float64, 2}
     end
-    
+
     @testset "spectral_layout" begin
         layout = spectral_layout(B, 5)
         @test layout isa Array{Float64, 2}
         @inferred spectral_layout(B, 5)
         @test_skip spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
     end
-    
+
     @testset "pairwise_knn tests" begin
         data = [0. 0. 0.; 0. 1.5 2.]
         true_knns = [2 3 2; 3 1 1]

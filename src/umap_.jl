@@ -14,13 +14,13 @@ end
 
 
 """
-    umap(X::AbstractMatrix[, n_neighbors=15, n_components=2]; <kwargs>) -> embedding
+    umap(X::AbstractMatrix[, n_components=2]; <kwargs>) -> embedding
 
 Embed the data `X` into a `n_components`-dimensional space. `n_neighbors` controls
-how many neighbors to consider as locally connected. Larger values capture more
-global structure in the data, while small values capture more local structure.
+how many neighbors to consider as locally connected.
 
 # Keyword Arguments
+- `n_neighbors::Integer = 15`: the number of neighbors to consider as locally connected. Larger values capture more global structure in the data, while small values capture more local structure.
 - `metric::SemiMetric = Euclidean()`: the metric to calculate distance in the input space
 - `n_epochs::Integer = 300`: the number of training epochs for embedding optimization
 - `learning_rate::AbstractFloat = 1.`: the initial learning rate during optimization
@@ -41,8 +41,8 @@ end
 
 
 function UMAP_(X::AbstractMatrix{S},
-               n_neighbors::Integer = 15,
                n_components::Integer = 2;
+               n_neighbors::Integer = 15,
                metric::SemiMetric = Euclidean(),
                n_epochs::Integer = 300,
                learning_rate::AbstractFloat = 1.,
@@ -81,10 +81,10 @@ Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simplicial_set(X::AbstractMatrix, 
-                              n_neighbors, 
-                              metric, 
-                              local_connectivity, 
+function fuzzy_simplicial_set(X::AbstractMatrix,
+                              n_neighbors,
+                              metric,
+                              local_connectivity,
                               set_operation_ratio) where {V <: AbstractVector}
     if size(X, 2) < 4096
         # compute all pairwise distances
@@ -227,7 +227,7 @@ function optimize_embedding(graph,
                 j = rowvals(graph)[ind]
                 p = nonzeros(graph)[ind]
                 if rand() <= p
-                    # NOTE: this currently allocates a temporary array before the sum 
+                    # NOTE: this currently allocates a temporary array before the sum
                     @views sdist = evaluate(SqEuclidean(), embedding[:, i], embedding[:, j])
                     if sdist > 0.
                         delta = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)
@@ -242,7 +242,7 @@ function optimize_embedding(graph,
 
                     for _ in 1:neg_sample_rate
                         k = rand(1:size(graph)[2])
-                        @views sdist = evaluate(SqEuclidean(), 
+                        @views sdist = evaluate(SqEuclidean(),
                                                 embedding[:, i], embedding[:, k])
                         if sdist > 0
                             delta = (2. * gamma * b) / ((0.001 + sdist)*(1. + a*sdist^b))
