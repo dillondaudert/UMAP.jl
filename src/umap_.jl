@@ -36,7 +36,7 @@ global structure in the data, while small values capture more local structure.
 """
 function umap(args...; kwargs...)
     # this is just a convenience function for now
-    return UMAP_(args; kwargs...).embedding
+    return UMAP_(args...; kwargs...).embedding
 end
 
 
