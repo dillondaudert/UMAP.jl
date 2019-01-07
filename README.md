@@ -11,9 +11,7 @@ algorithm in Julia.
 ```jl
 embedding = umap(X, n_components; n_neighbors, metric, min_dist, ...)
 ```
-The `umap` function takes two arguments, `X` and `n_components` - the data to be
-embedded and the number of dimensions in the output embedding, respectively - and
-several keyword arguments:
+The `umap` function takes two arguments, `X` (a matrix of shape (n_features, n_samples)), `n_components` (the number of dimensions in the output embedding), and several keyword arguments:
 - `n_neighbors::Int=15`: This controls how many neighbors around each point are considered to be part of its local neighborhood. Larger values will result in embeddings that capture more global structure, while smaller values will preserve more local structures.
 - `metric::SemiMetric=Euclidean()`: The (semi)metric to use when calculating distances between points. This can be any subtype of the `SemiMetric` type from the `Distances.jl` package, including user-defined types.
 - `min_dist::Float=0.1`: This controls the minimum spacing of points in the embedding. Larger values will cause points to be more evenly distributed, while smaller values will preserve more local structure.
