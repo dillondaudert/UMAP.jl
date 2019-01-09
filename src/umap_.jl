@@ -197,6 +197,25 @@ function initialize_embedding(graph, n_components, ::Val{:random})
     return 20. .* rand(n_components, size(graph, 1)) .- 10.
 end
 
+function ureinterpret(::Type{RT}, a::T) where {RT, T}
+    aref = Ref(a)
+    GC.@preserve aref begin
+        ptr = Ptr{RT}(Base.unsafe_convert(Ref{T}, aref))
+        return unsafe_load(ptr)
+    end
+end
+
+"""
+Faster approximate pow
+https://martin.ankerl.com/2007/10/04/optimized-pow-approximation-for-java-and-c-c/
+"""
+function fast_pow(a::Float64, b::Float64)
+    u = ureinterpret(NTuple{2, Int32}, a)
+    u2 = Int32(Base.floor_llvm(b * (u[2] - Int32(1072632447)) + Int32(1072632447)))
+    u = (Int32(0), u2)
+    return ureinterpret(Float64, u)
+end
+
 """
     optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread) -> embedding
 
@@ -217,23 +236,21 @@ function optimize_embedding(graph,
                             gamma,
                             neg_sample_rate)
     a, b = fit_ϕ(min_dist, spread)
-
     alpha = initial_alpha
     for e in 1:n_epochs
-
-        @fastmath @inbounds for i in 1:size(graph, 2)
+        @inbounds for i in 1:size(graph, 2)
             for ind in nzrange(graph, i)
                 j = rowvals(graph)[ind]
                 p = nonzeros(graph)[ind]
                 if rand() <= p
                     @views sdist = evaluate(SqEuclidean(), embedding[:, i], embedding[:, j])
-                    if sdist > 0.
-                        delta = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)
+                    if sdist > 0.0
+                        delta = (-2.0 * a * b * sdist^(b-1)) / (1.0 + a*fast_pow(sdist,b))
                     else
-                        delta = 0.
+                        delta = 0.0
                     end
                     @simd for d in 1:size(embedding, 1)
-                        grad = clamp(delta * (embedding[d,i] - embedding[d,j]), -4., 4.)
+                        grad = clamp(delta * (embedding[d,i] - embedding[d,j]), -4.0, 4.0)
                         embedding[d,i] += alpha * grad
                         embedding[d,j] -= alpha * grad
                     end
@@ -243,17 +260,17 @@ function optimize_embedding(graph,
                         @views sdist = evaluate(SqEuclidean(),
                                                 embedding[:, i], embedding[:, k])
                         if sdist > 0
-                            delta = (2. * gamma * b) / ((0.001 + sdist)*(1. + a*sdist^b))
+                            delta = (2.0 * gamma * b) / ((0.001 + sdist)*(1.0 + a*fast_pow(sdist, b)))
                         elseif i == k
                             continue
                         else
-                            delta = 0.
+                            delta = 0.0
                         end
                         @simd for d in 1:size(embedding, 1)
-                            if delta > 0.
-                                grad = clamp(delta * (embedding[d, i] - embedding[d, k]), -4., 4.)
+                            if delta > 0.0
+                                grad = clamp(delta * (embedding[d, i] - embedding[d, k]), -4.0, 4.0)
                             else
-                                grad = 4.
+                                grad = 4.0
                             end
                             embedding[d, i] += alpha * grad
                         end
@@ -262,7 +279,7 @@ function optimize_embedding(graph,
                 end
             end
         end
-        alpha = initial_alpha*(1. - e/n_epochs)
+        alpha = initial_alpha*(1.0 - e/n_epochs)
     end
 
     return embedding
