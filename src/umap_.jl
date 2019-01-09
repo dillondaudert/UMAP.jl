@@ -103,7 +103,7 @@ function fuzzy_simplicial_set(X::AbstractMatrix,
     σs, ρs = smooth_knn_dists(dists, n_neighbors, local_connectivity)
 
     rows, cols, vals = compute_membership_strengths(knns, dists, σs, ρs)
-    fs_set = sparse(rows, cols, vals, size(knns)[2], size(knns)[2])
+    fs_set = sparse(rows, cols, vals, size(knns, 2), size(knns, 2))
                                       # sparse matrix M[i, j] = vᵢⱼ where
                                       # vᵢⱼ is the probability that j is in the
                                       # simplicial set of i
@@ -125,10 +125,10 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S}, k::Integer, local_connec
                           bandwidth::AbstractFloat=1.,
                           ktol = 1e-5) where {S <: Real}
     @inline minimum_nonzero(dists) = minimum(dists[dists .> 0.])
-    ρs = S[minimum_nonzero(knn_dists[:, i]) for i in 1:size(knn_dists)[2]]
-    σs = Array{S}(undef, size(knn_dists)[2])
+    ρs = S[minimum_nonzero(knn_dists[:, i]) for i in 1:size(knn_dists, 2)]
+    σs = Array{S}(undef, size(knn_dists, 2))
 
-    for i in 1:size(knn_dists)[2]
+    for i in 1:size(knn_dists, 2)
         @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], ρs[i], k, local_connectivity, bandwidth, niter, ktol)
     end
     return ρs, σs
@@ -172,7 +172,7 @@ function compute_membership_strengths(knns::AbstractMatrix{S},
     rows = sizehint!(S[], length(knns))
     cols = sizehint!(S[], length(knns))
     vals = sizehint!(T[], length(knns))
-    for i in 1:size(knns)[2], j in 1:size(knns)[1]
+    for i in 1:size(knns, 2), j in 1:size(knns, 1)
         @inbounds if i == knns[j, i] # dist to self
             d = 0.
         else
@@ -221,7 +221,7 @@ function optimize_embedding(graph,
     alpha = initial_alpha
     for e in 1:n_epochs
 
-        @fastmath @inbounds for i in 1:size(graph)[2]
+        @fastmath @inbounds for i in 1:size(graph, 2)
             for ind in nzrange(graph, i)
                 j = rowvals(graph)[ind]
                 p = nonzeros(graph)[ind]
@@ -239,7 +239,7 @@ function optimize_embedding(graph,
                     end
 
                     for _ in 1:neg_sample_rate
-                        k = rand(1:size(graph)[2])
+                        k = rand(1:size(graph, 2))
                         @views sdist = evaluate(SqEuclidean(),
                                                 embedding[:, i], embedding[:, k])
                         if sdist > 0
@@ -313,7 +313,7 @@ function spectral_layout(graph::SparseMatrixCSC{T},
         print("\n", e, "\n")
         print("Error occured in spectral_layout;
                falling back to random layout.\n")
-        layout = 20 .* rand(T, embed_dim, size(L)[1]) .- 10
+        layout = 20 .* rand(T, embed_dim, size(L, 1)) .- 10
     end
     return layout
 end
