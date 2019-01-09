@@ -218,7 +218,6 @@ function optimize_embedding(graph,
                             neg_sample_rate)
     a, b = fit_ϕ(min_dist, spread)
 
-    clip(x) = x < -4. ? -4. : (x > 4. ? 4. : x)
     alpha = initial_alpha
     for e in 1:n_epochs
 
@@ -227,7 +226,6 @@ function optimize_embedding(graph,
                 j = rowvals(graph)[ind]
                 p = nonzeros(graph)[ind]
                 if rand() <= p
-                    # NOTE: this currently allocates a temporary array before the sum
                     @views sdist = evaluate(SqEuclidean(), embedding[:, i], embedding[:, j])
                     if sdist > 0.
                         delta = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)
@@ -235,7 +233,7 @@ function optimize_embedding(graph,
                         delta = 0.
                     end
                     @simd for d in 1:size(embedding, 1)
-                        grad = clip(delta * (embedding[d,i] - embedding[d,j]))
+                        grad = clamp(delta * (embedding[d,i] - embedding[d,j]), -4., 4.)
                         embedding[d,i] += alpha * grad
                         embedding[d,j] -= alpha * grad
                     end
@@ -253,7 +251,7 @@ function optimize_embedding(graph,
                         end
                         @simd for d in 1:size(embedding, 1)
                             if delta > 0.
-                                grad = clip(delta * (embedding[d, i] - embedding[d, k]))
+                                grad = clamp(delta * (embedding[d, i] - embedding[d, k]), -4., 4.)
                             else
                                 grad = 4.
                             end
