@@ -30,6 +30,7 @@
         k = 5
         umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.)
         @test issymmetric(umap_graph)
+        @test all(0. .<= umap_graph .<= 1.)
         data = rand(Float32, 20, 500)
         umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.)
         @test eltype(umap_graph) == Float32
