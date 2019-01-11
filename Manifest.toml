@@ -39,9 +39,9 @@ version = "1.4.0"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "OrderedCollections", "Random", "Serialization", "Test"]
-git-tree-sha1 = "8fc6e166e24fda04b2b648d4260cdad241788c54"
+git-tree-sha1 = "ca971f03e146cf144a9e2f2ce59674f5bf0e8038"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.14.0"
+version = "0.15.0"
 
 [[Dates]]
 deps = ["Printf"]
@@ -141,9 +141,9 @@ version = "0.3.2"
 
 [[NearestNeighborDescent]]
 deps = ["DataStructures", "Distances", "Random", "Test"]
-git-tree-sha1 = "61142a4cb3d7e22474420d483f7da2d1777aa166"
+git-tree-sha1 = "77302b76f37f4c6bdf5bcad11e707b6cf5c78d79"
 uuid = "dd2c4c9e-a32f-5b2f-b342-08c2f244fce8"
-version = "0.1.3"
+version = "0.1.4"
 
 [[OptimBase]]
 deps = ["Compat", "NLSolversBase", "Printf", "Reexport", "Test"]
