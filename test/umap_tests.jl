@@ -1,5 +1,5 @@
 
-@testset "all tests" begin
+@testset "umap tests" begin
     A = sprand(10000, 10000, 0.001)
     B = dropzeros(A + A' - A .* A')
 
@@ -32,7 +32,7 @@
         @test issymmetric(umap_graph)
         @test all(0. .<= umap_graph .<= 1.)
         data = rand(Float32, 20, 500)
-        umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.)
+        umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.f0)
         @test eltype(umap_graph) == Float32
     end
 
@@ -93,12 +93,4 @@
         @test_skip spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
     end
 
-    @testset "pairwise_knn tests" begin
-        data = [0. 0. 0.; 0. 1.5 2.]
-        true_knns = [2 3 2; 3 1 1]
-        true_dists = [1.5 .5 .5; 2. 1.5 2.]
-        knns, dists = pairwise_knn(data, 2, Euclidean())
-        @test knns == true_knns
-        @test dists == true_dists
-    end
 end
