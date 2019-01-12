@@ -81,11 +81,11 @@ Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simplicial_set(X::AbstractMatrix,
+function fuzzy_simplicial_set(X::AbstractMatrix{V},
                               n_neighbors,
                               metric,
                               local_connectivity,
-                              set_operation_ratio) where {V <: AbstractVector}
+                              set_operation_ratio) where {V <: AbstractFloat}
     if size(X, 2) < 4096
         # compute all pairwise distances
         knns, dists = pairwise_knn(X, n_neighbors, metric)
@@ -104,10 +104,10 @@ function fuzzy_simplicial_set(X::AbstractMatrix,
 
     rows, cols, vals = compute_membership_strengths(knns, dists, σs, ρs)
     fs_set = sparse(rows, cols, vals, size(knns, 2), size(knns, 2))
-                                      # sparse matrix M[i, j] = vᵢⱼ where
-                                      # vᵢⱼ is the probability that j is in the
-                                      # simplicial set of i
-    return dropzeros(fs_set .+ fs_set' .- fs_set .* fs_set')
+    
+    res = combine_fuzzy_sets(fs_set, set_operation_ratio)
+        
+    return dropzeros(res)
 end
 
 """
