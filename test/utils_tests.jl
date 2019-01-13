@@ -1,11 +1,15 @@
 @testset "utils tests" begin
-    @testset "pairwise_knn tests" begin
-        data = [0. 0. 0.; 0. 1.5 2.]
-        true_knns = [2 3 2; 3 1 1]
-        true_dists = [1.5 .5 .5; 2. 1.5 2.]
-        knns, dists = pairwise_knn(data, 2, Euclidean())
-        @test knns == true_knns
-        @test dists == true_dists
+    @testset "knn_search" begin
+        @inferred knn_search(rand(5, 100), 5, Euclidean())
+        @testset "pairwise tests" begin
+            data = [0. 0. 0.; 0. 1.5 2.]
+            true_knns = [2 3 2; 3 1 1]
+            true_dists = [1.5 .5 .5; 2. 1.5 2.]
+            knns, dists = knn_search(data, 2, Euclidean(), Val(:pairwise))
+            @test knns == true_knns
+            @test dists == true_dists
+        end
+        
     end
     
     @testset "combine_fuzzy_sets tests" begin
