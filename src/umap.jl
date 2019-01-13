@@ -55,7 +55,7 @@ function UMAP_(X::AbstractMatrix{S},
                neg_sample_rate::Integer = 5,
                a::Union{AbstractFloat, Nothing} = nothing,
                b::Union{AbstractFloat, Nothing} = nothing
-               ) where {S <: AbstractFloat, V <: AbstractVector}
+               ) where {S <: AbstractFloat}
     # argument checking
     size(X, 2) > n_neighbors > 0|| throw(ArgumentError("size(X, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     size(X, 1) > n_components > 1 || throw(ArgumentError("size(X, 1) must be greater than n_components and n_components must be greater than 1"))
@@ -81,11 +81,11 @@ Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simplicial_set(X::AbstractMatrix{V},
+function fuzzy_simplicial_set(X::AbstractMatrix,
                               n_neighbors,
                               metric,
                               local_connectivity,
-                              set_operation_ratio) where {V <: AbstractFloat}
+                              set_operation_ratio)
     
     knns, dists = knn_search(X, n_neighbors, metric)
 

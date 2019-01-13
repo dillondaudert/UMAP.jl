@@ -8,7 +8,7 @@ using LinearAlgebra: Symmetric, Diagonal, issymmetric, I
 using Arpack: eigs
 
 include("utils.jl")
-include("umap_.jl")
+include("umap.jl")
 
 export umap, UMAP_
 
