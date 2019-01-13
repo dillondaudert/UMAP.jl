@@ -86,19 +86,8 @@ function fuzzy_simplicial_set(X::AbstractMatrix{V},
                               metric,
                               local_connectivity,
                               set_operation_ratio) where {V <: AbstractFloat}
-    if size(X, 2) < 4096
-        # compute all pairwise distances
-        knns, dists = pairwise_knn(X, n_neighbors, metric)
-    else
-        knngraph = DescentGraph(X, n_neighbors, metric)
-        knngraph.graph::Matrix{Tuple{S,T}} where {S<:Integer,T<:AbstractFloat}
-        knns = Array{typeof(knngraph.graph[1][1])}(undef, size(knngraph.graph))
-        dists = Array{typeof(knngraph.graph[1][2])}(undef, size(knngraph.graph))
-        for index in eachindex(knngraph.graph)
-            @inbounds knns[index] = knngraph.graph[index][1]
-            @inbounds dists[index] = knngraph.graph[index][2]
-        end
-    end
+    
+    knns, dists = knn_search(X, n_neighbors, metric)
 
     σs, ρs = smooth_knn_dists(dists, n_neighbors, local_connectivity)
 
