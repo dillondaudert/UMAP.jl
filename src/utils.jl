@@ -14,21 +14,6 @@ function knn_search(X::AbstractMatrix,
     end
 end
 
-function knn_search(X::AbstractMatrix{S}, 
-                    k, 
-                    metric, 
-                    ::Val{:approximate}) where {S <: AbstractFloat}
-    knngraph = DescentGraph(X, k, metric)
-    knns = Array{Int}(undef, size(knngraph.graph))
-    dists = Array{S}(undef, size(knngraph.graph))
-    for index in eachindex(knngraph.graph)
-        @inbounds knns[index] = knngraph.graph[index][1]
-        @inbounds dists[index] = knngraph.graph[index][2]
-    end
-
-    return knns, dists    
-end
-
 # compute all pairwise distances
 # return the nearest k to each point v, other than v itself
 function knn_search(X::AbstractMatrix{S}, 
@@ -46,7 +31,23 @@ function knn_search(X::AbstractMatrix{S},
     return knns, dists
 end
 
+# find the approximate k nearest neighbors using NNDescent
+function knn_search(X::AbstractMatrix{S}, 
+                    k, 
+                    metric, 
+                    ::Val{:approximate}) where {S <: AbstractFloat}
+    knngraph = DescentGraph(X, k, metric)
+    knns = Array{Int}(undef, size(knngraph.graph))
+    dists = Array{S}(undef, size(knngraph.graph))
+    for index in eachindex(knngraph.graph)
+        @inbounds knns[index] = knngraph.graph[index][1]
+        @inbounds dists[index] = knngraph.graph[index][2]
+    end
 
+    return knns, dists    
+end
+
+    
 # combine local fuzzy simplicial sets 
 @inline function combine_fuzzy_sets(fs_set::AbstractMatrix{T}, 
                             set_op_ratio::T) where {T <: AbstractFloat}

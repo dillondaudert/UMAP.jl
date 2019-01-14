@@ -75,7 +75,7 @@ function UMAP_(X::AbstractMatrix{S},
 end
 
 """
-    fuzzy_simplicial_set(X, n_neighbors) -> graph::SparseMatrixCSC
+    fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_op_ratio) -> graph::SparseMatrixCSC
 
 Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
@@ -100,14 +100,11 @@ function fuzzy_simplicial_set(X::AbstractMatrix,
 end
 
 """
-    smooth_knn_dists(dists, k; <kwargs>) -> knn_dists, nn_dists
+    smooth_knn_dists(dists, k, local_connectivity; <kwargs>) -> knn_dists, nn_dists
 
 Compute the distances to the nearest neighbors for a continuous value `k`. Returns
 the approximated distances to the kth nearest neighbor (`knn_dists`)
 and the nearest neighbor (nn_dists) from each point.
-
-# Keyword Arguments
-...
 """
 function smooth_knn_dists(knn_dists::AbstractMatrix{S}, 
                           k::Integer, 
@@ -115,6 +112,7 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
                           niter::Integer=64,
                           bandwidth::AbstractFloat=1.,
                           ktol = 1e-5) where {S <: Real}
+    # TODO: implement local_connectivity
     @inline minimum_nonzero(dists) = minimum(dists[dists .> 0.])
     ρs = S[minimum_nonzero(knn_dists[:, i]) for i in 1:size(knn_dists, 2)]
     σs = Array{S}(undef, size(knn_dists, 2))
@@ -125,10 +123,10 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
     return ρs, σs
 end
 
+# calculate sigma for an individual point
 @fastmath function smooth_knn_dist(dists::AbstractVector, ρ, k, local_connectivity, bandwidth, niter, ktol)
     target = log2(k)*bandwidth
     lo, mid, hi = 0., 1., Inf
-    #psum(dists, ρ) = sum(exp.(-max.(dists .- ρ, 0.)/mid))
     for n in 1:niter
         psum = sum(exp.(-max.(dists .- ρ, 0.)./mid))
         if abs(psum - target) < ktol
@@ -151,7 +149,7 @@ end
 end
 
 """
-    compute_membership_strengths(knns, dists, σ, ρ) -> rows, cols, vals
+    compute_membership_strengths(knns, dists, σs, ρs) -> rows, cols, vals
 
 Compute the membership strengths for the 1-skeleton of each fuzzy simplicial set.
 """
@@ -189,14 +187,16 @@ function initialize_embedding(graph, n_components, ::Val{:random})
 end
 
 """
-    optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread) -> embedding
+    optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate) -> embedding
 
-Optimize an embedding by minimizing the fuzzy set cross entropy between the high and low
-dimensional simplicial sets using stochastic gradient descent.
+Optimize an embedding by minimizing the fuzzy set cross entropy between the high and low dimensional simplicial sets using stochastic gradient descent.
 
 # Arguments
 - `graph`: a sparse matrix of shape (n_samples, n_samples)
 - `embedding`: a dense matrix of shape (n_components, n_samples)
+- `n_epochs`: the number of training epochs for optimization
+- `initial_alpha`: the initial learning rate
+- `gamma`: the repulsive strength of negative samples 
 - `neg_sample_rate::Integer`: the number of negative samples per positive sample
 """
 function optimize_embedding(graph,
