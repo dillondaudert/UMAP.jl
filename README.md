@@ -1,5 +1,6 @@
 # UMAP.jl (WIP)
-[![Build Status](https://travis-ci.com/dillondaudert/UMAP.jl.svg?branch=master)](https://travis-ci.com/dillondaudert/UMAP.jl)[![Coverage Status](https://coveralls.io/repos/github/dillondaudert/UMAP.jl/badge.svg?branch=master)](https://coveralls.io/github/dillondaudert/UMAP.jl?branch=master) [![codecov](https://codecov.io/gh/dillondaudert/UMAP.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/dillondaudert/UMAP.jl)
+[![Build Status](https://travis-ci.com/dillondaudert/UMAP.jl.svg?branch=master)](https://travis-ci.com/dillondaudert/UMAP.jl)[![Build status](https://ci.appveyor.com/api/projects/status/bd8r74ingfos7166?svg=true)](https://ci.appveyor.com/project/dillondaudert/umap-jl)
+[![Coverage Status](https://coveralls.io/repos/github/dillondaudert/UMAP.jl/badge.svg?branch=master)](https://coveralls.io/github/dillondaudert/UMAP.jl?branch=master) [![codecov](https://codecov.io/gh/dillondaudert/UMAP.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/dillondaudert/UMAP.jl)
 
 A straightforward implementation of the [Uniform Manifold Approximation and Projection](https://arxiv.org/abs/1802.03426) dimension reduction
 algorithm in Julia.
