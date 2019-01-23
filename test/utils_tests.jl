@@ -1,6 +1,7 @@
 @testset "utils tests" begin
     @testset "knn_search" begin
         @inferred knn_search(rand(5, 100), 5, Euclidean())
+        @inferred knn_search(rand(5, 100), 5, Euclidean(), Val(:approximate))
         @testset "pairwise tests" begin
             data = [0. 0. 0.; 0. 1.5 2.]
             true_knns = [2 3 2; 3 1 1]

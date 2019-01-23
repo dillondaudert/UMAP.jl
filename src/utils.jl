@@ -37,14 +37,7 @@ function knn_search(X::AbstractMatrix{S},
                     metric, 
                     ::Val{:approximate}) where {S <: AbstractFloat}
     knngraph = DescentGraph(X, k, metric)
-    knns = Array{Int}(undef, size(knngraph.graph))
-    dists = Array{S}(undef, size(knngraph.graph))
-    for index in eachindex(knngraph.graph)
-        @inbounds knns[index] = knngraph.graph[index][1]
-        @inbounds dists[index] = knngraph.graph[index][2]
-    end
-
-    return knns, dists    
+    return knngraph.indices, knngraph.distances    
 end
 
     
