@@ -1,5 +1,5 @@
 using Test
-using Distances: Euclidean
+using Distances: Euclidean, CosineDist
 using SparseArrays
 using LinearAlgebra
 using UMAP
