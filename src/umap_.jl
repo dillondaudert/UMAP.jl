@@ -7,7 +7,7 @@ struct UMAP_{S}
     embedding::AbstractMatrix{S}
 
     function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{S}) where {S<:AbstractFloat}
-        issymmetric(graph) || error("UMAP_ constructor expected graph to be a symmetric matrix")
+        issymmetric(graph) || isapprox(graph, graph') || error("UMAP_ constructor expected graph to be a symmetric matrix")
         new{S}(graph, embedding)
     end
 end
