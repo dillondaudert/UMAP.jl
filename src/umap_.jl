@@ -12,6 +12,8 @@ struct UMAP_{S}
     end
 end
 
+const SMOOTH_K_TOLERANCE = 1e-5
+
 
 """
     umap(X::AbstractMatrix[, n_components=2]; <kwargs>) -> embedding
@@ -108,18 +110,33 @@ and the nearest neighbor (nn_dists) from each point.
 """
 function smooth_knn_dists(knn_dists::AbstractMatrix{S}, 
                           k::Integer, 
-                          local_connectivity::Integer;
+                          local_connectivity::Real;
                           niter::Integer=64,
                           bandwidth::AbstractFloat=1.,
                           ktol = 1e-5) where {S <: Real}
-    # TODO: implement local_connectivity
-    @inline minimum_nonzero(dists) = minimum(dists[dists .> 0.])
-    ρs = S[minimum_nonzero(knn_dists[:, i]) for i in 1:size(knn_dists, 2)]
+    
+    nonzero_dists(dists) = @view dists[dists .> 0.]
+    ρs = zeros(S, size(knn_dists, 2)) 
     σs = Array{S}(undef, size(knn_dists, 2))
-
     for i in 1:size(knn_dists, 2)
+        nz_dists = nonzero_dists(knn_dists[:, i])
+        if length(nz_dists) >= local_connectivity
+            index = floor(Int, local_connectivity)
+            interpolation = local_connectivity - index
+            if index > 0
+                ρs[i] = nz_dists[index]
+                if interpolation > SMOOTH_K_TOLERANCE
+                    ρs[i] += interpolation * (nz_dists[index+1] - nz_dists[index]) 
+                end
+            else
+                ρs[i] = interpolation * nz_dists[1] 
+            end
+        elseif length(nz_dists) > 0
+            ρs[i] = maximum(nz_dists) 
+        end
         @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], ρs[i], k, local_connectivity, bandwidth, niter, ktol)
     end
+            
     return ρs, σs
 end
 
