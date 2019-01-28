@@ -33,7 +33,13 @@
         @test all(0. .<= umap_graph .<= 1.)
         data = rand(Float32, 20, 500)
         umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.f0)
+        @test issymmetric(umap_graph)
         @test eltype(umap_graph) == Float32
+        
+        data = 2 .* rand(20, 1000) .- 1
+        umap_graph = fuzzy_simplicial_set(data, k, CosineDist(), 1, 1.)
+        @test issymmetric(umap_graph)
+        @test all(0. .<= umap_graph .<= 1.)
     end
 
     @testset "smooth_knn_dists" begin
