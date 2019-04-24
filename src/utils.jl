@@ -1,11 +1,22 @@
+struct Precomputed end
+
+"""
+    knn_search(dist_mat, k, ::Precomputed) -> knns, dists
+
+Find the `k` nearest neighbors of each point in a precomputed distance 
+matrix.
+"""
+function knn_search(dists, k, ::Precomputed)
+    return _knn_from_dists(dists, k)
+end
 
 """
     knn_search(X, k, metric) -> knns, dists
 
 Find the `k` nearest neighbors of each point in `X` by `metric`.
 """
-function knn_search(X::AbstractMatrix,
-                    k::Integer,
+function knn_search(X,
+                    k,
                     metric::SemiMetric)
     if size(X, 2) < 4096
         return knn_search(X, k, metric, Val(:pairwise))
