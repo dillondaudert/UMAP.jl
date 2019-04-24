@@ -22,7 +22,7 @@ function knn_search(X::AbstractMatrix{S},
                     ::Val{:pairwise}) where {S <: AbstractFloat}
     num_points = size(X, 2)
     all_dists = Array{S}(undef, num_points, num_points)
-    pairwise!(all_dists, metric, X)
+    pairwise!(all_dists, metric, X, dims=2)
     # all_dists is symmetric distance matrix
     knns_ = [partialsortperm(view(all_dists, :, i), 2:k+1) for i in 1:num_points]
     dists_ = [all_dists[:, i][knns_[i]] for i in eachindex(knns_)]
