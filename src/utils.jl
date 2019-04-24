@@ -21,14 +21,10 @@ function knn_search(X::AbstractMatrix{S},
                     metric,
                     ::Val{:pairwise}) where {S <: AbstractFloat}
     num_points = size(X, 2)
-    all_dists = Array{S}(undef, num_points, num_points)
-    pairwise!(all_dists, metric, X, dims=2)
+    dist_mat = Array{S}(undef, num_points, num_points)
+    pairwise!(dist_mat, metric, X, dims=2)
     # all_dists is symmetric distance matrix
-    knns_ = [partialsortperm(view(all_dists, :, i), 2:k+1) for i in 1:num_points]
-    dists_ = [all_dists[:, i][knns_[i]] for i in eachindex(knns_)]
-    knns = hcat(knns_...)::Matrix{Int}
-    dists = hcat(dists_...)::Matrix{S}
-    return knns, dists
+    return _knn_from_dists(dist_mat, k)
 end
 
 # find the approximate k nearest neighbors using NNDescent
@@ -38,6 +34,14 @@ function knn_search(X::AbstractMatrix{S},
                     ::Val{:approximate}) where {S <: AbstractFloat}
     knngraph = DescentGraph(X, k, metric)
     return knngraph.indices, knngraph.distances    
+end
+    
+function _knn_from_dists(dist_mat::AbstractMatrix{S}, k) where {S <: AbstractFloat}
+    knns_ = [partialsortperm(view(dist_mat, :, i), 2:k+1) for i in 1:size(dist_mat, 1)]
+    dists_ = [dist_mat[:, i][knns_[i]] for i in eachindex(knns_)]
+    knns = hcat(knns_...)::Matrix{Int}
+    dists = hcat(dists_...)::Matrix{S}
+    return knns, dists
 end
 
     
