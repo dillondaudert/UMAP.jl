@@ -1,14 +1,13 @@
-struct Precomputed end
+
+knn_search(dist_mat, k, metric::Symbol) = knn_search(dist_mat, k, Val(metric))
 
 """
-    knn_search(dist_mat, k, ::Precomputed) -> knns, dists
+    knn_search(dist_mat, k, :precomputed) -> knns, dists
 
 Find the `k` nearest neighbors of each point in a precomputed distance 
 matrix.
 """
-function knn_search(dists, k, ::Precomputed)
-    return _knn_from_dists(dists, k)
-end
+knn_search(dist_mat, k, ::Val{:precomputed}) = _knn_from_dists(dist_mat, k)
 
 """
     knn_search(X, k, metric) -> knns, dists

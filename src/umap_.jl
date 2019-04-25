@@ -45,7 +45,7 @@ end
 function UMAP_(X::AbstractMatrix{S},
                n_components::Integer = 2;
                n_neighbors::Integer = 15,
-               metric::Union{SemiMetric, Precomputed} = Euclidean(),
+               metric::Union{SemiMetric, Symbol} = Euclidean(),
                n_epochs::Integer = 300,
                learning_rate::AbstractFloat = 1.,
                init::Symbol = :spectral,
