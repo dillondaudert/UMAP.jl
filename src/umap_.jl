@@ -83,7 +83,7 @@ Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simplicial_set(X::AbstractMatrix,
+function fuzzy_simplicial_set(X,
                               n_neighbors,
                               metric,
                               local_connectivity,
