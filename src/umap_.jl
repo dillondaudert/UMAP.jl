@@ -23,7 +23,7 @@ how many neighbors to consider as locally connected.
 
 # Keyword Arguments
 - `n_neighbors::Integer = 15`: the number of neighbors to consider as locally connected. Larger values capture more global structure in the data, while small values capture more local structure.
-- `metric::SemiMetric = Euclidean()`: the metric to calculate distance in the input space
+- `metric::SemiMetric = Euclidean()`: the metric to calculate distance in the input space. It is also possible to pass `metric = :precomputed` to treat `X` like a precomputed distance matrix.
 - `n_epochs::Integer = 300`: the number of training epochs for embedding optimization
 - `learning_rate::AbstractFloat = 1.`: the initial learning rate during optimization
 - `init::Symbol = :spectral`: how to initialize the output embedding; valid options are `:spectral` and `:random`
