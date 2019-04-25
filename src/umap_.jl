@@ -23,7 +23,7 @@ how many neighbors to consider as locally connected.
 
 # Keyword Arguments
 - `n_neighbors::Integer = 15`: the number of neighbors to consider as locally connected. Larger values capture more global structure in the data, while small values capture more local structure.
-- `metric::SemiMetric = Euclidean()`: the metric to calculate distance in the input space
+- `metric::SemiMetric = Euclidean()`: the metric to calculate distance in the input space. It is also possible to pass `metric = :precomputed` to treat `X` like a precomputed distance matrix.
 - `n_epochs::Integer = 300`: the number of training epochs for embedding optimization
 - `learning_rate::AbstractFloat = 1.`: the initial learning rate during optimization
 - `init::Symbol = :spectral`: how to initialize the output embedding; valid options are `:spectral` and `:random`
@@ -45,7 +45,7 @@ end
 function UMAP_(X::AbstractMatrix{S},
                n_components::Integer = 2;
                n_neighbors::Integer = 15,
-               metric::SemiMetric = Euclidean(),
+               metric::Union{SemiMetric, Symbol} = Euclidean(),
                n_epochs::Integer = 300,
                learning_rate::AbstractFloat = 1.,
                init::Symbol = :spectral,
@@ -83,7 +83,7 @@ Construct the local fuzzy simplicial sets of each point in `X` by
 finding the approximate nearest `n_neighbors`, normalizing the distances
 on the manifolds, and converting the metric space to a simplicial set.
 """
-function fuzzy_simplicial_set(X::AbstractMatrix,
+function fuzzy_simplicial_set(X,
                               n_neighbors,
                               metric,
                               local_connectivity,

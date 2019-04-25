@@ -12,12 +12,19 @@ algorithm
 ```jl
 embedding = umap(X, n_components; n_neighbors, metric, min_dist, ...)
 ```
-The `umap` function takes two arguments, `X` (a matrix of shape (n_features, n_samples)), `n_components` (the number of dimensions in the output embedding), and various keyword arguments. Several important ones are:
+The `umap` function takes two arguments, `X` (a column-major matrix of shape (n_features, n_samples)), `n_components` (the number of dimensions in the output embedding), and various keyword arguments. Several important ones are:
 - `n_neighbors::Int=15`: This controls how many neighbors around each point are considered to be part of its local neighborhood. Larger values will result in embeddings that capture more global structure, while smaller values will preserve more local structures.
 - `metric::SemiMetric=Euclidean()`: The (semi)metric to use when calculating distances between points. This can be any subtype of the `SemiMetric` type from the `Distances.jl` package, including user-defined types.
 - `min_dist::Float=0.1`: This controls the minimum spacing of points in the embedding. Larger values will cause points to be more evenly distributed, while smaller values will preserve more local structure.
 
 The returned `embedding` will be a matrix of shape (n_components, n_samples).
+
+### Using precomputed distances
+UMAP can use a precomputed distance matrix instead of finding the nearest neighbors itself. In this case, the distance matrix is passed as `X` and the `metric` keyword argument should be `:precomputed`. Example:
+
+```jl
+embedding = umap(distances, n_components; metric=:precomputed)
+```
 
 ## Implementation Details
 There are two main steps involved in UMAP: building a weighted graph with edges connecting points to their nearest neighbors, and optimizing the low-dimensional embedding of that graph. The first step is accomplished either by an exact kNN search (for datasets with `< 4096` points) or by the approximate kNN search algorithm, [NNDescent](https://github.com/dillondaudert/NearestNeighborDescent.jl). This step is also usually the most costly.
