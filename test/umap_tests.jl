@@ -22,7 +22,7 @@
         @test size(umap_.embedding) == (2, 100)
 
         data = rand(Float32, 5, 100)
-        @test_skip UMAP_(data) isa UMAP_{Float32}
+        @test UMAP_(data; init=:random) isa UMAP_{Float32}
     end
 
     @testset "fuzzy_simpl_set" begin
