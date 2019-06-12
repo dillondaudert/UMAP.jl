@@ -57,7 +57,7 @@ end
     
 # combine local fuzzy simplicial sets 
 @inline function combine_fuzzy_sets(fs_set::AbstractMatrix{T}, 
-                            set_op_ratio::T) where {T <: AbstractFloat}
+                                    set_op_ratio) where {T}
     return set_op_ratio .* fuzzy_set_union(fs_set) .+ 
            (one(T) - set_op_ratio) .* fuzzy_set_intersection(fs_set)
 end
