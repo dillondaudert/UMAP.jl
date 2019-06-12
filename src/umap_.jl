@@ -192,10 +192,16 @@ function compute_membership_strengths(knns::AbstractMatrix{S},
 end
 
 function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:spectral}) where {T}
-    embed = spectral_layout(graph, n_components)
-    # expand
-    expansion = 10 / maximum(embed)
-    @. embed = (embed*expansion) + (1//10000)*randn(T, size(embed))
+    local embed
+    try
+        embed = spectral_layout(graph, n_components)
+        # expand
+        expansion = 10 / maximum(embed)
+        @. embed = (embed*expansion) + (1//10000)*randn(T, size(embed))
+    catch e
+        print("Error encountered in spectral_layout; defaulting to random layout\n")
+        embed = initialize_embedding(graph, n_components, Val(:random))
+    end
     return embed
 end
 
@@ -307,21 +313,13 @@ function spectral_layout(graph::SparseMatrixCSC{T},
 
     k = embed_dim+1
     num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L, 1))))
-    local layout
-    try
-        # get the 2nd - embed_dim+1th smallest eigenvectors
-        eigenvals, eigenvecs = eigs(L; nev=k,
-                                       ncv=num_lanczos_vectors,
-                                       which=:SM,
-                                       tol=1e-4,
-                                       v0=ones(T, size(L, 1)),
-                                       maxiter=size(L, 1)*5)
-        layout = permutedims(eigenvecs[:, 2:k])::Array{T, 2}
-    catch e
-        #print("\n", e, "\n")
-        print("Error occured in spectral_layout;
-               falling back to random layout.\n")
-        layout = 20 .* rand(T, embed_dim, size(L, 1)) .- 10
-    end
+    # get the 2nd - embed_dim+1th smallest eigenvectors
+    eigenvals, eigenvecs = eigs(L; nev=k,
+                                   ncv=num_lanczos_vectors,
+                                   which=:SM,
+                                   tol=1e-4,
+                                   v0=ones(T, size(L, 1)),
+                                   maxiter=size(L, 1)*5)
+    layout = permutedims(eigenvecs[:, 2:k])::Array{T, 2}
     return layout
 end

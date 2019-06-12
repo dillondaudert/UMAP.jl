@@ -5,7 +5,7 @@ using NearestNeighborDescent: DescentGraph
 using LsqFit: curve_fit
 using SparseArrays: SparseMatrixCSC, sparse, dropzeros, nzrange, rowvals, nonzeros
 using LinearAlgebra: Symmetric, Diagonal, issymmetric, I
-using Arpack: eigs
+using Arpack: eigs, ARPACKException
 
 include("utils.jl")
 include("umap_.jl")
