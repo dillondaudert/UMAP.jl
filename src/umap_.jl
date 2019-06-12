@@ -191,16 +191,16 @@ function compute_membership_strengths(knns::AbstractMatrix{S},
     return rows, cols, vals
 end
 
-function initialize_embedding(graph, n_components, ::Val{:spectral})
+function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:spectral}) where {T}
     embed = spectral_layout(graph, n_components)
     # expand
-    expansion = 10. / maximum(embed)
-    @. embed = (embed*expansion) + randn(size(embed))*0.0001
+    expansion = 10 / maximum(embed)
+    @. embed = (embed*expansion) + (1//10000)*randn(T, size(embed))
     return embed
 end
 
-function initialize_embedding(graph, n_components, ::Val{:random})
-    return 20. .* rand(n_components, size(graph, 1)) .- 10.
+function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:random}) where {T}
+    return 20 .* rand(T, n_components, size(graph, 1)) .- 10
 end
 
 """
@@ -318,7 +318,7 @@ function spectral_layout(graph::SparseMatrixCSC{T},
                                        maxiter=size(L, 1)*5)
         layout = permutedims(eigenvecs[:, 2:k])::Array{T, 2}
     catch e
-        print("\n", e, "\n")
+        #print("\n", e, "\n")
         print("Error occured in spectral_layout;
                falling back to random layout.\n")
         layout = 20 .* rand(T, embed_dim, size(L, 1)) .- 10
