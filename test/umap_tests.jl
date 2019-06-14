@@ -105,7 +105,8 @@
         layout = spectral_layout(B, 5)
         @test layout isa Array{Float64, 2}
         @inferred spectral_layout(B, 5)
-        @test_skip spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
+        layout32 = spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
+        @test layout32 isa Array{Float32, 2}
     end
 
 end

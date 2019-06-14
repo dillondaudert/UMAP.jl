@@ -316,7 +316,7 @@ function spectral_layout(graph::SparseMatrixCSC{T},
     # get the 2nd - embed_dim+1th smallest eigenvectors
     eigenvals, eigenvecs = eigs(L; nev=k,
                                    ncv=num_lanczos_vectors,
-                                   which=:SM,
+                                   which=:SR,
                                    tol=1e-4,
                                    v0=ones(T, size(L, 1)),
                                    maxiter=size(L, 1)*5)
