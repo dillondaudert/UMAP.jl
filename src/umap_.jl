@@ -6,7 +6,7 @@ struct UMAP_{S}
     graph::AbstractMatrix{S}
     embedding::AbstractMatrix{S}
 
-    function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{S}) where {S<:AbstractFloat}
+    function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{S}) where {S<:Real}
         issymmetric(graph) || isapprox(graph, graph') || error("UMAP_ constructor expected graph to be a symmetric matrix")
         new{S}(graph, embedding)
     end
@@ -112,7 +112,7 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
                           k::Integer, 
                           local_connectivity::Real;
                           niter::Integer=64,
-                          bandwidth::AbstractFloat=1.,
+                          bandwidth::Real=1,
                           ktol = 1e-5) where {S <: Real}
     
     nonzero_dists(dists) = @view dists[dists .> 0.]
@@ -304,7 +304,7 @@ end
 Initialize the graph layout with spectral embedding.
 """
 function spectral_layout(graph::SparseMatrixCSC{T},
-                         embed_dim::Integer) where {T<:AbstractFloat}
+                         embed_dim::Integer) where {T<:Real}
     D_ = Diagonal(dropdims(sum(graph; dims=2); dims=2))
     D = inv(sqrt(D_))
     # normalized laplacian

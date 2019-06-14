@@ -29,7 +29,7 @@ end
 function knn_search(X::AbstractMatrix{S}, 
                     k, 
                     metric,
-                    ::Val{:pairwise}) where {S <: AbstractFloat}
+                    ::Val{:pairwise}) where {S <: Real}
     num_points = size(X, 2)
     dist_mat = Array{S}(undef, num_points, num_points)
     pairwise!(dist_mat, metric, X, dims=2)
@@ -41,12 +41,12 @@ end
 function knn_search(X::AbstractMatrix{S}, 
                     k, 
                     metric, 
-                    ::Val{:approximate}) where {S <: AbstractFloat}
+                    ::Val{:approximate}) where {S <: Real}
     knngraph = DescentGraph(X, k, metric)
     return knngraph.indices, knngraph.distances    
 end
     
-function _knn_from_dists(dist_mat::AbstractMatrix{S}, k) where {S <: AbstractFloat}
+function _knn_from_dists(dist_mat::AbstractMatrix{S}, k) where {S <: Real}
     knns_ = [partialsortperm(view(dist_mat, :, i), 2:k+1) for i in 1:size(dist_mat, 1)]
     dists_ = [dist_mat[:, i][knns_[i]] for i in eachindex(knns_)]
     knns = hcat(knns_...)::Matrix{Int}
