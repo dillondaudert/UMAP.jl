@@ -22,7 +22,7 @@
         @test size(umap_.embedding) == (2, 100)
 
         data = rand(Float32, 5, 100)
-        @test_skip UMAP_(data) isa UMAP_{Float32}
+        @test UMAP_(data) isa UMAP_{Float32}
     end
 
     @testset "fuzzy_simpl_set" begin
@@ -105,7 +105,8 @@
         layout = spectral_layout(B, 5)
         @test layout isa Array{Float64, 2}
         @inferred spectral_layout(B, 5)
-        @test_skip spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
+        layout32 = spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
+        @test layout32 isa Array{Float32, 2}
     end
 
 end

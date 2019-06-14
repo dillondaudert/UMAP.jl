@@ -6,7 +6,7 @@ struct UMAP_{S}
     graph::AbstractMatrix{S}
     embedding::AbstractMatrix{S}
 
-    function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{S}) where {S<:AbstractFloat}
+    function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{S}) where {S<:Real}
         issymmetric(graph) || isapprox(graph, graph') || error("UMAP_ constructor expected graph to be a symmetric matrix")
         new{S}(graph, embedding)
     end
@@ -23,18 +23,18 @@ how many neighbors to consider as locally connected.
 
 # Keyword Arguments
 - `n_neighbors::Integer = 15`: the number of neighbors to consider as locally connected. Larger values capture more global structure in the data, while small values capture more local structure.
-- `metric::SemiMetric = Euclidean()`: the metric to calculate distance in the input space. It is also possible to pass `metric = :precomputed` to treat `X` like a precomputed distance matrix.
+- `metric::{SemiMetric, Symbol} = Euclidean()`: the metric to calculate distance in the input space. It is also possible to pass `metric = :precomputed` to treat `X` like a precomputed distance matrix.
 - `n_epochs::Integer = 300`: the number of training epochs for embedding optimization
-- `learning_rate::AbstractFloat = 1.`: the initial learning rate during optimization
+- `learning_rate::Real = 1`: the initial learning rate during optimization
 - `init::Symbol = :spectral`: how to initialize the output embedding; valid options are `:spectral` and `:random`
-- `min_dist::AbstractFloat = 0.1`: the minimum spacing of points in the output embedding
-- `spread::AbstractFloat = 1.0`: the effective scale of embedded points. Determines how clustered embedded points are in combination with `min_dist`.
-- `set_operation_ratio::AbstractFloat = 1.0`: interpolates between fuzzy set union and fuzzy set intersection when constructing the UMAP graph (global fuzzy simplicial set). The value of this parameter should be between 1.0 and 0.0: 1.0 indicates pure fuzzy union, while 0.0 indicates pure fuzzy intersection.
+- `min_dist::Real = 0.1`: the minimum spacing of points in the output embedding
+- `spread::Real = 1`: the effective scale of embedded points. Determines how clustered embedded points are in combination with `min_dist`.
+- `set_operation_ratio::Real = 1`: interpolates between fuzzy set union and fuzzy set intersection when constructing the UMAP graph (global fuzzy simplicial set). The value of this parameter should be between 1.0 and 0.0: 1.0 indicates pure fuzzy union, while 0.0 indicates pure fuzzy intersection.
 - `local_connectivity::Integer = 1`: the number of nearest neighbors that should be assumed to be locally connected. The higher this value, the more connected the manifold becomes. This should not be set higher than the intrinsic dimension of the manifold.
-- `repulsion_strength::AbstractFloat = 1.0`: the weighting of negative samples during the optimization process.
+- `repulsion_strength::Real = 1`: the weighting of negative samples during the optimization process.
 - `neg_sample_rate::Integer = 5`: the number of negative samples to select for each positive sample. Higher values will increase computational cost but result in slightly more accuracy.
-- `a::AbstractFloat = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
-- `b::AbstractFloat = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
+- `a = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
+- `b = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 """
 function umap(args...; kwargs...)
     # this is just a convenience function for now
@@ -47,17 +47,17 @@ function UMAP_(X::AbstractMatrix{S},
                n_neighbors::Integer = 15,
                metric::Union{SemiMetric, Symbol} = Euclidean(),
                n_epochs::Integer = 300,
-               learning_rate::AbstractFloat = 1.,
+               learning_rate::Real = 1,
                init::Symbol = :spectral,
-               min_dist::AbstractFloat = 0.1,
-               spread::AbstractFloat = 1.0,
-               set_operation_ratio::AbstractFloat = 1.0,
+               min_dist::Real = 1//10,
+               spread::Real = 1,
+               set_operation_ratio::Real = 1,
                local_connectivity::Integer = 1,
-               repulsion_strength::AbstractFloat = 1.0,
+               repulsion_strength::Real = 1,
                neg_sample_rate::Integer = 5,
-               a::Union{AbstractFloat, Nothing} = nothing,
-               b::Union{AbstractFloat, Nothing} = nothing
-               ) where {S <: AbstractFloat}
+               a::Union{Real, Nothing} = nothing,
+               b::Union{Real, Nothing} = nothing
+               ) where {S<:Real}
     # argument checking
     size(X, 2) > n_neighbors > 0|| throw(ArgumentError("size(X, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     size(X, 1) > n_components > 1 || throw(ArgumentError("size(X, 1) must be greater than n_components and n_components must be greater than 1"))
@@ -112,7 +112,7 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
                           k::Integer, 
                           local_connectivity::Real;
                           niter::Integer=64,
-                          bandwidth::AbstractFloat=1.,
+                          bandwidth::Real=1,
                           ktol = 1e-5) where {S <: Real}
     
     nonzero_dists(dists) = @view dists[dists .> 0.]
@@ -191,16 +191,22 @@ function compute_membership_strengths(knns::AbstractMatrix{S},
     return rows, cols, vals
 end
 
-function initialize_embedding(graph, n_components, ::Val{:spectral})
-    embed = spectral_layout(graph, n_components)
-    # expand
-    expansion = 10. / maximum(embed)
-    @. embed = (embed*expansion) + randn(size(embed))*0.0001
+function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:spectral}) where {T}
+    local embed
+    try
+        embed = spectral_layout(graph, n_components)
+        # expand
+        expansion = 10 / maximum(embed)
+        @. embed = (embed*expansion) + (1//10000)*randn(T, size(embed))
+    catch e
+        print("Error encountered in spectral_layout; defaulting to random layout\n")
+        embed = initialize_embedding(graph, n_components, Val(:random))
+    end
     return embed
 end
 
-function initialize_embedding(graph, n_components, ::Val{:random})
-    return 20. .* rand(n_components, size(graph, 1)) .- 10.
+function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:random}) where {T}
+    return 20 .* rand(T, n_components, size(graph, 1)) .- 10
 end
 
 """
@@ -298,7 +304,7 @@ end
 Initialize the graph layout with spectral embedding.
 """
 function spectral_layout(graph::SparseMatrixCSC{T},
-                         embed_dim::Integer) where {T<:AbstractFloat}
+                         embed_dim::Integer) where {T<:Real}
     D_ = Diagonal(dropdims(sum(graph; dims=2); dims=2))
     D = inv(sqrt(D_))
     # normalized laplacian
@@ -307,21 +313,13 @@ function spectral_layout(graph::SparseMatrixCSC{T},
 
     k = embed_dim+1
     num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L, 1))))
-    local layout
-    try
-        # get the 2nd - embed_dim+1th smallest eigenvectors
-        eigenvals, eigenvecs = eigs(L; nev=k,
-                                       ncv=num_lanczos_vectors,
-                                       which=:SM,
-                                       tol=1e-4,
-                                       v0=ones(T, size(L, 1)),
-                                       maxiter=size(L, 1)*5)
-        layout = permutedims(eigenvecs[:, 2:k])::Array{T, 2}
-    catch e
-        print("\n", e, "\n")
-        print("Error occured in spectral_layout;
-               falling back to random layout.\n")
-        layout = 20 .* rand(T, embed_dim, size(L, 1)) .- 10
-    end
+    # get the 2nd - embed_dim+1th smallest eigenvectors
+    eigenvals, eigenvecs = eigs(L; nev=k,
+                                   ncv=num_lanczos_vectors,
+                                   which=:SR,
+                                   tol=1e-4,
+                                   v0=ones(T, size(L, 1)),
+                                   maxiter=size(L, 1)*5)
+    layout = permutedims(eigenvecs[:, 2:k])::Array{T, 2}
     return layout
 end
