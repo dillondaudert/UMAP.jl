@@ -110,7 +110,7 @@ and the nearest neighbor (nn_dists) from each point.
 """
 function smooth_knn_dists(knn_dists::AbstractMatrix{S},
                           k::Real,
-                          local_connectivity::Integer;
+                          local_connectivity::Real;
                           niter::Integer=64,
                           bandwidth::Real=1) where {S <: Real}
 
