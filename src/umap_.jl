@@ -109,11 +109,10 @@ the approximated distances to the kth nearest neighbor (`knn_dists`)
 and the nearest neighbor (nn_dists) from each point.
 """
 function smooth_knn_dists(knn_dists::AbstractMatrix{S},
-                          k::Integer,
-                          local_connectivity::Real;
+                          k::Real,
+                          local_connectivity::Integer;
                           niter::Integer=64,
-                          bandwidth::Real=1,
-                          ktol = 1e-5) where {S <: Real}
+                          bandwidth::Real=1) where {S <: Real}
 
     nonzero_dists(dists) = @view dists[dists .> 0.]
     ρs = zeros(S, size(knn_dists, 2))
@@ -134,19 +133,19 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
         elseif length(nz_dists) > 0
             ρs[i] = maximum(nz_dists)
         end
-        @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], ρs[i], k, local_connectivity, bandwidth, niter, ktol)
+        @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], ρs[i], k, bandwidth, niter)
     end
 
     return ρs, σs
 end
 
 # calculate sigma for an individual point
-@fastmath function smooth_knn_dist(dists::AbstractVector, ρ, k, local_connectivity, bandwidth, niter, ktol)
+@fastmath function smooth_knn_dist(dists::AbstractVector, ρ, k, bandwidth, niter)
     target = log2(k)*bandwidth
     lo, mid, hi = 0., 1., Inf
     for n in 1:niter
         psum = sum(exp.(-max.(dists .- ρ, 0.)./mid))
-        if abs(psum - target) < ktol
+        if abs(psum - target) < SMOOTH_K_TOLERANCE
             break
         end
         if psum > target
