@@ -10,7 +10,7 @@
             @test knns == true_knns
             @test dists == true_dists
         end
-        
+
         @testset "precomputed tests" begin
             dist_mat = [0. 2. 1.;
                         2. 0. 3.;
@@ -22,19 +22,23 @@
             knns, dists = knn_search(dist_mat, 2, :precomputed)
             @test knns == true_knns
             @test dists == true_dists
-            
+
         end
-        
+
     end
-    
+
     @testset "combine_fuzzy_sets tests" begin
         A = [1.0 0.1; 0.4 1.0]
         union_res = [1.0 0.46; 0.46 1.0]
         res = combine_fuzzy_sets(A, 1.0)
         @test isapprox(res, union_res)
         inter_res = [1.0 0.04; 0.04 1.0]
-        res = combine_fuzzy_sets(A, 0.0) 
+        res = combine_fuzzy_sets(A, 0.0)
         @test isapprox(res, inter_res)
-        
+
+    end
+
+    @testset "fit_ab tests" begin
+        @test all((1, 2) .== fit_ab(-1, 0, 1, 2))
     end
 end
