@@ -66,7 +66,7 @@ function UMAP_(X::AbstractMatrix{S},
     min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
     0 ≤ set_operation_ratio ≤ 1 || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
     local_connectivity > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
-    
+
 
 
     # main algorithm
@@ -247,13 +247,13 @@ function optimize_embedding(graph,
                 p = nonzeros(graph)[ind]
                 if rand() <= p
                     @views sdist = evaluate(SqEuclidean(), embedding[:, i], embedding[:, j])
-                    if sdist > 0.
-                        delta = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)
+                    if sdist > 0
+                        delta = (-2 * a * b * sdist^(b-1))/(1 + a*sdist^b)
                     else
-                        delta = 0.
+                        delta = 0
                     end
                     @simd for d in 1:size(embedding, 1)
-                        grad = clamp(delta * (embedding[d,i] - embedding[d,j]), -4., 4.)
+                        grad = clamp(delta * (embedding[d,i] - embedding[d,j]), -4, 4)
                         embedding[d,i] += alpha * grad
                         embedding[d,j] -= alpha * grad
                     end
@@ -263,17 +263,17 @@ function optimize_embedding(graph,
                         @views sdist = evaluate(SqEuclidean(),
                                                 embedding[:, i], embedding[:, k])
                         if sdist > 0
-                            delta = (2. * gamma * b) / ((0.001 + sdist)*(1. + a*sdist^b))
+                            delta = (2 * gamma * b) / ((1//1000 + sdist)*(1 + a*sdist^b))
                         elseif i == k
                             continue
                         else
-                            delta = 0.
+                            delta = 0
                         end
                         @simd for d in 1:size(embedding, 1)
-                            if delta > 0.
-                                grad = clamp(delta * (embedding[d, i] - embedding[d, k]), -4., 4.)
+                            if delta > 0
+                                grad = clamp(delta * (embedding[d, i] - embedding[d, k]), -4, 4)
                             else
-                                grad = 4.
+                                grad = 4
                             end
                             embedding[d, i] += alpha * grad
                         end
@@ -282,7 +282,7 @@ function optimize_embedding(graph,
                 end
             end
         end
-        alpha = initial_alpha*(1. - e/n_epochs)
+        alpha = initial_alpha*(1 - e//n_epochs)
     end
 
     return embedding
