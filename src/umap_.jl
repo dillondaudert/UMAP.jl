@@ -88,16 +88,16 @@ function fuzzy_simplicial_set(X,
                               metric,
                               local_connectivity,
                               set_operation_ratio)
-    
+
     knns, dists = knn_search(X, n_neighbors, metric)
 
     σs, ρs = smooth_knn_dists(dists, n_neighbors, local_connectivity)
 
     rows, cols, vals = compute_membership_strengths(knns, dists, σs, ρs)
     fs_set = sparse(rows, cols, vals, size(knns, 2), size(knns, 2))
-    
+
     res = combine_fuzzy_sets(fs_set, set_operation_ratio)
-        
+
     return dropzeros(res)
 end
 
@@ -108,15 +108,15 @@ Compute the distances to the nearest neighbors for a continuous value `k`. Retur
 the approximated distances to the kth nearest neighbor (`knn_dists`)
 and the nearest neighbor (nn_dists) from each point.
 """
-function smooth_knn_dists(knn_dists::AbstractMatrix{S}, 
-                          k::Integer, 
+function smooth_knn_dists(knn_dists::AbstractMatrix{S},
+                          k::Integer,
                           local_connectivity::Real;
                           niter::Integer=64,
                           bandwidth::Real=1,
                           ktol = 1e-5) where {S <: Real}
-    
+
     nonzero_dists(dists) = @view dists[dists .> 0.]
-    ρs = zeros(S, size(knn_dists, 2)) 
+    ρs = zeros(S, size(knn_dists, 2))
     σs = Array{S}(undef, size(knn_dists, 2))
     for i in 1:size(knn_dists, 2)
         nz_dists = nonzero_dists(knn_dists[:, i])
@@ -126,17 +126,17 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
             if index > 0
                 ρs[i] = nz_dists[index]
                 if interpolation > SMOOTH_K_TOLERANCE
-                    ρs[i] += interpolation * (nz_dists[index+1] - nz_dists[index]) 
+                    ρs[i] += interpolation * (nz_dists[index+1] - nz_dists[index])
                 end
             else
-                ρs[i] = interpolation * nz_dists[1] 
+                ρs[i] = interpolation * nz_dists[1]
             end
         elseif length(nz_dists) > 0
-            ρs[i] = maximum(nz_dists) 
+            ρs[i] = maximum(nz_dists)
         end
         @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], ρs[i], k, local_connectivity, bandwidth, niter, ktol)
     end
-            
+
     return ρs, σs
 end
 
@@ -219,7 +219,7 @@ Optimize an embedding by minimizing the fuzzy set cross entropy between the high
 - `embedding`: a dense matrix of shape (n_components, n_samples)
 - `n_epochs`: the number of training epochs for optimization
 - `initial_alpha`: the initial learning rate
-- `gamma`: the repulsive strength of negative samples 
+- `gamma`: the repulsive strength of negative samples
 - `neg_sample_rate::Integer`: the number of negative samples per positive sample
 """
 function optimize_embedding(graph,
@@ -230,7 +230,7 @@ function optimize_embedding(graph,
                             spread,
                             gamma,
                             neg_sample_rate)
-    a, b = fit_ϕ(min_dist, spread)
+    a, b = fit_ab(min_dist, spread)
 
     alpha = initial_alpha
     for e in 1:n_epochs
@@ -283,12 +283,12 @@ function optimize_embedding(graph,
 end
 
 """
-    fit_ϕ(min_dist, spread) -> a, b
+    fit_ab(min_dist, spread) -> a, b
 
 Find a smooth approximation to the membership function of points embedded in ℜᵈ.
 This fits a smooth curve that approximates an exponential decay offset by `min_dist`.
 """
-function fit_ϕ(min_dist, spread)
+function fit_ab(min_dist, spread)
     ψ(d) = d >= min_dist ? exp(-(d - min_dist)/spread) : 1.
     xs = LinRange(0., spread*3, 300)
     ys = map(ψ, xs)
