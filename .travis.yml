@@ -1,13 +1,14 @@
 language: julia
-os: 
+os:
   - linux
 
 julia:
   - 1.0
   - 1.1
+  - 1.2
   - nightly
 
-script: 
+script:
   - julia -e 'import Pkg; Pkg.build(); Pkg.test(; coverage=true)'
 
 codecov: true
