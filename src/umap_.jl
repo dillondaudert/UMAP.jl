@@ -61,8 +61,13 @@ function UMAP_(X::AbstractMatrix{S},
     # argument checking
     size(X, 2) > n_neighbors > 0|| throw(ArgumentError("size(X, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     size(X, 1) > n_components > 1 || throw(ArgumentError("size(X, 1) must be greater than n_components and n_components must be greater than 1"))
-    min_dist > 0. || throw(ArgumentError("min_dist must be greater than 0"))
-    #n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 1"))
+    n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 0"))
+    learning_rate > 0 || throw(ArgumentError("learning_rate must be greater than 0"))
+    min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
+    0 ≤ set_operation_ratio ≤ 1 || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
+    local_connectivity > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
+    
+
 
     # main algorithm
     graph = fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_operation_ratio)
