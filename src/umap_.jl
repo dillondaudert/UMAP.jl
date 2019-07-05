@@ -2,14 +2,21 @@
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
 # NOTE: unused for now
-struct UMAP_{S}
-    graph::AbstractMatrix{S}
-    embedding::AbstractMatrix{S}
+struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}}
+    graph::M
+    embedding::N
 
-    function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{S}) where {S<:Real}
+    function UMAP_{S, M, N}(graph, embedding) where {S<:Real,
+                                                     M<:AbstractMatrix{S},
+                                                     N<:AbstractMatrix{S}}
         issymmetric(graph) || isapprox(graph, graph') || error("UMAP_ constructor expected graph to be a symmetric matrix")
-        new{S}(graph, embedding)
+        new(graph, embedding)
     end
+end
+function UMAP_(graph::M, embedding::N) where {S <: Real,
+                                              M <: AbstractMatrix{S},
+                                              N <: AbstractMatrix{S}}
+    return UMAP_{S, M, N}(graph, embedding)
 end
 
 const SMOOTH_K_TOLERANCE = 1e-5
