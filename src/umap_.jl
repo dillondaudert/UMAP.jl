@@ -2,14 +2,21 @@
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
 # NOTE: unused for now
-struct UMAP_{S}
-    graph::AbstractMatrix{S}
-    embedding::AbstractMatrix{S}
+struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}}
+    graph::M
+    embedding::N
 
-    function UMAP_(graph::AbstractMatrix{S}, embedding::AbstractMatrix{S}) where {S<:Real}
+    function UMAP_{S, M, N}(graph, embedding) where {S<:Real,
+                                                     M<:AbstractMatrix{S},
+                                                     N<:AbstractMatrix{S}}
         issymmetric(graph) || isapprox(graph, graph') || error("UMAP_ constructor expected graph to be a symmetric matrix")
-        new{S}(graph, embedding)
+        new(graph, embedding)
     end
+end
+function UMAP_(graph::M, embedding::N) where {S <: Real,
+                                              M <: AbstractMatrix{S},
+                                              N <: AbstractMatrix{S}}
+    return UMAP_{S, M, N}(graph, embedding)
 end
 
 const SMOOTH_K_TOLERANCE = 1e-5
@@ -61,8 +68,13 @@ function UMAP_(X::AbstractMatrix{S},
     # argument checking
     size(X, 2) > n_neighbors > 0|| throw(ArgumentError("size(X, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     size(X, 1) > n_components > 1 || throw(ArgumentError("size(X, 1) must be greater than n_components and n_components must be greater than 1"))
-    min_dist > 0. || throw(ArgumentError("min_dist must be greater than 0"))
-    #n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 1"))
+    n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 0"))
+    learning_rate > 0 || throw(ArgumentError("learning_rate must be greater than 0"))
+    min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
+    0 ≤ set_operation_ratio ≤ 1 || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
+    local_connectivity > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
+
+
 
     # main algorithm
     graph = fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_operation_ratio)
@@ -88,16 +100,16 @@ function fuzzy_simplicial_set(X,
                               metric,
                               local_connectivity,
                               set_operation_ratio)
-    
+
     knns, dists = knn_search(X, n_neighbors, metric)
 
     σs, ρs = smooth_knn_dists(dists, n_neighbors, local_connectivity)
 
     rows, cols, vals = compute_membership_strengths(knns, dists, σs, ρs)
     fs_set = sparse(rows, cols, vals, size(knns, 2), size(knns, 2))
-    
+
     res = combine_fuzzy_sets(fs_set, set_operation_ratio)
-        
+
     return dropzeros(res)
 end
 
@@ -108,15 +120,14 @@ Compute the distances to the nearest neighbors for a continuous value `k`. Retur
 the approximated distances to the kth nearest neighbor (`knn_dists`)
 and the nearest neighbor (nn_dists) from each point.
 """
-function smooth_knn_dists(knn_dists::AbstractMatrix{S}, 
-                          k::Integer, 
+function smooth_knn_dists(knn_dists::AbstractMatrix{S},
+                          k::Real,
                           local_connectivity::Real;
                           niter::Integer=64,
-                          bandwidth::Real=1,
-                          ktol = 1e-5) where {S <: Real}
-    
+                          bandwidth::Real=1) where {S <: Real}
+
     nonzero_dists(dists) = @view dists[dists .> 0.]
-    ρs = zeros(S, size(knn_dists, 2)) 
+    ρs = zeros(S, size(knn_dists, 2))
     σs = Array{S}(undef, size(knn_dists, 2))
     for i in 1:size(knn_dists, 2)
         nz_dists = nonzero_dists(knn_dists[:, i])
@@ -126,27 +137,27 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
             if index > 0
                 ρs[i] = nz_dists[index]
                 if interpolation > SMOOTH_K_TOLERANCE
-                    ρs[i] += interpolation * (nz_dists[index+1] - nz_dists[index]) 
+                    ρs[i] += interpolation * (nz_dists[index+1] - nz_dists[index])
                 end
             else
-                ρs[i] = interpolation * nz_dists[1] 
+                ρs[i] = interpolation * nz_dists[1]
             end
         elseif length(nz_dists) > 0
-            ρs[i] = maximum(nz_dists) 
+            ρs[i] = maximum(nz_dists)
         end
-        @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], ρs[i], k, local_connectivity, bandwidth, niter, ktol)
+        @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], ρs[i], k, bandwidth, niter)
     end
-            
+
     return ρs, σs
 end
 
 # calculate sigma for an individual point
-@fastmath function smooth_knn_dist(dists::AbstractVector, ρ, k, local_connectivity, bandwidth, niter, ktol)
+@fastmath function smooth_knn_dist(dists::AbstractVector, ρ, k, bandwidth, niter)
     target = log2(k)*bandwidth
     lo, mid, hi = 0., 1., Inf
     for n in 1:niter
         psum = sum(exp.(-max.(dists .- ρ, 0.)./mid))
-        if abs(psum - target) < ktol
+        if abs(psum - target) < SMOOTH_K_TOLERANCE
             break
         end
         if psum > target
@@ -219,7 +230,7 @@ Optimize an embedding by minimizing the fuzzy set cross entropy between the high
 - `embedding`: a dense matrix of shape (n_components, n_samples)
 - `n_epochs`: the number of training epochs for optimization
 - `initial_alpha`: the initial learning rate
-- `gamma`: the repulsive strength of negative samples 
+- `gamma`: the repulsive strength of negative samples
 - `neg_sample_rate::Integer`: the number of negative samples per positive sample
 """
 function optimize_embedding(graph,
@@ -229,8 +240,10 @@ function optimize_embedding(graph,
                             min_dist,
                             spread,
                             gamma,
-                            neg_sample_rate)
-    a, b = fit_ϕ(min_dist, spread)
+                            neg_sample_rate,
+                            _a=nothing,
+                            _b=nothing)
+    a, b = fit_ab(min_dist, spread, _a, _b)
 
     alpha = initial_alpha
     for e in 1:n_epochs
@@ -241,13 +254,13 @@ function optimize_embedding(graph,
                 p = nonzeros(graph)[ind]
                 if rand() <= p
                     @views sdist = evaluate(SqEuclidean(), embedding[:, i], embedding[:, j])
-                    if sdist > 0.
-                        delta = (-2. * a * b * sdist^(b-1))/(1. + a*sdist^b)
+                    if sdist > 0
+                        delta = (-2 * a * b * sdist^(b-1))/(1 + a*sdist^b)
                     else
-                        delta = 0.
+                        delta = 0
                     end
                     @simd for d in 1:size(embedding, 1)
-                        grad = clamp(delta * (embedding[d,i] - embedding[d,j]), -4., 4.)
+                        grad = clamp(delta * (embedding[d,i] - embedding[d,j]), -4, 4)
                         embedding[d,i] += alpha * grad
                         embedding[d,j] -= alpha * grad
                     end
@@ -257,17 +270,17 @@ function optimize_embedding(graph,
                         @views sdist = evaluate(SqEuclidean(),
                                                 embedding[:, i], embedding[:, k])
                         if sdist > 0
-                            delta = (2. * gamma * b) / ((0.001 + sdist)*(1. + a*sdist^b))
+                            delta = (2 * gamma * b) / ((1//1000 + sdist)*(1 + a*sdist^b))
                         elseif i == k
                             continue
                         else
-                            delta = 0.
+                            delta = 0
                         end
                         @simd for d in 1:size(embedding, 1)
-                            if delta > 0.
-                                grad = clamp(delta * (embedding[d, i] - embedding[d, k]), -4., 4.)
+                            if delta > 0
+                                grad = clamp(delta * (embedding[d, i] - embedding[d, k]), -4, 4)
                             else
-                                grad = 4.
+                                grad = 4
                             end
                             embedding[d, i] += alpha * grad
                         end
@@ -276,26 +289,10 @@ function optimize_embedding(graph,
                 end
             end
         end
-        alpha = initial_alpha*(1. - e/n_epochs)
+        alpha = initial_alpha*(1 - e//n_epochs)
     end
 
     return embedding
-end
-
-"""
-    fit_ϕ(min_dist, spread) -> a, b
-
-Find a smooth approximation to the membership function of points embedded in ℜᵈ.
-This fits a smooth curve that approximates an exponential decay offset by `min_dist`.
-"""
-function fit_ϕ(min_dist, spread)
-    ψ(d) = d >= min_dist ? exp(-(d - min_dist)/spread) : 1.
-    xs = LinRange(0., spread*3, 300)
-    ys = map(ψ, xs)
-    @. curve(x, p) = (1. + p[1]*x^(2*p[2]))^(-1)
-    result = curve_fit(curve, xs, ys, [1., 1.], lower=[0., -Inf])
-    a, b = result.param
-    return a, b
 end
 
 """

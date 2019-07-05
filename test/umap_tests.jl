@@ -35,7 +35,7 @@
         umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.f0)
         @test issymmetric(umap_graph)
         @test eltype(umap_graph) == Float32
-        
+
         data = 2 .* rand(20, 1000) .- 1
         umap_graph = fuzzy_simplicial_set(data, k, CosineDist(), 1, 1.)
         @test issymmetric(umap_graph)
@@ -49,10 +49,9 @@
         local_connectivity = 1
         bandwidth = 1.
         niter = 64
-        ktol = 1e-5
-        sigma = smooth_knn_dist(dists, rho, k, local_connectivity, bandwidth, niter, ktol)
+        sigma = smooth_knn_dist(dists, rho, k, bandwidth, niter)
         psum(ds, r, s) = sum(exp.(-max.(ds .- r, 0.) ./ s))
-        @test psum(dists, rho, sigma) - log2(k)*bandwidth < ktol
+        @test psum(dists, rho, sigma) - log2(k)*bandwidth < SMOOTH_K_TOLERANCE
 
         knn_dists = [0. 0. 0.;
                      1. 2. 3.;
@@ -63,14 +62,14 @@
         rhos, sigmas = smooth_knn_dists(knn_dists, k, local_connectivity)
         @test rhos == [1., 2., 3.]
         diffs = [psum(knn_dists[:,i], rhos[i], sigmas[i]) for i in 1:3] .- log2(6)
-        @test all(diffs .< 1e-5)
-        
+        @test all(diffs .< SMOOTH_K_TOLERANCE)
+
         knn_dists = [0. 0. 0.;
                      0. 1. 2.;
                      0. 2. 3.]
         rhos, sigmas = smooth_knn_dists(knn_dists, 2, 1)
         @test rhos == [0., 1., 2.]
-        
+
         rhos, sigmas = smooth_knn_dists(knn_dists, 2, 1.5)
         @test rhos == [0., 1.5, 2.5]
     end
