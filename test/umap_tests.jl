@@ -1,7 +1,5 @@
 
 @testset "umap tests" begin
-    A = sprand(10000, 10000, 0.001)
-    B = dropzeros(A + A' - A .* A')
 
     @testset "constructor" begin
         @testset "argument validation tests" begin
@@ -16,13 +14,13 @@
 
     @testset "input type stability tests" begin
         data = rand(5, 100)
-        umap_ = UMAP_(data)
+        umap_ = UMAP_(data; init=:random)
         @test umap_ isa UMAP_{Float64}
         @test size(umap_.graph) == (100, 100)
         @test size(umap_.embedding) == (2, 100)
 
         data = rand(Float32, 5, 100)
-        @test UMAP_(data) isa UMAP_{Float32}
+        @test UMAP_(data; init=:random) isa UMAP_{Float32}
     end
 
     @testset "fuzzy_simpl_set" begin
@@ -89,6 +87,8 @@
     end
 
     @testset "optimize_embedding" begin
+        A = sprand(10000, 10000, 0.001)
+        B = dropzeros(A + A' - A .* A')
         layout = spectral_layout(B, 5)
         n_epochs = 1
         initial_alpha = 1.
@@ -101,6 +101,8 @@
     end
 
     @testset "spectral_layout" begin
+        A = sprand(10000, 10000, 0.001)
+        B = dropzeros(A + A' - A .* A')
         layout = spectral_layout(B, 5)
         @test layout isa Array{Float64, 2}
         @inferred spectral_layout(B, 5)
