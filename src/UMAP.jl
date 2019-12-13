@@ -6,6 +6,7 @@ using LinearAlgebra
 using LsqFit: curve_fit
 using NearestNeighborDescent
 using SparseArrays
+using StatsBase
 
 include("utils.jl")
 include("layouts.jl")

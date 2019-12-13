@@ -31,25 +31,26 @@ function optimize_embedding!(embedding,
 end
 
 function _optimize_embedding!(embedding::Matrix{T}, graph, alpha::T, gamma::T, neg_sample_rate::Integer, a::T, b::T) where T <: Real
-    @inbounds for i in 1:size(graph, 2)
+    sqeucl = SqEuclidean()
+    neg_samples = Array{Int}(undef, neg_sample_rate)
+    for i in 1:size(graph, 2)
         for ind in nzrange(graph, i)
             j = rowvals(graph)[ind]
             p = nonzeros(graph)[ind]
             if rand() <= p
-                pdist = evaluate(SqEuclidean(), view(embedding, :, i), view(embedding, :, j))
+                pdist = evaluate(sqeucl, view(embedding, :, i), view(embedding, :, j))
                 delta = pos_grad_coef(pdist, a, b)
-                @simd for d in 1:size(embedding, 1)
+                @inbounds @simd for d in 1:size(embedding, 1)
                     grad = clamp(delta * (embedding[d,i] - embedding[d,j]), -4, 4)
                     embedding[d,i] += alpha * grad
                     embedding[d,j] -= alpha * grad
                 end
 
-                for _ in 1:neg_sample_rate
-                    k = rand(1:size(graph, 2))
+                for k in sample!(1:size(graph, 2), neg_samples)
                     i != k || continue # don't evaluate if the same point
-                    ndist = evaluate(SqEuclidean(), view(embedding, :, i), view(embedding, :, k))
+                    ndist = evaluate(sqeucl, view(embedding, :, i), view(embedding, :, k))
                     delta = neg_grad_coef(ndist, gamma, a, b)
-                    @simd for d in 1:size(embedding, 1)
+                    @inbounds @simd for d in 1:size(embedding, 1)
                         if delta > 0
                             grad = clamp(delta * (embedding[d, i] - embedding[d, k]), -4, 4)
                             embedding[d, i] += alpha * grad
