@@ -65,8 +65,8 @@ function knn_search(X::AbstractMatrix{S},
                     k,
                     metric,
                     ::Val{:approximate}) where {S <: Real}
-    knngraph = DescentGraph(X, k, metric)
-    return knngraph.indices, knngraph.distances
+    knngraph = nndescent(X, k, metric)
+    return knn_matrices(knngraph)
 end
 
 function _knn_from_dists(dist_mat::AbstractMatrix{S}, k) where {S <: Real}
