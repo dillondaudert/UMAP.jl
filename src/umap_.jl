@@ -74,16 +74,16 @@ function UMAP_(X::AbstractMatrix{S},
     0 ≤ set_operation_ratio ≤ 1 || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
     local_connectivity > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
 
-
+    U = result_type(metric, view(X, :, 1), view(X, :, 1))
 
     # main algorithm
     graph = fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_operation_ratio)
 
     embedding = initialize_embedding(graph, n_components, Val(init))
 
-    embedding = optimize_embedding(graph, embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate)
-    # TODO: if target variable y is passed, then construct target graph
-    #       in the same manner and do a fuzzy simpl set intersection
+    a, b = fit_ab(min_dist, spread, a, b)
+
+    embedding = optimize_embedding!(embedding, graph, n_epochs, U(learning_rate), U(repulsion_strength), neg_sample_rate, U(a), U(b))
 
     return UMAP_(graph, embedding)
 end
@@ -113,6 +113,11 @@ function fuzzy_simplicial_set(X,
     return dropzeros(res)
 end
 
+@inline function nonzero_dists(dists::AbstractVector{T}) where T
+    return dists[dists .> zero(T)]
+end
+
+
 """
     smooth_knn_dists(dists, k, local_connectivity; <kwargs>) -> knn_dists, nn_dists
 
@@ -125,12 +130,10 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
                           local_connectivity::Real;
                           niter::Integer=64,
                           bandwidth::Real=1) where {S <: Real}
-
-    nonzero_dists(dists) = @view dists[dists .> 0.]
     ρs = zeros(S, size(knn_dists, 2))
     σs = Array{S}(undef, size(knn_dists, 2))
     for i in 1:size(knn_dists, 2)
-        nz_dists = nonzero_dists(knn_dists[:, i])
+        nz_dists = nonzero_dists(view(knn_dists, :, i))
         if length(nz_dists) >= local_connectivity
             index = floor(Int, local_connectivity)
             interpolation = local_connectivity - index
@@ -145,30 +148,30 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
         elseif length(nz_dists) > 0
             ρs[i] = maximum(nz_dists)
         end
-        @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], ρs[i], k, bandwidth, niter)
+        σs[i] = smooth_knn_dist(view(knn_dists, :, i), ρs[i], k, bandwidth, niter)
     end
 
     return ρs, σs
 end
 
 # calculate sigma for an individual point
-@fastmath function smooth_knn_dist(dists::AbstractVector, ρ, k, bandwidth, niter)
+@fastmath function smooth_knn_dist(dists::AbstractVector{T}, ρ, k, bandwidth, niter) where {T <: AbstractFloat}
     target = log2(k)*bandwidth
-    lo, mid, hi = 0., 1., Inf
+    lo, mid, hi = T(0), T(1), T(Inf)
     for n in 1:niter
-        psum = sum(exp.(-max.(dists .- ρ, 0.)./mid))
+        psum = sum(exp.((-).(max.(dists .- ρ, zero(T)))./mid))
         if abs(psum - target) < SMOOTH_K_TOLERANCE
             break
         end
         if psum > target
             hi = mid
-            mid = (lo + hi)/2.
+            mid = (lo + hi)/T(2)
         else
             lo = mid
-            if hi == Inf
-                mid *= 2.
+            if hi == T(Inf)
+                mid *= T(2)
             else
-                mid = (lo + hi) / 2.
+                mid = (lo + hi) / T(2)
             end
         end
     end
@@ -191,9 +194,9 @@ function compute_membership_strengths(knns::AbstractMatrix{S},
     vals = sizehint!(T[], length(knns))
     for i in 1:size(knns, 2), j in 1:size(knns, 1)
         @inbounds if i == knns[j, i] # dist to self
-            d = 0.
+            d = zero(T)
         else
-            @inbounds d = exp(-max(dists[j, i] - ρs[i], 0.)/σs[i])
+            @inbounds d = exp(-max(dists[j, i] - ρs[i], zero(T))/σs[i])
         end
         append!(cols, i)
         append!(rows, knns[j, i])
@@ -218,81 +221,6 @@ end
 
 function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:random}) where {T}
     return 20 .* rand(T, n_components, size(graph, 1)) .- 10
-end
-
-"""
-    optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate) -> embedding
-
-Optimize an embedding by minimizing the fuzzy set cross entropy between the high and low dimensional simplicial sets using stochastic gradient descent.
-
-# Arguments
-- `graph`: a sparse matrix of shape (n_samples, n_samples)
-- `embedding`: a dense matrix of shape (n_components, n_samples)
-- `n_epochs`: the number of training epochs for optimization
-- `initial_alpha`: the initial learning rate
-- `gamma`: the repulsive strength of negative samples
-- `neg_sample_rate::Integer`: the number of negative samples per positive sample
-"""
-function optimize_embedding(graph,
-                            embedding,
-                            n_epochs,
-                            initial_alpha,
-                            min_dist,
-                            spread,
-                            gamma,
-                            neg_sample_rate,
-                            _a=nothing,
-                            _b=nothing)
-    a, b = fit_ab(min_dist, spread, _a, _b)
-
-    alpha = initial_alpha
-    for e in 1:n_epochs
-
-        @inbounds for i in 1:size(graph, 2)
-            for ind in nzrange(graph, i)
-                j = rowvals(graph)[ind]
-                p = nonzeros(graph)[ind]
-                if rand() <= p
-                    @views sdist = evaluate(SqEuclidean(), embedding[:, i], embedding[:, j])
-                    if sdist > 0
-                        delta = (-2 * a * b * sdist^(b-1))/(1 + a*sdist^b)
-                    else
-                        delta = 0
-                    end
-                    @simd for d in 1:size(embedding, 1)
-                        grad = clamp(delta * (embedding[d,i] - embedding[d,j]), -4, 4)
-                        embedding[d,i] += alpha * grad
-                        embedding[d,j] -= alpha * grad
-                    end
-
-                    for _ in 1:neg_sample_rate
-                        k = rand(1:size(graph, 2))
-                        @views sdist = evaluate(SqEuclidean(),
-                                                embedding[:, i], embedding[:, k])
-                        if sdist > 0
-                            delta = (2 * gamma * b) / ((1//1000 + sdist)*(1 + a*sdist^b))
-                        elseif i == k
-                            continue
-                        else
-                            delta = 0
-                        end
-                        @simd for d in 1:size(embedding, 1)
-                            if delta > 0
-                                grad = clamp(delta * (embedding[d, i] - embedding[d, k]), -4, 4)
-                            else
-                                grad = 4
-                            end
-                            embedding[d, i] += alpha * grad
-                        end
-                    end
-
-                end
-            end
-        end
-        alpha = initial_alpha*(1 - e//n_epochs)
-    end
-
-    return embedding
 end
 
 """

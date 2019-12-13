@@ -1,23 +1,21 @@
 
 """
-    optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate) -> embedding
+    optimize_embedding(embedding, graph, n_epochs, initial_alpha, gamma, neg_sample_rate, a, b) -> embedding
 
 Optimize an embedding by minimizing the fuzzy set cross entropy between the high and low dimensional simplicial sets using stochastic gradient descent.
 
 # Arguments
-- `graph`: a sparse matrix of shape (n_samples, n_samples)
 - `embedding`: a dense matrix of shape (n_components, n_samples)
+- `graph`: a sparse matrix of shape (n_samples, n_samples)
 - `n_epochs`: the number of training epochs for optimization
 - `initial_alpha`: the initial learning rate
 - `gamma`: the repulsive strength of negative samples
 - `neg_sample_rate::Integer`: the number of negative samples per positive sample
 """
-function optimize_embedding!(graph,
-                             embedding,
+function optimize_embedding!(embedding,
+                             graph,
                              n_epochs,
                              initial_alpha,
-                             min_dist,
-                             spread,
                              gamma,
                              neg_sample_rate,
                              a,
@@ -25,14 +23,14 @@ function optimize_embedding!(graph,
 
     alpha = initial_alpha
     for e in 1:n_epochs
-        embedding = _optimize_embedding!(graph, embedding, alpha, gamma, neg_sample_rate, a, b)
-        alpha = initial_alpha*(1 - e//n_epochs)
+        embedding = _optimize_embedding!(embedding, graph, alpha, gamma, neg_sample_rate, a, b)
+        alpha = (1 - e//n_epochs)*initial_alpha
     end
 
     return embedding
 end
 
-function _optimize_embedding!(graph, embedding::Matrix{T}, alpha::T, gamma::T, neg_sample_rate::Integer, a::T, b::T) where T <: Real
+function _optimize_embedding!(embedding::Matrix{T}, graph, alpha::T, gamma::T, neg_sample_rate::Integer, a::T, b::T) where T <: Real
     @inbounds for i in 1:size(graph, 2)
         for ind in nzrange(graph, i)
             j = rowvals(graph)[ind]
@@ -67,12 +65,12 @@ function _optimize_embedding!(graph, embedding::Matrix{T}, alpha::T, gamma::T, n
     return embedding
 end
 
-function pos_grad_coef(dist::T, a, b) where T
+function pos_grad_coef(dist::T, a::T, b::T) where T
     delta = (-T(2) * a * b * dist^(b-one(T)))/(one(T) + a*dist^b)
     return max(zero(T), delta)
 end
 
-function neg_grad_coef(dist::T, gamma, a, b) where T
-    delta = (T(2) * gamma * b) / ((dist + sqrt(eps(T)))*(one(T) + a * dist^b))::T
+function neg_grad_coef(dist::T, gamma::T, a::T, b::T) where T
+    delta = (T(2) * gamma * b) / ((dist + T(1e-3))*(one(T) + a * dist^b))
     return max(zero(T), delta)
 end

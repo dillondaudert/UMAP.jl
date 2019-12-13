@@ -92,11 +92,11 @@
         layout = spectral_layout(B, 5)
         n_epochs = 1
         initial_alpha = 1.
-        min_dist = 1.
-        spread = 1.
         gamma = 1.
         neg_sample_rate = 5
-        embedding = optimize_embedding(B, layout, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate)
+        a = 1.
+        b = 2.
+        embedding = optimize_embedding!(layout, B, n_epochs, initial_alpha, gamma, neg_sample_rate, a, b)
         @test embedding isa Array{Float64, 2}
     end
 
