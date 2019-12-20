@@ -19,32 +19,40 @@
 - `compute_membership_strengths(knns, dists, sigmas, rhos) -> fs_set`
 - `combine_fuzzy_sets(fs_set, set_operation_ratio) -> combined_fs_set`
 
+`initialize_embedding(graph, n_components, init)`
+- `spectral_layout(graph, n_components)`
+
+`optimize_embedding!(embedding, graph, n_epochs, learning_rate, repulsion_strength, neg_sample_rate)`
+- `SqEuclidean`: actually the target embedding space metric
+- `pos_grad_coef(a, b, ...?)`
+- `neg_grad_coef(a, b, ...?)`
+
 
 ## Arguments and where they are used (current names)
 
 Format: `arg`: `<used in>`; `<used in>()`
 
-`X`: fuzzy_simplicial_set,
+`X`: fuzzy_simplicial_set, (knn_search)
 
-`n_components`: initialize_embedding,
+`n_components`: initialize_embedding, (spectral_layout)
 
-`n_neighbors`: fuzzy_simplicial_set,
+`n_neighbors`: fuzzy_simplicial_set, (knn_search), (smooth_knn_dists)
 
-`metric`: fuzzy_simplicial_set,
+`metric`: fuzzy_simplicial_set, (knn_search)
 
 `n_epochs`: optimize_embedding
 
 `learning_rate`: optimize_embedding
 
-`init`: initialize_embedding,
+`init`: initialize_embedding
 
 `min_dist`: fit_ab
 
 `spread`: fit_ab
 
-`set_operation_ratio`: fuzzy_simplicial_set,
+`set_operation_ratio`: fuzzy_simplicial_set, (combine_fuzzy_sets)
 
-`local_connectivity`: fuzzy_simplicial_set,
+`local_connectivity`: fuzzy_simplicial_set, (smooth_knn_dists)
 
 `repulsion_strength`: optimize_embedding
 
