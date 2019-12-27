@@ -87,9 +87,10 @@
     end
 
     @testset "optimize_embedding" begin
+        Random.seed!(0)
         A = sprand(10000, 10000, 0.001)
         B = dropzeros(A + A' - A .* A')
-        layout = spectral_layout(B, 5)
+        layout = initialize_embedding(B, 5, Val(:random))
         n_epochs = 1
         initial_alpha = 1.
         min_dist = 1.
@@ -97,7 +98,7 @@
         gamma = 1.
         neg_sample_rate = 5
         embedding = optimize_embedding(B, layout, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate)
-        @test embedding isa Array{Float64, 2}
+        @test embedding isa Array{Array{Float64, 1}, 1}
     end
 
     @testset "spectral_layout" begin
@@ -108,6 +109,7 @@
         @inferred spectral_layout(B, 5)
         layout32 = spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
         @test layout32 isa Array{Float32, 2}
+        @inferred spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
     end
 
 end
