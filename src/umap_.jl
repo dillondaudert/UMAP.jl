@@ -85,7 +85,7 @@ function UMAP_(X::AbstractMatrix{S},
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
 
-    return UMAP_(graph, embedding)
+    return UMAP_(graph, hcat(embedding...))
 end
 
 """
@@ -209,6 +209,7 @@ function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:spe
         # expand
         expansion = 10 / maximum(embed)
         embed .= (embed .* expansion) .+ (1//10000) .* randn.(T)
+        embed = collect(eachcol(embed))
     catch e
         print("Error encountered in spectral_layout; defaulting to random layout\n")
         embed = initialize_embedding(graph, n_components, Val(:random))
@@ -217,7 +218,7 @@ function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:spe
 end
 
 function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:random}) where {T}
-    return 20 .* rand(T, n_components, size(graph, 1)) .- 10
+    return [20 .* rand(T, n_components) .- 10 for _ in 1:size(graph, 1)]
 end
 
 """
@@ -227,7 +228,7 @@ Optimize an embedding by minimizing the fuzzy set cross entropy between the high
 
 # Arguments
 - `graph`: a sparse matrix of shape (n_samples, n_samples)
-- `embedding`: a dense matrix of shape (n_components, n_samples)
+- `embedding`: a vector of length (n_samples,) of vectors representing the embedded data points
 - `n_epochs`: the number of training epochs for optimization
 - `initial_alpha`: the initial learning rate
 - `gamma`: the repulsive strength of negative samples
@@ -247,42 +248,39 @@ function optimize_embedding(graph,
 
     alpha = initial_alpha
     for e in 1:n_epochs
-
         @inbounds for i in 1:size(graph, 2)
             for ind in nzrange(graph, i)
                 j = rowvals(graph)[ind]
                 p = nonzeros(graph)[ind]
                 if rand() <= p
-                    @views sdist = evaluate(SqEuclidean(), embedding[:, i], embedding[:, j])
+                    sdist = evaluate(SqEuclidean(), embedding[i], embedding[j])
                     if sdist > 0
                         delta = (-2 * a * b * sdist^(b-1))/(1 + a*sdist^b)
                     else
                         delta = 0
                     end
-                    @simd for d in 1:size(embedding, 1)
-                        grad = clamp(delta * (embedding[d,i] - embedding[d,j]), -4, 4)
-                        embedding[d,i] += alpha * grad
-                        embedding[d,j] -= alpha * grad
+                    @simd for d in eachindex(embedding[i])
+                        grad = clamp(delta * (embedding[i][d] - embedding[j][d]), -4, 4)
+                        embedding[i][d] += alpha * grad
+                        embedding[j][d] -= alpha * grad
                     end
 
                     for _ in 1:neg_sample_rate
                         k = rand(1:size(graph, 2))
-                        @views sdist = evaluate(SqEuclidean(),
-                                                embedding[:, i], embedding[:, k])
+                        i != k || continue
+                        sdist = evaluate(SqEuclidean(), embedding[i], embedding[k])
                         if sdist > 0
                             delta = (2 * gamma * b) / ((1//1000 + sdist)*(1 + a*sdist^b))
-                        elseif i == k
-                            continue
                         else
                             delta = 0
                         end
-                        @simd for d in 1:size(embedding, 1)
+                        @simd for d in eachindex(embedding[i])
                             if delta > 0
-                                grad = clamp(delta * (embedding[d, i] - embedding[d, k]), -4, 4)
+                                grad = clamp(delta * (embedding[i][d] - embedding[k][d]), -4, 4)
                             else
                                 grad = 4
                             end
-                            embedding[d, i] += alpha * grad
+                            embedding[i][d] += alpha * grad
                         end
                     end
 
