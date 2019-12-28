@@ -1,13 +1,14 @@
 module UMAP
 
-using Distances: evaluate, pairwise!, Euclidean, SqEuclidean, SemiMetric
-using NearestNeighborDescent: DescentGraph
+using Arpack
+using Distances
+using LinearAlgebra
 using LsqFit: curve_fit
-using SparseArrays: SparseMatrixCSC, sparse, dropzeros, nzrange, rowvals, nonzeros
-using LinearAlgebra: Symmetric, Diagonal, issymmetric, I
-using Arpack: eigs, ARPACKException
+using NearestNeighborDescent
+using SparseArrays
 
 include("utils.jl")
+include("embeddings.jl")
 include("umap_.jl")
 
 export umap, UMAP_

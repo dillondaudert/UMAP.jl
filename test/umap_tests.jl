@@ -1,7 +1,5 @@
 
 @testset "umap tests" begin
-    A = sprand(10000, 10000, 0.001)
-    B = dropzeros(A + A' - A .* A')
 
     @testset "constructor" begin
         @testset "argument validation tests" begin
@@ -16,13 +14,13 @@
 
     @testset "input type stability tests" begin
         data = rand(5, 100)
-        umap_ = UMAP_(data)
+        umap_ = UMAP_(data; init=:random)
         @test umap_ isa UMAP_{Float64}
         @test size(umap_.graph) == (100, 100)
         @test size(umap_.embedding) == (2, 100)
 
         data = rand(Float32, 5, 100)
-        @test UMAP_(data) isa UMAP_{Float32}
+        @test UMAP_(data; init=:random) isa UMAP_{Float32}
     end
 
     @testset "fuzzy_simpl_set" begin
@@ -89,7 +87,10 @@
     end
 
     @testset "optimize_embedding" begin
-        layout = spectral_layout(B, 5)
+        Random.seed!(0)
+        A = sprand(10000, 10000, 0.001)
+        B = dropzeros(A + A' - A .* A')
+        layout = initialize_embedding(B, 5, Val(:random))
         n_epochs = 1
         initial_alpha = 1.
         min_dist = 1.
@@ -97,15 +98,18 @@
         gamma = 1.
         neg_sample_rate = 5
         embedding = optimize_embedding(B, layout, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate)
-        @test embedding isa Array{Float64, 2}
+        @test embedding isa Array{Array{Float64, 1}, 1}
     end
 
     @testset "spectral_layout" begin
+        A = sprand(10000, 10000, 0.001)
+        B = dropzeros(A + A' - A .* A')
         layout = spectral_layout(B, 5)
         @test layout isa Array{Float64, 2}
         @inferred spectral_layout(B, 5)
         layout32 = spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
         @test layout32 isa Array{Float32, 2}
+        @inferred spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
     end
 
 end
