@@ -37,6 +37,7 @@ The low-dimensional embedding is initialized (by default) with the eigenvectors 
 - **Sequential**: This implementation does not take advantage of any parallelism
 
 ## External Resources
+- [Understanding UMAP](https://pair-code.github.io/understanding-umap/)
 - For a great description of how UMAP works, see [this page](https://umap-learn.readthedocs.io/en/latest/how_umap_works.html) from the Python UMAP documentation
 - If you're familiar with [t-SNE](https://lvdmaaten.github.io/tsne/), then [this page](https://jlmelville.github.io/uwot/umap-for-tsne.html) describes UMAP with similar vocabulary to that dimension reduction algorithm
 
