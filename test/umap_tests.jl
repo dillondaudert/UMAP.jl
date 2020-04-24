@@ -112,4 +112,56 @@
         @inferred spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
     end
 
+    @testset "initialize_embedding" begin
+        graph = [0.75 1.0 0.5 0.5 0.5 0.25; 
+                 1.0 1.33333 0.666667 0.666667 0.666667 0.333333; 
+                 0.5 0.666667 0.333333 0.333333 0.333333 0.166667; 
+                 0.5 0.666667 0.333333 0.333333 0.333333 0.166667; 
+                 0.5 0.666667 0.333333 0.333333 0.333333 0.166667; 
+                 0.25 0.333333 0.166667 0.166667 0.166667 0.0833333]
+        ref_embedding = [3 4 2;
+                         1 5 3]
+
+        embedding = initialize_embedding(graph, ref_embedding, [1,2,3], [4,5,6])
+        @test embedding isa Array{Array{Float64, 1}, 1}
+        actual = [[3.2, 3.0], [3.2, 3.0], [3.2, 3.0]]
+        @test length(embedding) == length(actual)
+        for i in 1:length(embedding)
+            @test length(embedding[i]) == length(actual[i])
+        end
+        @test isapprox(embedding, actual, atol=1e-4)
+
+        embedding = initialize_embedding(graph, ref_embedding, [4,5], [2,3,6])
+        @test embedding isa Array{Array{Float64, 1}, 1}
+        actual = [[3.14286, 2.42857], [3.14286, 2.42857]]
+        @test length(embedding) == length(actual)
+        for i in 1:length(embedding)
+            @test length(embedding[i]) == length(actual[i])
+        end
+        @test isapprox(embedding, actual, atol=1e-4)
+    end
+
+    @testset "optimize_embedding_with_reference" begin
+        graph = sparse(Symmetric(sprand(6,6,0.4)))
+        embedding = Vector{Float64}[[3, 1], [4, 5], [2, 3], [1, 7], [6, 3], [2, 6]]
+
+        n_epochs = 1
+        initial_alpha = 1.
+        min_dist = 1.
+        spread = 1.
+        gamma = 1.
+        neg_sample_rate = 5
+        query_inds_list = [[1,2,3], [1,3,6]]
+        ref_inds_list = [[4,5,6], [2,4,5]]
+        for (query_inds, ref_inds) in zip(query_inds_list, ref_inds_list)
+            res_embedding = optimize_embedding(graph, embedding, query_inds, ref_inds, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate, nothing, nothing, move_ref=false)
+            @test res_embedding isa Array{Array{Float64, 1}, 1}
+            @test length(res_embedding) == length(embedding)
+            for i in 1:length(res_embedding)
+                @test length(res_embedding[i]) == length(embedding[i])
+            end
+            @test isapprox(res_embedding[ref_inds], embedding[ref_inds], atol=1e-5)
+        end
+    end
+
 end
