@@ -23,10 +23,18 @@ const SMOOTH_K_TOLERANCE = 1e-5
 
 
 """
-    umap(X::AbstractMatrix[, n_components=2]; <kwargs>) -> embedding
+    umap(X::AbstractMatrix[, n_components=2[, ref_embedding::AbstractMatrix]]; <kwargs>) -> embedding
 
 Embed the data `X` into a `n_components`-dimensional space. `n_neighbors` controls
 how many neighbors to consider as locally connected.
+
+# Arguments
+- `X::AbstractMatrix`: data to embed
+- `n_components::Integer`: number of dimensions of embedded space
+- `ref_embedding::AbstractMatrix{<:Real} = nothing`: An embedding of size (n_components, R reference samples) corresponding to the first R data samples of `X` to fix and optimize the new embedding against. If this 
+   kwarg is nothing, the embedding is initialized according to `init` and optimized with respect to itself. Otherwise, the `init` kwarg is ignored, and the learned 
+   embedding is initialized and optimized with respect to points in `ref_embedding`. The first dimension of `ref_embedding` must equal `n_components`, and the 
+   second dimension (# reference points) must be less than the second dimension of `X` (# total samples). The beginning of the returned embedding will equal `ref_embedding`.
 
 # Keyword Arguments
 - `n_neighbors::Integer = 15`: the number of neighbors to consider as locally connected. Larger values capture more global structure in the data, while small values capture more local structure.
@@ -50,7 +58,8 @@ end
 
 
 function UMAP_(X::AbstractMatrix{S},
-               n_components::Integer = 2;
+               n_components::Integer = 2,
+               ref_embedding::Union{AbstractMatrix{S}, Nothing} = nothing;
                n_neighbors::Integer = 15,
                metric::Union{SemiMetric, Symbol} = Euclidean(),
                n_epochs::Integer = 300,
@@ -63,7 +72,7 @@ function UMAP_(X::AbstractMatrix{S},
                repulsion_strength::Real = 1,
                neg_sample_rate::Integer = 5,
                a::Union{Real, Nothing} = nothing,
-               b::Union{Real, Nothing} = nothing
+               b::Union{Real, Nothing} = nothing,
                ) where {S<:Real}
     # argument checking
     size(X, 2) > n_neighbors > 0|| throw(ArgumentError("size(X, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
@@ -73,17 +82,29 @@ function UMAP_(X::AbstractMatrix{S},
     min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
     0 ≤ set_operation_ratio ≤ 1 || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
     local_connectivity > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
-
+    isnothing(ref_embedding) || size(ref_embedding, 1) == n_components || throw(ArgumentError("size(ref_embedding, 1) must equal n_components"))
+    isnothing(ref_embedding) || size(ref_embedding, 2) < size(X, 2)    || throw(ArgumentError("size(ref_embedding, 2) must be less than size(X, 2)"))
 
 
     # main algorithm
     graph = fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_operation_ratio)
 
-    embedding = initialize_embedding(graph, n_components, Val(init))
+    local embedding
+    if isnothing(ref_embedding)
+        embedding = initialize_embedding(graph, n_components, Val(init))
 
-    embedding = optimize_embedding(graph, embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate)
-    # TODO: if target variable y is passed, then construct target graph
-    #       in the same manner and do a fuzzy simpl set intersection
+        embedding = optimize_embedding(graph, embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate)
+        # TODO: if target variable y is passed, then construct target graph
+        #       in the same manner and do a fuzzy simpl set intersection
+    else
+        ref_inds = collect(1 : size(ref_embedding, 2))
+        query_inds = collect(size(ref_embedding, 2)+1 : size(X, 2))
+
+        embedding = initialize_embedding(graph, ref_embedding, query_inds, ref_inds)
+        ref_embedding = collect(eachcol(ref_embedding))
+        embedding = vcat(ref_embedding, embedding)
+        embedding = optimize_embedding(graph, embedding, query_inds, ref_inds, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate, a, b, move_ref=false)
+    end
 
     return UMAP_(graph, hcat(embedding...))
 end

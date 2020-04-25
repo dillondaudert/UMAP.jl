@@ -164,4 +164,14 @@
         end
     end
 
+    @testset "UMAP_ with reference" begin
+        data = rand(5, 50)
+        ref_embedding = rand(2, 20)
+        umap_ = UMAP_(data, 2, ref_embedding)
+        @test umap_ isa UMAP_{Float64}
+        @test size(umap_.graph) == (50, 50)
+        @test size(umap_.embedding) == (2, 50)
+        @test isapprox(umap_.embedding[:, 1:20], ref_embedding)
+    end
+
 end
