@@ -111,7 +111,7 @@ function optimize_embedding(graph,
 end
 
 """
-    optimize_embedding_rq(graph, embedding,query_inds, ref_inds, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate, _a=nothing, _b=nothing, move_ref=false) -> embedding
+    optimize_embedding_rq(graph, embedding,query_inds, ref_inds, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate, _a, _b; move_ref=false) -> embedding
 
 Optimize an embedding by minimizing the fuzzy set cross entropy between the high and low dimensional simplicial sets using stochastic gradient descent.
 Optimize "query" samples with respect to "reference" samples.
@@ -124,7 +124,11 @@ Optimize "query" samples with respect to "reference" samples.
 - `n_epochs`: the number of training epochs for optimization
 - `initial_alpha`: the initial learning rate
 - `gamma`: the repulsive strength of negative samples
-- `neg_sample_rate::Integer`: the number of negative samples per positive sample
+- `neg_sample_rate`: the number of negative samples per positive sample
+- `_a`: this controls the embedding. If the actual argument is `nothing`, this is determined automatically by `min_dist` and `spread`.
+- `_b`: this controls the embedding. If the actual argument is `nothing`, this is determined automatically by `min_dist` and `spread`.
+
+# Keyword Arguments
 - `move_ref::Bool = false`: if true, also improve the embeddings of samples in `ref_inds`, else fix them and only improve embeddings of samples in `query_inds`.
 """
 function optimize_embedding(graph,
