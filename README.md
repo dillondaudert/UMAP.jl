@@ -26,13 +26,24 @@ UMAP can use a precomputed distance matrix instead of finding the nearest neighb
 embedding = umap(distances, n_components; metric=:precomputed)
 ```
 
+## Fitting UMAP to a dataset and transforming new data
+To transform new data with UMAP fit to a dataset, use the `ref_embedding` parameter.
+```jl
+embedding = umap(X, n_components, ref_embedding; <kwargs>)
+```
+`ref_embedding` is a matrix of shape (`n_components`, R reference points). The R reference points correspond to the first R samples (columns) of `X`, which are the fit data, and the remaining samples of `X` are the data to transform with respect to the fit data. For example, `ref_embedding` may be the output of `umap` called on the first R samples of `X`.
+
+The output of this transformation will be a matrix of embedded points, where the first R points are the points from `ref_embedding`, and the remaining R points are the embedded points of the transformed samples.
+
+The number of reference samples R must be less than the number of samples in `X`. The keyword arguments `kwargs` are the same as normal `umap` usage, but transforming new data according to fit data is only well defined when using the same `kwargs` as the fit data.
+
+
 ## Implementation Details
 There are two main steps involved in UMAP: building a weighted graph with edges connecting points to their nearest neighbors, and optimizing the low-dimensional embedding of that graph. The first step is accomplished either by an exact kNN search (for datasets with `< 4096` points) or by the approximate kNN search algorithm, [NNDescent](https://github.com/dillondaudert/NearestNeighborDescent.jl). This step is also usually the most costly.
 
 The low-dimensional embedding is initialized (by default) with the eigenvectors of the normalized Laplacian of the kNN graph. These are found using ARPACK (via [Arpack.jl](https://github.com/JuliaLinearAlgebra/Arpack.jl)).
 
 ## Current Limitations
-- **No transform**: Only one-time embeddings are possible at the moment. That is to say, it isn't possible to "fit" UMAP to a dataset and then use it to "transform" new data
 - **Input data types**: Only data points that are represented by vectors of numbers (passed in as a matrix) are valid inputs. This is mostly due to a lack of support for other formats in [NNDescent](https://github.com/dillondaudert/NearestNeighborDescent.jl). Support for e.g. string datasets is possible in the future
 - **Sequential**: This implementation does not take advantage of any parallelism
 
