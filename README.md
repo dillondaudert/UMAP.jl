@@ -33,6 +33,22 @@ embedding = umap(X, n_components, ref_embedding; <kwargs>)
 ```
 `ref_embedding` is a matrix of shape (`n_components`, R reference points). The R reference points correspond to the first R samples (columns) of `X`, which are the fit data, and the remaining samples of `X` are the data to transform with respect to the fit data. For example, `ref_embedding` may be the output of `umap` called on the first R samples of `X`.
 
+Here is an example process of fitting training and transforming testing data:
+
+```jl
+Xfit =       ...  # some training data of size (n_features, k_samples)
+ref_embedding = umap(Xfit, 2)
+
+Xtransform = ...  # some testing data of size (n_features, k_samples)
+Xall = hcat(Xfit, Xtransform)
+total_embedding = umap(Xall, 2, ref_embedding)
+
+ref_inds = [1:size(ref_embedding, 2)...]
+query_inds = [1+size(ref_embedding, 2):size(total_embedding, 2)...]
+transform_embedding = total_embedding[:, query_inds]
+@assert ref_embedding == total_embedding[:, ref_inds]
+```
+
 The output of this transformation will be a matrix of embedded points, where the first R points are the points from `ref_embedding`, and the remaining R points are the embedded points of the transformed samples.
 
 The number of reference samples R must be less than the number of samples in `X`. The keyword arguments `kwargs` are the same as normal `umap` usage, but transforming new data according to fit data is only well defined when using the same `kwargs` as the fit data.
