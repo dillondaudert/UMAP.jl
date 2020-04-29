@@ -18,26 +18,31 @@
         @test umap_ isa UMAP_{Float64}
         @test size(umap_.graph) == (100, 100)
         @test size(umap_.embedding) == (2, 100)
+        @test umap_.data === data
 
         data = rand(Float32, 5, 100)
         @test UMAP_(data; init=:random) isa UMAP_{Float32}
     end
 
     @testset "fuzzy_simpl_set" begin
-        data = rand(20, 500)
-        k = 5
-        umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.)
+        # knns = rand(1:50, 5, 50)
+        # dists = rand(5, 50)
+        knns = [2 3 2; 3 1 1]
+        dists = [1.5 .5 .5; 2. 1.5 2.]
+        k = 3
+        umap_graph = fuzzy_simplicial_set(knns, dists, k, 3, 1, 1.)
         @test issymmetric(umap_graph)
         @test all(0. .<= umap_graph .<= 1.)
-        data = rand(Float32, 20, 500)
-        umap_graph = fuzzy_simplicial_set(data, k, Euclidean(), 1, 1.f0)
+        @test size(umap_graph) == (3, 3)
+
+        dists = convert.(Float32, dists)
+        umap_graph = fuzzy_simplicial_set(knns, dists, k, 3, 1, 1.f0)
         @test issymmetric(umap_graph)
         @test eltype(umap_graph) == Float32
 
-        data = 2 .* rand(20, 1000) .- 1
-        umap_graph = fuzzy_simplicial_set(data, k, CosineDist(), 1, 1.)
-        @test issymmetric(umap_graph)
+        umap_graph = fuzzy_simplicial_set(knns, dists, k, 200, 1, 1., false)
         @test all(0. .<= umap_graph .<= 1.)
+        @test size(umap_graph) == (200, 3)
     end
 
     @testset "smooth_knn_dists" begin
@@ -113,27 +118,29 @@
     end
 
     @testset "initialize_embedding" begin
-        graph = [0.75 1.0 0.5 0.5 0.5 0.25; 
-                 1.0 1.33333 0.666667 0.666667 0.666667 0.333333; 
-                 0.5 0.666667 0.333333 0.333333 0.333333 0.166667; 
-                 0.5 0.666667 0.333333 0.333333 0.333333 0.166667; 
-                 0.5 0.666667 0.333333 0.333333 0.333333 0.166667; 
-                 0.25 0.333333 0.166667 0.166667 0.166667 0.0833333]
-        ref_embedding = [3 4 2;
-                         1 5 3]
+        graph = [5 0 1 1;
+                 2 4 1 1;
+                 3 6 8 8] ./10
+        ref_embedding = Float64[1 2 0;
+                                0 2 -1]
+        actual = [[9, 1], [8, 2], [3, -6], [3, -6]] ./10
 
-        embedding = initialize_embedding(graph, ref_embedding, [1,2,3], [4,5,6])
+        embedding = initialize_embedding(graph, ref_embedding)
         @test embedding isa Array{Array{Float64, 1}, 1}
-        actual = [[3.2, 3.0], [3.2, 3.0], [3.2, 3.0]]
         @test length(embedding) == length(actual)
         for i in 1:length(embedding)
             @test length(embedding[i]) == length(actual[i])
         end
-        @test isapprox(embedding, actual, atol=1e-4)
+        @test isapprox(embedding, actual, atol=1e-8)
 
-        embedding = initialize_embedding(graph, ref_embedding, [4,5], [2,3,6])
-        @test embedding isa Array{Array{Float64, 1}, 1}
-        actual = [[3.14286, 2.42857], [3.14286, 2.42857]]
+        graph = graph[:, [1,2]]
+        graph[:, end] .= 0
+        ref_embedding = Float16[1 2 0;
+                                0 2 -1]
+        actual = Vector{Float16}[[9, 1], [0, 0]] ./10
+
+        embedding = initialize_embedding(graph, ref_embedding)
+        @test embedding isa Array{Array{Float16, 1}, 1}
         @test length(embedding) == length(actual)
         for i in 1:length(embedding)
             @test length(embedding[i]) == length(actual[i])
@@ -141,8 +148,10 @@
         @test isapprox(embedding, actual, atol=1e-4)
     end
 
-    @testset "optimize_embedding_with_reference" begin
-        graph = sparse(Symmetric(sprand(6,6,0.4)))
+    @testset "optimize_embedding with reference" begin
+        graph1 = sparse(Symmetric(sprand(6,6,0.4)))
+        graph2 = sparse(sprand(5,3,0.4))
+        graph3 = sparse(sprand(3,5,0.4))
         embedding = Vector{Float64}[[3, 1], [4, 5], [2, 3], [1, 7], [6, 3], [2, 6]]
 
         n_epochs = 1
@@ -151,27 +160,49 @@
         spread = 1.
         gamma = 1.
         neg_sample_rate = 5
-        query_inds_list = [[1,2,3], [1,3,6]]
-        ref_inds_list = [[4,5,6], [2,4,5]]
-        for (query_inds, ref_inds) in zip(query_inds_list, ref_inds_list)
-            res_embedding = optimize_embedding(graph, embedding, query_inds, ref_inds, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate, nothing, nothing, move_ref=false)
+        for graph in [graph1, graph2, graph3]
+            ref_embedding = collect(eachcol(rand(2, size(graph, 1))))
+            old_ref_embedding = deepcopy(ref_embedding)
+            query_embedding = rand(2, size(graph, 2))
+            query_embedding = [query_embedding[:, i] for i in 1:size(query_embedding, 2)]
+            res_embedding = optimize_embedding(graph, query_embedding, ref_embedding, n_epochs, initial_alpha, 
+                                               min_dist, spread, gamma, neg_sample_rate, move_ref=false)
             @test res_embedding isa Array{Array{Float64, 1}, 1}
-            @test length(res_embedding) == length(embedding)
+            @test length(res_embedding) == length(query_embedding)
             for i in 1:length(res_embedding)
-                @test length(res_embedding[i]) == length(embedding[i])
+                @test length(res_embedding[i]) == length(query_embedding[i])
             end
-            @test isapprox(res_embedding[ref_inds], embedding[ref_inds], atol=1e-5)
+            @test isapprox(old_ref_embedding, ref_embedding, atol=1e-4)
         end
     end
 
-    @testset "UMAP_ with reference" begin
-        data = rand(5, 50)
-        ref_embedding = rand(2, 20)
-        umap_ = UMAP_(data, 2, ref_embedding)
-        @test umap_ isa UMAP_{Float64}
-        @test size(umap_.graph) == (50, 50)
-        @test size(umap_.embedding) == (2, 50)
-        @test isapprox(umap_.embedding[:, 1:20], ref_embedding)
-    end
+    @testset "umap_transform" begin
+        @testset "argument validation tests" begin
+            ref_embedding = rand(2, 10)
+            data = rand(5, 10)
+            model = UMAP_(sparse(Symmetric(sprand(10,10,0.4))), ref_embedding, data)
+            query = rand(5, 8)
+            @test_throws ArgumentError umap_transform(rand(6, 8), model; n_neighbors=0) # query size error
+            @test_throws ArgumentError umap_transform(query, model; n_neighbors=0) # n_neighbors error
+            @test_throws ArgumentError umap_transform(query, model; n_neighbors=15) # n_neighbors error
+            @test_throws ArgumentError umap_transform(query, model; n_neighbors=1, min_dist = 0.) # min_dist error
 
+            model = UMAP_(sparse(Symmetric(sprand(10,10,0.4))), ref_embedding)
+            @test_throws ArgumentError umap_transform(query, model; n_neighbors=3) # data empty error
+        end
+        @testset "umap_transform test" begin
+            ref_embedding = rand(2, 30)
+            data = rand(5, 30)
+            model = UMAP_(sparse(Symmetric(sprand(30,30,0.4))), ref_embedding, data)
+            embedding = umap_transform(rand(5, 10), model, n_epochs=5, n_neighbors=5)
+            @test size(embedding) == (2, 10)
+            @test typeof(embedding) == typeof(ref_embedding)
+
+            ref_embedding = rand(Float16, 2, 30)
+            model = UMAP_(sparse(Symmetric(sprand(Float16, 6,6,0.4))), ref_embedding, data)
+            embedding = umap_transform(rand(5, 50), model, n_epochs=5, n_neighbors=5)
+            @test size(embedding) == (2, 50)
+            @test typeof(embedding) == typeof(ref_embedding)
+        end
+    end
 end
