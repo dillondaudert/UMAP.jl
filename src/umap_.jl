@@ -1,40 +1,48 @@
 # an implementation of Uniform Manifold Approximation and Projection
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
-# NOTE: unused for now
 struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}}
     graph::M
     embedding::N
+    data::AbstractMatrix
+    # data::Union{AbstractMatrix, Nothing}
+    knns::AbstractMatrix{<:Integer}
+    dists::AbstractMatrix{<:Real}
 
+    function UMAP_{S, M, N}(graph, embedding, data, knns, dists) where {S<:Real,
+                                                                           M<:AbstractMatrix{S},
+                                                                           N<:AbstractMatrix{S}}
+        issymmetric(graph) || isapprox(graph, graph') || error("UMAP_ constructor expected graph to be a symmetric matrix")
+        new(graph, embedding, data, knns, dists)
+    end
+    # For backwards compatibility:
     function UMAP_{S, M, N}(graph, embedding) where {S<:Real,
                                                      M<:AbstractMatrix{S},
                                                      N<:AbstractMatrix{S}}
-        issymmetric(graph) || isapprox(graph, graph') || error("UMAP_ constructor expected graph to be a symmetric matrix")
-        new(graph, embedding)
+        UMAP_{S, M, N}(graph, embedding, Matrix(undef, 0, 0), Matrix(undef, 0, 0), Matrix(undef, 0, 0))
     end
 end
+
 function UMAP_(graph::M, embedding::N) where {S <: Real,
                                               M <: AbstractMatrix{S},
                                               N <: AbstractMatrix{S}}
     return UMAP_{S, M, N}(graph, embedding)
 end
 
+function UMAP_(graph::M, embedding::N, data, knns, dists) where {S <: Real,
+                                                                    M <: AbstractMatrix{S},
+                                                                    N <: AbstractMatrix{S}}
+    return UMAP_{S, M, N}(graph, embedding, data, knns, dists)
+end
+
 const SMOOTH_K_TOLERANCE = 1e-5
 
 
 """
-    umap(X::AbstractMatrix[, n_components=2[, ref_embedding::AbstractMatrix]]; <kwargs>) -> embedding
+    umap(X::AbstractMatrix[, n_components=2]; <kwargs>) -> embedding
 
 Embed the data `X` into a `n_components`-dimensional space. `n_neighbors` controls
 how many neighbors to consider as locally connected.
-
-# Arguments
-- `X::AbstractMatrix`: data to embed
-- `n_components::Integer`: number of dimensions of embedded space
-- `ref_embedding::AbstractMatrix{<:Real} = nothing`: An embedding of size (n_components, R reference samples) corresponding to the first R data samples of `X` to fix and optimize the new embedding against. If this 
-   kwarg is nothing, the embedding is initialized according to `init` and optimized with respect to itself. Otherwise, the `init` kwarg is ignored, and the learned 
-   embedding is initialized and optimized with respect to points in `ref_embedding`. The first dimension of `ref_embedding` must equal `n_components`, and the 
-   second dimension (# reference points) must be less than the second dimension of `X` (# total samples). The beginning of the returned embedding will equal `ref_embedding`.
 
 # Keyword Arguments
 - `n_neighbors::Integer = 15`: the number of neighbors to consider as locally connected. Larger values capture more global structure in the data, while small values capture more local structure.
@@ -58,8 +66,7 @@ end
 
 
 function UMAP_(X::AbstractMatrix{S},
-               n_components::Integer = 2,
-               ref_embedding::Union{AbstractMatrix{S}, Nothing} = nothing;
+               n_components::Integer = 2;
                n_neighbors::Integer = 15,
                metric::Union{SemiMetric, Symbol} = Euclidean(),
                n_epochs::Integer = 300,
@@ -82,56 +89,90 @@ function UMAP_(X::AbstractMatrix{S},
     min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
     0 ≤ set_operation_ratio ≤ 1 || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
     local_connectivity > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
-    isnothing(ref_embedding) || size(ref_embedding, 1) == n_components || throw(ArgumentError("size(ref_embedding, 1) must equal n_components"))
-    isnothing(ref_embedding) || size(ref_embedding, 2) < size(X, 2)    || throw(ArgumentError("size(ref_embedding, 2) must be less than size(X, 2)"))
 
 
     # main algorithm
-    graph = fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_operation_ratio)
+    knns, dists = knn_search(X, n_neighbors, metric)
+    graph = fuzzy_simplicial_set(knns, dists, n_neighbors, size(knns, 2), local_connectivity, set_operation_ratio)
 
-    local embedding
-    if isnothing(ref_embedding)
-        embedding = initialize_embedding(graph, n_components, Val(init))
+    embedding = initialize_embedding(graph, n_components, Val(init))
 
-        embedding = optimize_embedding(graph, embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate)
-        # TODO: if target variable y is passed, then construct target graph
-        #       in the same manner and do a fuzzy simpl set intersection
-    else
-        ref_inds = collect(1 : size(ref_embedding, 2))
-        query_inds = collect(size(ref_embedding, 2)+1 : size(X, 2))
+    embedding = optimize_embedding(graph, embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate)
+    # TODO: if target variable y is passed, then construct target graph
+    #       in the same manner and do a fuzzy simpl set intersection
 
-        embedding = initialize_embedding(graph, ref_embedding, query_inds, ref_inds)
-        ref_embedding = collect(eachcol(ref_embedding))
-        embedding = vcat(ref_embedding, embedding)
-        embedding = optimize_embedding(graph, embedding, query_inds, ref_inds, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate, a, b, move_ref=false)
-    end
-
-    return UMAP_(graph, hcat(embedding...))
+    return UMAP_(graph, hcat(embedding...), X, knns, dists)
 end
 
-"""
-    fuzzy_simplicial_set(X, n_neighbors, metric, local_connectivity, set_op_ratio) -> graph::SparseMatrixCSC
+# TODO: switch Q and X?
+# TODO: optimize_embedding with 2 arrays
+function umap_transform(Q::AbstractMatrix{S},
+                        model::UMAP_;
+                        n_neighbors::Integer = 15,
+                        metric::Union{SemiMetric, Symbol} = Euclidean(),
+                        n_epochs::Integer = 300,
+                        learning_rate::Real = 1,
+                        min_dist::Real = 1//10,
+                        spread::Real = 1,
+                        set_operation_ratio::Real = 1,
+                        local_connectivity::Integer = 1,
+                        repulsion_strength::Real = 1,
+                        neg_sample_rate::Integer = 5,
+                        a::Union{Real, Nothing} = nothing,
+                        b::Union{Real, Nothing} = nothing,
+                        ) where {S<:Real}
+    # argument checking
+    size(Q, 2) > n_neighbors > 0                     || throw(ArgumentError("size(Q, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
+    n_epochs > 0                                     || throw(ArgumentError("n_epochs must be greater than 0"))
+    learning_rate > 0                                || throw(ArgumentError("learning_rate must be greater than 0"))
+    min_dist > 0                                     || throw(ArgumentError("min_dist must be greater than 0"))
+    0 ≤ set_operation_ratio ≤ 1                      || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
+    local_connectivity > 0                           || throw(ArgumentError("local_connectivity must be greater than 0"))
+    !isempty(model.data)                             || throw(ArgumentError("model.data must not be empty"))
+    size(model.data, 2) == size(model.embedding, 2)  || throw(ArgumentError("model.data must have same number of columns as model.embedding"))
+    size(model.data, 1) == size(Q, 1)                || throw(ArgumentError("size(model.data, 1) must equal size(Q, 1)"))
 
-Construct the local fuzzy simplicial sets of each point in `X` by
-finding the approximate nearest `n_neighbors`, normalizing the distances
-on the manifolds, and converting the metric space to a simplicial set.
+
+    # main algorithm
+    knns, dists = knn_search(model.data, Q, n_neighbors, metric, model.knns, model.dists)
+    graph = fuzzy_simplicial_set(knns, dists, n_neighbors, size(model.data, 2), local_connectivity, set_operation_ratio, false)
+
+    embedding = initialize_embedding(graph, model.embedding)
+    ref_embedding = collect(eachcol(model.embedding))
+    embedding = optimize_embedding(graph, embedding, ref_embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate, a, b, move_ref=false)
+
+    return hcat(embedding...)
+end
+
+
 """
-function fuzzy_simplicial_set(X,
+    fuzzy_simplicial_set(knns, dists, n_neighbors, n_samples, local_connectivity, set_op_ratio, apply_fuzzy_combine=true) -> membership_graph::SparseMatrixCSC, 
+
+Construct the local fuzzy simplicial sets of each point represented by its distances
+to its `n_neighbors` nearest neighbors, stored in `dists`, normalizing the distances
+on the manifolds, and converting the metric space to a simplicial set. If
+`apply_fuzzy_combine` is true, use intersections and unions to combine
+fuzzy sets of neighbors.
+"""
+function fuzzy_simplicial_set(knns,
+                              dists,
                               n_neighbors,
-                              metric,
+                              n_samples,
                               local_connectivity,
-                              set_operation_ratio)
-
-    knns, dists = knn_search(X, n_neighbors, metric)
+                              set_operation_ratio,
+                              apply_fuzzy_combine=true)
 
     σs, ρs = smooth_knn_dists(dists, n_neighbors, local_connectivity)
 
     rows, cols, vals = compute_membership_strengths(knns, dists, σs, ρs)
-    fs_set = sparse(rows, cols, vals, size(knns, 2), size(knns, 2))
+    fs_set = sparse(rows, cols, vals, n_samples, size(knns, 2))
 
-    res = combine_fuzzy_sets(fs_set, set_operation_ratio)
-
-    return dropzeros(res)
+    if apply_fuzzy_combine
+        res = combine_fuzzy_sets(fs_set, set_operation_ratio)
+        return dropzeros(res)
+    else
+        return dropzeros(fs_set)
+    end
 end
 
 """

@@ -20,7 +20,7 @@ function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:ran
 end
 
 """
-    initialize_embedding(graph, ref_embedding, query_inds::Vector{<:Integer}, ref_inds::Vector{<:Integer}) -> embedding
+    initialize_embedding(graph::AbstractMatrix{<:Real}, ref_embedding::AbstractMatrix{T<:Real}) -> embedding
 
 Initialize an embedding of points corresponding to the `query_inds` columns of the `graph`, by taking weighted means of
 the `ref_embedding`, where weights are values from the `ref_inds` rows of the `graph`.
@@ -30,12 +30,12 @@ ie. the sample `ref_embedding[:, i]`.
 
 The resulting embedding will have shape `(size(ref_embedding, 1), length(query_inds))`, where `size(ref_embedding, 1)`
 is the number of components (dimensions) of the `reference embedding`, and `length(query_inds)` is the number of 
-samples in the resulting embedding.
+samples in the resulting embedding. Its elements will have type T.
 """
-function initialize_embedding(graph, ref_embedding, query_inds::Vector{<:Integer}, ref_inds::Vector{<:Integer})
-    embed = [zeros(size(ref_embedding, 1)) for _ in 1:length(query_inds)]
-    rq_graph = graph[ref_inds, query_inds]
-    for (i, col) in enumerate(eachcol(rq_graph))
+function initialize_embedding(graph::AbstractMatrix{<:Real}, ref_embedding::AbstractMatrix{T}) where {T<:Real}
+    embed = [zeros(T, size(ref_embedding, 1)) for _ in 1:size(graph, 2)]
+    # rq_graph = graph[ref_inds, query_inds]
+    for (i, col) in enumerate(eachcol(graph))
         embed[i] = vec(sum(transpose(col) .* ref_embedding, dims=2) ./ sum(col))
     end
     return embed
@@ -90,14 +90,10 @@ function optimize_embedding(graph,
                             neg_sample_rate,
                             _a=nothing,
                             _b=nothing)
-    # query_inds and ref_inds are each the entire set of indices of the embedding, so all samples of the embedding will
-    #   be optimized, with respect to each (neighbor) sample.
-    query_inds = ref_inds = collect(eachindex(embedding))
     return optimize_embedding(
         graph,
         embedding,
-        query_inds,
-        ref_inds,
+        embedding,
         n_epochs,
         initial_alpha,
         min_dist,
@@ -132,9 +128,10 @@ Optimize "query" samples with respect to "reference" samples.
 - `move_ref::Bool = false`: if true, also improve the embeddings of samples in `ref_inds`, else fix them and only improve embeddings of samples in `query_inds`.
 """
 function optimize_embedding(graph,
-                            embedding,
-                            query_inds,
-                            ref_inds,
+                            query_embedding,
+                            ref_embedding,
+                            # query_inds,
+                            # ref_inds,
                             n_epochs,
                             initial_alpha,
                             min_dist,
@@ -145,48 +142,47 @@ function optimize_embedding(graph,
                             _b;
                             move_ref::Bool=false)
     a, b = fit_ab(min_dist, spread, _a, _b)
-    ref_indset = Set(ref_inds)
+    self_reference = query_embedding === ref_embedding
 
     alpha = initial_alpha
     for e in 1:n_epochs
-        @inbounds for i in query_inds
+        @inbounds for i in 1:size(graph, 2)
             for ind in nzrange(graph, i)
                 j = rowvals(graph)[ind]
-                if !(j in ref_indset)
-                    continue
-                end
                 p = nonzeros(graph)[ind]
                 if rand() <= p
-                    sdist = evaluate(SqEuclidean(), embedding[i], embedding[j])
+                    sdist = evaluate(SqEuclidean(), query_embedding[i], ref_embedding[j])
                     if sdist > 0
                         delta = (-2 * a * b * sdist^(b-1))/(1 + a*sdist^b)
                     else
                         delta = 0
                     end
-                    @simd for d in eachindex(embedding[i])
-                        grad = clamp(delta * (embedding[i][d] - embedding[j][d]), -4, 4)
-                        embedding[i][d] += alpha * grad
+                    @simd for d in eachindex(query_embedding[i])
+                        grad = clamp(delta * (query_embedding[i][d] - ref_embedding[j][d]), -4, 4)
+                        query_embedding[i][d] += alpha * grad
                         if move_ref
-                            embedding[j][d] -= alpha * grad
+                            ref_embedding[j][d] -= alpha * grad
                         end
                     end
 
                     for _ in 1:neg_sample_rate
-                        k = rand(ref_inds)
-                        i != k || continue
-                        sdist = evaluate(SqEuclidean(), embedding[i], embedding[k])
+                        k = rand(eachindex(ref_embedding))
+                        if i == k && self_reference
+                            continue
+                        end
+                        sdist = evaluate(SqEuclidean(), query_embedding[i], ref_embedding[k])
                         if sdist > 0
                             delta = (2 * gamma * b) / ((1//1000 + sdist)*(1 + a*sdist^b))
                         else
                             delta = 0
                         end
-                        @simd for d in eachindex(embedding[i])
+                        @simd for d in eachindex(query_embedding[i])
                             if delta > 0
-                                grad = clamp(delta * (embedding[i][d] - embedding[k][d]), -4, 4)
+                                grad = clamp(delta * (query_embedding[i][d] - ref_embedding[k][d]), -4, 4)
                             else
                                 grad = 4
                             end
-                            embedding[i][d] += alpha * grad
+                            query_embedding[i][d] += alpha * grad
                         end
                     end
                 end
@@ -194,5 +190,5 @@ function optimize_embedding(graph,
         end
         alpha = initial_alpha*(1 - e//n_epochs)
     end
-    return embedding
+    return query_embedding
 end
