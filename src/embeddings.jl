@@ -20,23 +20,19 @@ function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:ran
 end
 
 """
-    initialize_embedding(graph::AbstractMatrix{<:Real}, ref_embedding::AbstractMatrix{T<:Real}) -> embedding
+    initialize_embedding(graph::AbstractMatrix{<:Real}, ref_embedding::AbstractMatrix{T<:AbstractFloat}) -> embedding
 
-Initialize an embedding of points corresponding to the `query_inds` columns of the `graph`, by taking weighted means of
-the `ref_embedding`, where weights are values from the `ref_inds` rows of the `graph`.
-
-`ref_inds[i]` is the row in the `graph` corresponding to the `i`th sample of `ref_embedding`, 
-ie. the sample `ref_embedding[:, i]`.
+Initialize an embedding of points corresponding to the columns of the `graph`, by taking weighted means of
+the columns of `ref_embedding`, where weights are values from the rows of the `graph`.
 
 The resulting embedding will have shape `(size(ref_embedding, 1), length(query_inds))`, where `size(ref_embedding, 1)`
 is the number of components (dimensions) of the `reference embedding`, and `length(query_inds)` is the number of 
 samples in the resulting embedding. Its elements will have type T.
 """
-function initialize_embedding(graph::AbstractMatrix{<:Real}, ref_embedding::AbstractMatrix{T}) where {T<:Real}
+function initialize_embedding(graph::AbstractMatrix{<:Real}, ref_embedding::AbstractMatrix{T}) where {T<:AbstractFloat}
     embed = [zeros(T, size(ref_embedding, 1)) for _ in 1:size(graph, 2)]
-    # rq_graph = graph[ref_inds, query_inds]
     for (i, col) in enumerate(eachcol(graph))
-        embed[i] = vec(sum(transpose(col) .* ref_embedding, dims=2) ./ sum(col))
+        embed[i] = vec(sum(transpose(col) .* ref_embedding, dims=2) ./ (sum(col) + eps(zero(T))))
     end
     return embed
 end
@@ -67,6 +63,13 @@ function spectral_layout(graph::SparseMatrixCSC{T},
     return convert.(T, layout)
 end
 
+
+# The optimize_embedding methods have parameters that are ::AbstractVector{<:AbstractVector{T}}.
+# AbstractVector{<:AbstractVector{T}} allows arguments to be views of some other array/matrix
+# rather than just vectors themselves (so we can avoid copying the model.data and instead just
+# create a view to satisfy our reshaping needs). For example, calling collect(eachcol(X)) creates
+# an Array of SubArrays, and SubArray is not an Array, but SubArray <: AbstractArray.
+
 """
     optimize_embedding(graph, embedding, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate) -> embedding
 
@@ -75,14 +78,14 @@ Optimize an embedding by minimizing the fuzzy set cross entropy between the high
 # Arguments
 - `graph`: a sparse matrix of shape (n_samples, n_samples)
 - `embedding`: a vector of length (n_samples,) of vectors representing the embedded data points
-- `n_epochs`: the number of training epochs for optimization
+- `n_epochs`::Integer: the number of training epochs for optimization
 - `initial_alpha`: the initial learning rate
 - `gamma`: the repulsive strength of negative samples
 - `neg_sample_rate::Integer`: the number of negative samples per positive sample
 """
 function optimize_embedding(graph,
-                            embedding,
-                            n_epochs,
+                            embedding::AbstractVector{<:AbstractVector{<:AbstractFloat}},
+                            n_epochs::Integer,
                             initial_alpha,
                             min_dist,
                             spread,
@@ -107,17 +110,16 @@ function optimize_embedding(graph,
 end
 
 """
-    optimize_embedding_rq(graph, embedding,query_inds, ref_inds, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate, _a, _b; move_ref=false) -> embedding
+    optimize_embedding(graph, query_embedding, ref_embedding, n_epochs, initial_alpha, min_dist, spread, gamma, neg_sample_rate, _a=nothing, _b=nothing; move_ref=false) -> embedding
 
 Optimize an embedding by minimizing the fuzzy set cross entropy between the high and low dimensional simplicial sets using stochastic gradient descent.
 Optimize "query" samples with respect to "reference" samples.
 
 # Arguments
 - `graph`: a sparse matrix of shape (n_samples, n_samples)
-- `embedding`: a vector of length (n_samples,) of vectors representing the embedded data points
-- `query_inds`: the indices of the embedding to optimize.
-- `ref_inds`: the indices of the embedding to optimize with respect to.
-- `n_epochs`: the number of training epochs for optimization
+- `query_embedding`: a vector of length (n_samples,) of vectors representing the embedded data points to be optimized
+- `ref_embedding`: a vector of length (n_samples,) of vectors representing the embedded data points to optimize against
+- `n_epochs`::Integer: the number of training epochs for optimization
 - `initial_alpha`: the initial learning rate
 - `gamma`: the repulsive strength of negative samples
 - `neg_sample_rate`: the number of negative samples per positive sample
@@ -125,22 +127,20 @@ Optimize "query" samples with respect to "reference" samples.
 - `_b`: this controls the embedding. If the actual argument is `nothing`, this is determined automatically by `min_dist` and `spread`.
 
 # Keyword Arguments
-- `move_ref::Bool = false`: if true, also improve the embeddings of samples in `ref_inds`, else fix them and only improve embeddings of samples in `query_inds`.
+- `move_ref::Bool = false`: if true, also improve the embeddings in `ref_embedding`, else fix them and only improve embeddings in `query_embedding`.
 """
 function optimize_embedding(graph,
-                            query_embedding,
-                            ref_embedding,
-                            # query_inds,
-                            # ref_inds,
-                            n_epochs,
+                            query_embedding::AbstractVector{<:AbstractVector{T}},
+                            ref_embedding::AbstractVector{<:AbstractVector{T}},
+                            n_epochs::Integer,
                             initial_alpha,
                             min_dist,
                             spread,
                             gamma,
                             neg_sample_rate,
-                            _a,
-                            _b;
-                            move_ref::Bool=false)
+                            _a=nothing,
+                            _b=nothing;
+                            move_ref::Bool=false) where {T <: AbstractFloat}
     a, b = fit_ab(min_dist, spread, _a, _b)
     self_reference = query_embedding === ref_embedding
 

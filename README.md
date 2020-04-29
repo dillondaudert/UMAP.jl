@@ -26,33 +26,31 @@ UMAP can use a precomputed distance matrix instead of finding the nearest neighb
 embedding = umap(distances, n_components; metric=:precomputed)
 ```
 
-## Fitting UMAP to a dataset and transforming new data
-To transform new data with UMAP fit to a dataset, use the `ref_embedding` parameter.
+## Fitting a UMAP model to a dataset and transforming new data
+
+### Constructing a model
+To construct a model to use for embedding new data, use the constructor:
 ```jl
-embedding = umap(X, n_components, ref_embedding; <kwargs>)
+model = UMAP_(X, n_components; <kwargs>)
 ```
-`ref_embedding` is a matrix of shape (`n_components`, R reference points). The R reference points correspond to the first R samples (columns) of `X`, which are the fit data, and the remaining samples of `X` are the data to transform with respect to the fit data. For example, `ref_embedding` may be the output of `umap` called on the first R samples of `X`.
-
-Here is an example process of fitting training and transforming testing data:
-
+where the constructor takes the same keyword arguments (kwargs) as `umap`. The returned object has the following fields:
 ```jl
-Xfit =       ...  # some training data of size (n_features, k_samples)
-ref_embedding = umap(Xfit, 2)
-
-Xtransform = ...  # some testing data of size (n_features, k_samples)
-Xall = hcat(Xfit, Xtransform)
-total_embedding = umap(Xall, 2, ref_embedding)
-
-ref_inds = [1:size(ref_embedding, 2)...]
-query_inds = [1+size(ref_embedding, 2):size(total_embedding, 2)...]
-transform_embedding = total_embedding[:, query_inds]
-@assert ref_embedding == total_embedding[:, ref_inds]
+model.graph     # The graph of fuzzy simplicial set membership strengths of each point in the dataset
+model.embedding # The embedding of the dataset
+model.data      # A reference to the original dataset
+model.knns      # A matrix of indices of nearest neighbors of points in the dataset,
+                # as determined on the original manifold (may be approximate)
+model.dists     # The distances of the neighbors indicated by model.knns
 ```
 
-The output of this transformation will be a matrix of embedded points, where the first R points are the points from `ref_embedding`, and the remaining R points are the embedded points of the transformed samples.
+### Embedding new data
+To transform new data into the existing embedding of a UMAP model, use the `umap_transform` function:
+```jl
+Q_embedding = umap_transform(Q, model; <kwargs>)
+```
+where `Q` is a matrix of new query data to embed into the existing embedding, and `model` is the object obtained from the `UMAP_` call above. `Q` must come from a space of the same dimensionality as `model.data` (ie `X` in the `UMAP_` call above).
 
-The number of reference samples R must be less than the number of samples in `X`. The keyword arguments `kwargs` are the same as normal `umap` usage, but transforming new data according to fit data is only well defined when using the same `kwargs` as the fit data.
-
+The remaining keyword arguments (kwargs) are the same as for above functions.
 
 ## Implementation Details
 There are two main steps involved in UMAP: building a weighted graph with edges connecting points to their nearest neighbors, and optimizing the low-dimensional embedding of that graph. The first step is accomplished either by an exact kNN search (for datasets with `< 4096` points) or by the approximate kNN search algorithm, [NNDescent](https://github.com/dillondaudert/NearestNeighborDescent.jl). This step is also usually the most costly.

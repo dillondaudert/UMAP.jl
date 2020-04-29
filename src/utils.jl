@@ -43,8 +43,8 @@ the approximate nearest neighbors graph; otherwise, reconstruct it from scratch.
 If the matrices are small, search for exact nearest neighbors of `Q` by computing all pairwise distances with `X`.
 
 # Returns
-- `knns` - `knns[j, i]` is the index of node i's jth nearest neighbor.
-- `dists` - `dists[j, i]` is the distance of node i's jth nearest neighbor.
+- `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
+- `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
 """
 function knn_search end
 
@@ -97,7 +97,7 @@ function knn_search(X::AbstractMatrix,
                     dists::AbstractMatrix{<:Real})
     
     if size(X, 2) < 4096
-        return _knn_from_dists(pairwise(metric, X, Q, dims=2), k)
+        return _knn_from_dists(pairwise(metric, X, Q, dims=2), k, ignore_diagonal=false)
     end
 
     if isempty(knns) || isempty(dists) || size(knns) != size(dists) || size(knns, 1) < k
