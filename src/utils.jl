@@ -95,17 +95,17 @@ function knn_search(X::AbstractMatrix,
                     metric::SemiMetric,
                     knns::AbstractMatrix{<:Integer},
                     dists::AbstractMatrix{<:Real})
-    
+
     if size(X, 2) < 4096
         return _knn_from_dists(pairwise(metric, X, Q, dims=2), k, ignore_diagonal=false)
     end
 
-    if isempty(knns) || isempty(dists) || size(knns) != size(dists) || size(knns, 1) < k
+    if isempty(knns) || isempty(dists) || size(knns) != size(dists)
         knngraph = nndescent(X, k, metric)
     else
         knngraph = HeapKNNGraph(collect(eachcol(X)), metric, knns, dists)
     end
-    return search(knngraph, collect(eachcol(Q)), k)
+    return search(knngraph, collect(eachcol(Q)), k; max_candidates=8*k)
 end
 
 

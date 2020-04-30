@@ -162,7 +162,6 @@ function umap_transform(Q::AbstractMatrix{S},
                         ) where {S<:Real}
     # argument checking
     size(Q, 2) > n_neighbors > 0                     || throw(ArgumentError("size(Q, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
-    n_epochs > 0                                     || throw(ArgumentError("n_epochs must be greater than 0"))
     learning_rate > 0                                || throw(ArgumentError("learning_rate must be greater than 0"))
     min_dist > 0                                     || throw(ArgumentError("min_dist must be greater than 0"))
     0 ≤ set_operation_ratio ≤ 1                      || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
@@ -172,7 +171,7 @@ function umap_transform(Q::AbstractMatrix{S},
     size(model.data, 1) == size(Q, 1)                || throw(ArgumentError("size(model.data, 1) must equal size(Q, 1)"))
 
 
-    
+    n_epochs = max(0, n_epochs)
     # main algorithm
     knns, dists = knn_search(model.data, Q, n_neighbors, metric, model.knns, model.dists)
     graph = fuzzy_simplicial_set(knns, dists, n_neighbors, size(model.data, 2), local_connectivity, set_operation_ratio, false)
