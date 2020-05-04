@@ -23,10 +23,13 @@ function fit_ab(min_dist, spread, ::Nothing, ::Nothing)
 end
 
 
+knn_search(X::AbstractMatrix, k, metric::Symbol) = knn_search(X, k, Val(metric))
+
+# treat given matrix `X` as distance matrix
+knn_search(X::AbstractMatrix, k, ::Val{:precomputed}) = _knn_from_dists(X, k)
+
 """
-    knn_search(X::AbstractMatrix, k::Integer, metric)                                -> knns, dists
-    knn_search(X::AbstractMatrix, Q::AbstractMatrix, k::Integer, metric::SemiMetric,
-                    knns::AbstractMatrix{<:Integer}, dists::AbstractMatrix{<:Real})  -> knns, dists,
+    knn_search(X, k, metric) -> knns, dists
 
 Find the `k` nearest neighbors of each point.
 
@@ -35,24 +38,10 @@ Find the `k` nearest neighbors of each point.
 - ::Val(:precomputed) - computes neighbors from `X` treated as a precomputed distance matrix.
 - ::SemiMetric - computes neighbors from `X` treated as samples, using the given metric.
 
-Given a matrix `X` and a matrix `Q`, use the given metric to compute the `k` nearest neighbors out of the
-columns of `X` from the queries (columns in `Q`). 
-If the matrices are large, compute the approximate nearest neighbors graph of `X` and use this to search 
-for approximate nearest neighbors of `Q`. If provided `knns` and `dists` are nonempty, use these to reconstruct 
-the approximate nearest neighbors graph; otherwise, reconstruct it from scratch.
-If the matrices are small, search for exact nearest neighbors of `Q` by computing all pairwise distances with `X`.
-
 # Returns
 - `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
 - `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
 """
-function knn_search end
-
-knn_search(X::AbstractMatrix, k::Integer, metric::Symbol) = knn_search(X, k, Val(metric))
-
-# treat given matrix `X` as distance matrix
-knn_search(X::AbstractMatrix, k::Integer, ::Val{:precomputed}) = _knn_from_dists(X, k)
-
 function knn_search(X::AbstractMatrix,
                     k,
                     metric::SemiMetric)
@@ -66,15 +55,11 @@ end
 # compute all pairwise distances
 # return the nearest k to each point v, other than v itself
 function knn_search(X::AbstractMatrix{S},
-                    k::Integer,
+                    k,
                     metric,
                     ::Val{:pairwise}) where {S <: Real}
     num_points = size(X, 2)
-    if S <: AbstractFloat
-        dist_mat = Array{S}(undef, num_points, num_points)
-    else
-        dist_mat = Array{Float64}(undef, num_points, num_points)
-    end
+    dist_mat = Array{S}(undef, num_points, num_points)
     pairwise!(dist_mat, metric, X, dims=2)
     # all_dists is symmetric distance matrix
     return _knn_from_dists(dist_mat, k)
@@ -89,23 +74,37 @@ function knn_search(X::AbstractMatrix{S},
     return knn_matrices(knngraph)
 end
 
+"""
+    knn_search(X, Q, k, metric, knns, dists) -> knns, dists
+
+Given a matrix `X` and a matrix `Q`, use the given metric to compute the `k` nearest neighbors out of the
+columns of `X` from the queries (columns in `Q`). 
+If the matrices are large, reconstruct the approximate nearest neighbors graph of `X` using the given `knns` and `dists`,
+representing indices and distances of pairwise neighbors of `X`, and use this to search for approximate nearest 
+neighbors of `Q`.
+If the matrices are small, search for exact nearest neighbors of `Q` by computing all pairwise distances with `X`.
+
+`metric` may be of type:
+- ::Symbol - `knn_search` is dispatched to one of the following based on the evaluation of `metric`:
+- ::Val(:precomputed) - computes neighbors from `X` treated as a precomputed distance matrix.
+- ::SemiMetric - computes neighbors from `X` treated as samples, using the given metric.
+
+# Returns
+- `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
+- `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
+"""
 function knn_search(X::AbstractMatrix, 
                     Q::AbstractMatrix,
                     k::Integer,
                     metric::SemiMetric,
                     knns::AbstractMatrix{<:Integer},
                     dists::AbstractMatrix{<:Real})
-
     if size(X, 2) < 4096
         return _knn_from_dists(pairwise(metric, X, Q, dims=2), k, ignore_diagonal=false)
-    end
-
-    if isempty(knns) || isempty(dists) || size(knns) != size(dists)
-        knngraph = nndescent(X, k, metric)
     else
         knngraph = HeapKNNGraph(collect(eachcol(X)), metric, knns, dists)
+        return search(knngraph, collect(eachcol(Q)), k; max_candidates=8*k)
     end
-    return search(knngraph, collect(eachcol(Q)), k; max_candidates=8*k)
 end
 
 

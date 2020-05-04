@@ -1,42 +1,33 @@
 # an implementation of Uniform Manifold Approximation and Projection
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
-struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}}
+struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}, D<:AbstractMatrix{S}, K<:AbstractMatrix{<:Integer}, I<:AbstractMatrix{S}}
     graph::M
     embedding::N
-    data::AbstractMatrix
-    knns::AbstractMatrix{<:Integer}
-    dists::AbstractMatrix{<:Real}
+    data::D
+    knns::K
+    dists::I
 
-    function UMAP_{S, M, N}(graph, embedding, data, knns, dists) where {S<:Real,
-                                                                           M<:AbstractMatrix{S},
-                                                                           N<:AbstractMatrix{S}}
+    function UMAP_{S, M, N, D, K, I}(graph, embedding, data, knns, dists) where {S<:Real,
+                                                                                 M<:AbstractMatrix{S},
+                                                                                 N<:AbstractMatrix{S},
+                                                                                 D<:AbstractMatrix{S},
+                                                                                 K<:AbstractMatrix{<:Integer},
+                                                                                 I<:AbstractMatrix{S}}
         issymmetric(graph) || isapprox(graph, graph') || error("UMAP_ constructor expected graph to be a symmetric matrix")
         size(knns) == size(dists) || error("UMAP_ constructor expected knns and dists to have equal size")
         new(graph, embedding, data, knns, dists)
     end
-    # For backwards compatibility:
-    function UMAP_{S, M, N}(graph, embedding) where {S<:Real,
-                                                     M<:AbstractMatrix{S},
-                                                     N<:AbstractMatrix{S}}
-        UMAP_{S, M, N}(graph, embedding, Matrix(undef, 0, 0), Matrix{Int}(undef, 0, 0), Matrix{S}(undef, 0, 0))
-    end
 end
 
-function UMAP_(graph::M, embedding::N, data, knns, dists) where {S <: Real,
-                                                                 M <: AbstractMatrix{S},
-                                                                 N <: AbstractMatrix{S}}
-    return UMAP_{S, M, N}(graph, embedding, data, knns, dists)
+function UMAP_(graph::M, embedding::N, data::D, knns::K, dists::I) where {S<:Real,
+                                                                          M<:AbstractMatrix{S},
+                                                                          N<:AbstractMatrix{S},
+                                                                          D<:AbstractMatrix{S},
+                                                                          K<:AbstractMatrix{<:Integer},
+                                                                          I<:AbstractMatrix{S}}
+    return UMAP_{S, M, N, D, K, I}(graph, embedding, data, knns, dists)
 end
-
-function UMAP_(graph::M, embedding::N, data) where {S <: Real,
-                                                    M <: AbstractMatrix{S},
-                                                    N <: AbstractMatrix{S}}
-    return UMAP_(graph, embedding, data, Matrix{Int}(undef, 0, 0), Matrix{S}(undef, 0, 0))
-end
-
-# For backwards compatibility:
-UMAP_(graph::AbstractMatrix, embedding::AbstractMatrix) = UMAP_(graph, embedding, Matrix(undef, 0, 0))
 
 const SMOOTH_K_TOLERANCE = 1e-5
 
@@ -97,7 +88,7 @@ function UMAP_(X::AbstractMatrix{S},
                repulsion_strength::Real = 1,
                neg_sample_rate::Integer = 5,
                a::Union{Real, Nothing} = nothing,
-               b::Union{Real, Nothing} = nothing,
+               b::Union{Real, Nothing} = nothing
                ) where {S<:Real}
     # argument checking
     size(X, 2) > n_neighbors > 0|| throw(ArgumentError("size(X, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
@@ -115,7 +106,7 @@ function UMAP_(X::AbstractMatrix{S},
 
     embedding = initialize_embedding(graph, n_components, Val(init))
 
-    embedding = optimize_embedding(graph, embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate)
+    embedding = optimize_embedding(graph, embedding, embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate, move_ref=true)
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
 
@@ -123,7 +114,7 @@ function UMAP_(X::AbstractMatrix{S},
 end
 
 """
-    umap_transform(Q::AbstractMatrix, model::UMAP_; <kwargs>) -> embedding
+    transform(model::UMAP_, Q::AbstractMatrix; <kwargs>) -> embedding
 
 Use the given model to embed new points into an existing embedding. `Q` is a matrix of some number of points (columns)
 in the same space as `model.data`. The returned embedding is the embedding of these points in n-dimensional space, where
@@ -145,28 +136,27 @@ and optimizing cross entropy according to membership strengths according to thes
 - `a = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 - `b = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 """
-function umap_transform(Q::AbstractMatrix{S},
-                        model::UMAP_;
-                        n_neighbors::Integer = 15,
-                        metric::Union{SemiMetric, Symbol} = Euclidean(),
-                        n_epochs::Integer = 100,
-                        learning_rate::Real = 1,
-                        min_dist::Real = 1//10,
-                        spread::Real = 1,
-                        set_operation_ratio::Real = 1,
-                        local_connectivity::Integer = 1,
-                        repulsion_strength::Real = 1,
-                        neg_sample_rate::Integer = 5,
-                        a::Union{Real, Nothing} = nothing,
-                        b::Union{Real, Nothing} = nothing
-                        ) where {S<:Real}
+function transform(model::UMAP_,
+                   Q::AbstractMatrix{S};
+                   n_neighbors::Integer = 15,
+                   metric::Union{SemiMetric, Symbol} = Euclidean(),
+                   n_epochs::Integer = 100,
+                   learning_rate::Real = 1,
+                   min_dist::Real = 1//10,
+                   spread::Real = 1,
+                   set_operation_ratio::Real = 1,
+                   local_connectivity::Integer = 1,
+                   repulsion_strength::Real = 1,
+                   neg_sample_rate::Integer = 5,
+                   a::Union{Real, Nothing} = nothing,
+                   b::Union{Real, Nothing} = nothing
+                   ) where {S<:Real}
     # argument checking
     size(Q, 2) > n_neighbors > 0                     || throw(ArgumentError("size(Q, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
     learning_rate > 0                                || throw(ArgumentError("learning_rate must be greater than 0"))
     min_dist > 0                                     || throw(ArgumentError("min_dist must be greater than 0"))
     0 ≤ set_operation_ratio ≤ 1                      || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
     local_connectivity > 0                           || throw(ArgumentError("local_connectivity must be greater than 0"))
-    !isempty(model.data)                             || throw(ArgumentError("model.data must not be empty"))
     size(model.data, 2) == size(model.embedding, 2)  || throw(ArgumentError("model.data must have same number of columns as model.embedding"))
     size(model.data, 1) == size(Q, 1)                || throw(ArgumentError("size(model.data, 1) must equal size(Q, 1)"))
 
@@ -180,7 +170,7 @@ function umap_transform(Q::AbstractMatrix{S},
     ref_embedding = collect(eachcol(model.embedding))
     embedding = optimize_embedding(graph, embedding, ref_embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate, a, b, move_ref=false)
 
-    return hcat(embedding...)
+    return reduce(hcat, embedding)
 end
 
 

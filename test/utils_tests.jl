@@ -36,34 +36,6 @@
             @test ret_knns == true_knns
             @test isapprox(ret_dists, true_dists, atol=1e-4)
         end
-
-        @testset "bad knns and dists values" begin
-            X = [0. 0. 0.; 0. 1.5 2.]
-            Q = [-2 0; 0 -1]
-            true_knns = [1 1; 2 2]
-            true_dists = [2.0 1.0; 2.5 2.5]
-
-            # empty knns / dists
-            knns = Matrix{Int}(undef, 0, 0)
-            dists = Matrix{Float64}(undef, 0, 0)
-            ret_knns, ret_dists = knn_search(X, Q, 2, Euclidean(), knns, dists)
-            @test true_knns == ret_knns
-            @test isapprox(true_dists, ret_dists, atol=1e-4)
-
-            # different size knns / dists
-            knns = rand(1:3, 2, 2)
-            dists = rand(2, 3)
-            ret_knns, ret_dists = knn_search(X, Q, 2, Euclidean(), knns, dists)
-            @test true_knns == ret_knns
-            @test isapprox(true_dists, ret_dists, atol=1e-4)
-
-            # knns / dists smaller than k
-            knns = [2 3 2]
-            dists = [1.5 .5 .5]
-            ret_knns, ret_dists = knn_search(X, Q, 2, Euclidean(), knns, dists)
-            @test true_knns == ret_knns
-            @test isapprox(true_dists, ret_dists, atol=1e-4)
-        end
     end
 
     @testset "combine_fuzzy_sets tests" begin
