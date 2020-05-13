@@ -44,9 +44,9 @@ model.dists     # The distances of the neighbors indicated by model.knns
 ```
 
 ### Embedding new data
-To transform new data into the existing embedding of a UMAP model, use the `umap_transform` function:
+To transform new data into the existing embedding of a UMAP model, use the `transform` function:
 ```jl
-Q_embedding = umap_transform(model, Q; <kwargs>)
+Q_embedding = transform(model, Q; <kwargs>)
 ```
 where `Q` is a matrix of new query data to embed into the existing embedding, and `model` is the object obtained from the `UMAP_` call above. `Q` must come from a space of the same dimensionality as `model.data` (ie `X` in the `UMAP_` call above).
 
