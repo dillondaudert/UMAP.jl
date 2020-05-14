@@ -26,13 +26,38 @@ UMAP can use a precomputed distance matrix instead of finding the nearest neighb
 embedding = umap(distances, n_components; metric=:precomputed)
 ```
 
+## Fitting a UMAP model to a dataset and transforming new data
+
+### Constructing a model
+To construct a model to use for embedding new data, use the constructor:
+```jl
+model = UMAP_(X, n_components; <kwargs>)
+```
+where the constructor takes the same keyword arguments (kwargs) as `umap`. The returned object has the following fields:
+```jl
+model.graph     # The graph of fuzzy simplicial set membership strengths of each point in the dataset
+model.embedding # The embedding of the dataset
+model.data      # A reference to the original dataset
+model.knns      # A matrix of indices of nearest neighbors of points in the dataset,
+                # as determined on the original manifold (may be approximate)
+model.dists     # The distances of the neighbors indicated by model.knns
+```
+
+### Embedding new data
+To transform new data into the existing embedding of a UMAP model, use the `transform` function:
+```jl
+Q_embedding = transform(model, Q; <kwargs>)
+```
+where `Q` is a matrix of new query data to embed into the existing embedding, and `model` is the object obtained from the `UMAP_` call above. `Q` must come from a space of the same dimensionality as `model.data` (ie `X` in the `UMAP_` call above).
+
+The remaining keyword arguments (kwargs) are the same as for above functions.
+
 ## Implementation Details
 There are two main steps involved in UMAP: building a weighted graph with edges connecting points to their nearest neighbors, and optimizing the low-dimensional embedding of that graph. The first step is accomplished either by an exact kNN search (for datasets with `< 4096` points) or by the approximate kNN search algorithm, [NNDescent](https://github.com/dillondaudert/NearestNeighborDescent.jl). This step is also usually the most costly.
 
 The low-dimensional embedding is initialized (by default) with the eigenvectors of the normalized Laplacian of the kNN graph. These are found using ARPACK (via [Arpack.jl](https://github.com/JuliaLinearAlgebra/Arpack.jl)).
 
 ## Current Limitations
-- **No transform**: Only one-time embeddings are possible at the moment. That is to say, it isn't possible to "fit" UMAP to a dataset and then use it to "transform" new data
 - **Input data types**: Only data points that are represented by vectors of numbers (passed in as a matrix) are valid inputs. This is mostly due to a lack of support for other formats in [NNDescent](https://github.com/dillondaudert/NearestNeighborDescent.jl). Support for e.g. string datasets is possible in the future
 - **Sequential**: This implementation does not take advantage of any parallelism
 
