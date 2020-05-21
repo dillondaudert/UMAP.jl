@@ -1,7 +1,7 @@
 # an implementation of Uniform Manifold Approximation and Projection
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
-struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}, D<:AbstractMatrix{S}, K<:AbstractMatrix{<:Integer}, I<:AbstractMatrix{S}}
+struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}, D<:AbstractVecOrMat, K<:AbstractMatrix{<:Integer}, I<:AbstractMatrix{S}}
     graph::M
     embedding::N
     data::D
@@ -11,7 +11,7 @@ struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}, D<:Abstr
     function UMAP_{S, M, N, D, K, I}(graph, embedding, data, knns, dists) where {S<:Real,
                                                                                  M<:AbstractMatrix{S},
                                                                                  N<:AbstractMatrix{S},
-                                                                                 D<:AbstractMatrix{S},
+                                                                                 D<:AbstractVecOrMat,
                                                                                  K<:AbstractMatrix{<:Integer},
                                                                                  I<:AbstractMatrix{S}}
         issymmetric(graph) || isapprox(graph, graph') || error("UMAP_ constructor expected graph to be a symmetric matrix")
@@ -23,7 +23,7 @@ end
 function UMAP_(graph::M, embedding::N, data::D, knns::K, dists::I) where {S<:Real,
                                                                           M<:AbstractMatrix{S},
                                                                           N<:AbstractMatrix{S},
-                                                                          D<:AbstractMatrix{S},
+                                                                          D<:AbstractVecOrMat,
                                                                           K<:AbstractMatrix{<:Integer},
                                                                           I<:AbstractMatrix{S}}
     return UMAP_{S, M, N, D, K, I}(graph, embedding, data, knns, dists)
@@ -46,9 +46,10 @@ function umap(args...; kwargs...)
 end
 
 """
-    UMAP_(X::AbstractMatrix[, n_components=2]; <kwargs>) -> UMAP_ object
+    UMAP_(X::AbstractVecOrMat[, n_components=2]; <kwargs>) -> UMAP_ object
 
 Create a model representing the embedding of data `X` into `n_components`-dimensional space. 
+The input data `X` may be a matrix (in which columns represent separate data points), or a vector of data points.
 The returned model has the following fields:
 
 - `graph`: the graph representing the fuzzy simplicial set of the manifold of `X`.
@@ -74,7 +75,7 @@ The returned model has the following fields:
 - `a = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 - `b = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 """
-function UMAP_(X::AbstractMatrix{S},
+function UMAP_(X::AbstractVecOrMat,
                n_components::Integer = 2;
                n_neighbors::Integer = 15,
                metric::Union{SemiMetric, Symbol} = Euclidean(),
@@ -89,10 +90,10 @@ function UMAP_(X::AbstractMatrix{S},
                neg_sample_rate::Integer = 5,
                a::Union{Real, Nothing} = nothing,
                b::Union{Real, Nothing} = nothing
-               ) where {S<:Real}
+               )
     # argument checking
-    size(X, 2) > n_neighbors > 0|| throw(ArgumentError("size(X, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
-    size(X, 1) > n_components > 1 || throw(ArgumentError("size(X, 1) must be greater than n_components and n_components must be greater than 1"))
+    size(X)[end] > n_neighbors > 0|| throw(ArgumentError("`size(X)[end]` must be greater than n_neighbors and n_neighbors must be greater than 0"))
+    ndims(X) == 1 || size(X, 1) > n_components > 1 || throw(ArgumentError("size(X, 1) must be greater than n_components and n_components must be greater than 1"))
     n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 0"))
     learning_rate > 0 || throw(ArgumentError("learning_rate must be greater than 0"))
     min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
@@ -102,7 +103,7 @@ function UMAP_(X::AbstractMatrix{S},
 
     # main algorithm
     knns, dists = knn_search(X, n_neighbors, metric)
-    graph = fuzzy_simplicial_set(knns, dists, n_neighbors, size(X, 2), local_connectivity, set_operation_ratio)
+    graph = fuzzy_simplicial_set(knns, dists, n_neighbors, size(X)[end], local_connectivity, set_operation_ratio)
 
     embedding = initialize_embedding(graph, n_components, Val(init))
 
@@ -114,10 +115,10 @@ function UMAP_(X::AbstractMatrix{S},
 end
 
 """
-    transform(model::UMAP_, Q::AbstractMatrix; <kwargs>) -> embedding
+    transform(model::UMAP_, Q::AbstractVecOrMat; <kwargs>) -> embedding
 
 Use the given model to embed new points into an existing embedding. `Q` is a matrix of some number of points (columns)
-in the same space as `model.data`. The returned embedding is the embedding of these points in n-dimensional space, where
+or a vector of data points in the same space as `model.data`. The returned embedding is the embedding of these points in n-dimensional space, where
 n is the dimensionality of `model.embedding`. This embedding is created by finding neighbors of `Q` in `model.embedding`
 and optimizing cross entropy according to membership strengths according to these neighbors.
 
@@ -137,7 +138,7 @@ and optimizing cross entropy according to membership strengths according to thes
 - `b = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 """
 function transform(model::UMAP_,
-                   Q::AbstractMatrix{S};
+                   Q::AbstractVecOrMat;
                    n_neighbors::Integer = 15,
                    metric::Union{SemiMetric, Symbol} = Euclidean(),
                    n_epochs::Integer = 100,
@@ -150,15 +151,15 @@ function transform(model::UMAP_,
                    neg_sample_rate::Integer = 5,
                    a::Union{Real, Nothing} = nothing,
                    b::Union{Real, Nothing} = nothing
-                   ) where {S<:Real}
+                   )
     # argument checking
-    size(Q, 2) > n_neighbors > 0                     || throw(ArgumentError("size(Q, 2) must be greater than n_neighbors and n_neighbors must be greater than 0"))
-    learning_rate > 0                                || throw(ArgumentError("learning_rate must be greater than 0"))
-    min_dist > 0                                     || throw(ArgumentError("min_dist must be greater than 0"))
-    0 ≤ set_operation_ratio ≤ 1                      || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
-    local_connectivity > 0                           || throw(ArgumentError("local_connectivity must be greater than 0"))
-    size(model.data, 2) == size(model.embedding, 2)  || throw(ArgumentError("model.data must have same number of columns as model.embedding"))
-    size(model.data, 1) == size(Q, 1)                || throw(ArgumentError("size(model.data, 1) must equal size(Q, 1)"))
+    size(Q)[end] > n_neighbors > 0                              || throw(ArgumentError("`size(Q)[end]` must be greater than n_neighbors and n_neighbors must be greater than 0"))
+    learning_rate > 0                                           || throw(ArgumentError("learning_rate must be greater than 0"))
+    min_dist > 0                                                || throw(ArgumentError("min_dist must be greater than 0"))
+    0 ≤ set_operation_ratio ≤ 1                                 || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
+    local_connectivity > 0                                      || throw(ArgumentError("local_connectivity must be greater than 0"))
+    size(model.data)[end] == size(model.embedding, 2)           || throw(ArgumentError("model.data must have same number of columns or data points as model.embedding"))
+    ndims(model.data) == 1 || size(model.data, 1) == size(Q, 1) || throw(ArgumentError("size(model.data, 1) must equal size(Q, 1)"))
 
 
     n_epochs = max(0, n_epochs)

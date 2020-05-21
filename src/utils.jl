@@ -23,10 +23,10 @@ function fit_ab(min_dist, spread, ::Nothing, ::Nothing)
 end
 
 
-knn_search(X::AbstractMatrix, k, metric::Symbol) = knn_search(X, k, Val(metric))
+knn_search(X::AbstractVecOrMat, k, metric::Symbol) = knn_search(X, k, Val(metric))
 
 # treat given matrix `X` as distance matrix
-knn_search(X::AbstractMatrix, k, ::Val{:precomputed}) = _knn_from_dists(X, k)
+knn_search(X::AbstractVecOrMat, k, ::Val{:precomputed}) = _knn_from_dists(X, k)
 
 """
     knn_search(X, k, metric) -> knns, dists
@@ -42,10 +42,10 @@ Find the `k` nearest neighbors of each point.
 - `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
 - `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
 """
-function knn_search(X::AbstractMatrix,
+function knn_search(X::AbstractVecOrMat,
                     k,
                     metric::SemiMetric)
-    if size(X, 2) < 4096
+    if size(X)[end] < 4096
         return knn_search(X, k, metric, Val(:pairwise))
     else
         return knn_search(X, k, metric, Val(:approximate))
@@ -65,11 +65,24 @@ function knn_search(X::AbstractMatrix{S},
     return _knn_from_dists(dist_mat, k)
 end
 
+function knn_search(X::AbstractVector,
+    k,
+    metric,
+    ::Val{:pairwise})
+    
+    num_points = length(X)
+    T = result_type(metric, first(X), first(X))
+    dist_mat = [i < j ? evaluate(metric, X[i], X[j]) : zero(T) for i in eachindex(X), j in eachindex(X)]
+    dist_mat = Symmetric(dist_mat, :U)
+    return _knn_from_dists(dist_mat, k)
+end
+
+
 # find the approximate k nearest neighbors using NNDescent
-function knn_search(X::AbstractMatrix{S},
+function knn_search(X::AbstractVecOrMat,
                     k,
                     metric,
-                    ::Val{:approximate}) where {S <: Real}
+                    ::Val{:approximate})
     knngraph = nndescent(X, k, metric)
     return knn_matrices(knngraph)
 end
@@ -93,14 +106,23 @@ If the matrices are small, search for exact nearest neighbors of `Q` by computin
 - `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
 - `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
 """
-function knn_search(X::AbstractMatrix, 
-                    Q::AbstractMatrix,
+function knn_search(X::AbstractVecOrMat, 
+                    Q::AbstractVecOrMat,
                     k::Integer,
                     metric::SemiMetric,
                     knns::AbstractMatrix{<:Integer},
                     dists::AbstractMatrix{<:Real})
-    if size(X, 2) < 4096
-        return _knn_from_dists(pairwise(metric, X, Q, dims=2), k, ignore_diagonal=false)
+    if size(X)[end] < 4096
+        if ndims(X) == 2
+            dists = pairwise(metric, X, Q, dims=2)
+        else
+            # We use that it's a `SemiMetric` to only compute the upper half
+            # and then symmetrize.
+            T = result_type(metric, X[1], Q[1])
+            dists = [i <= j ? evaluate(metric, X[i], Q[j]) : zero(T) for i in eachindex(X), j in eachindex(Q)]
+            dists = Symmetric(dists, :U)
+        end
+        return _knn_from_dists(dists, k, ignore_diagonal=false)
     else
         knngraph = HeapKNNGraph(collect(eachcol(X)), metric, knns, dists)
         return search(knngraph, collect(eachcol(Q)), k; max_candidates=8*k)
