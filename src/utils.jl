@@ -69,7 +69,7 @@ function knn_search(X::AbstractVector,
     k,
     metric,
     ::Val{:pairwise})
-    
+
     num_points = length(X)
     T = result_type(metric, first(X), first(X))
     dist_mat = [i < j ? evaluate(metric, X[i], X[j]) : zero(T) for i in eachindex(X), j in eachindex(X)]
@@ -116,11 +116,7 @@ function knn_search(X::AbstractVecOrMat,
         if ndims(X) == 2
             dists = pairwise(metric, X, Q, dims=2)
         else
-            # We use that it's a `SemiMetric` to only compute the upper half
-            # and then symmetrize.
-            T = result_type(metric, X[1], Q[1])
-            dists = [i <= j ? evaluate(metric, X[i], Q[j]) : zero(T) for i in eachindex(X), j in eachindex(Q)]
-            dists = Symmetric(dists, :U)
+            dists = [evaluate(metric, X[i], Q[j]) for i in eachindex(X), j in eachindex(Q)]
         end
         return _knn_from_dists(dists, k, ignore_diagonal=false)
     else
@@ -155,4 +151,20 @@ end
 
 @inline function fuzzy_set_intersection(fs_set::AbstractMatrix)
     return fs_set .* fs_set'
+end
+
+function categorical_intersect(graph, y; far_dist, unknown_dist)
+    unknown_weight = exp(-unknown_dist)
+    far_weight = exp(-far_dist)
+    I, J, V = findnz(graph)
+    for nz in eachindex(I,J,V)
+        yi = y[I[nz]]
+        yj = y[J[nz]]
+        if ismissing(yi) || ismissing(yj)
+            V[nz] *= unknown_weight
+        elseif yi != yj
+            V[nz] *= far_weight
+        end
+    end
+    sparse(I, J, V, size(graph)...)
 end
