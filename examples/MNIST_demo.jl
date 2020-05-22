@@ -13,7 +13,8 @@ X = reshape(MNIST.traintensor(Float64)[:, :, 1:n_points], 28^2, :)
 y = MNIST.trainlabels()[1:n_points]
 
 # Now we run UMAP super and unsupervised, via PyCall and via UMAP.jl
-# max_iters =  # try to match py_umap's number of nndescent iterations
+
+## try to match py_umap's number of nndescent iterations
 nndescent_kwargs = (max_iters = max(5, round(Int, log2(n_points))), sample_rate = 1)
 unsup = UMAP_(X; n_neighbors=10, min_dist=0.001, n_epochs=200,
               nndescent_kwargs = nndescent_kwargs)
