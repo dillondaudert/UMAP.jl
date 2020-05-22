@@ -23,10 +23,10 @@ function fit_ab(min_dist, spread, ::Nothing, ::Nothing)
 end
 
 
-knn_search(X::AbstractVecOrMat, k, metric::Symbol) = knn_search(X, k, Val(metric))
+knn_search(X::AbstractVecOrMat, k, metric::Symbol; nndescent_kwargs = NamedTuple()) = knn_search(X, k, Val(metric); nndescent_kwargs=nndescent_kwargs)
 
 # treat given matrix `X` as distance matrix
-knn_search(X::AbstractVecOrMat, k, ::Val{:precomputed}) = _knn_from_dists(X, k)
+knn_search(X::AbstractVecOrMat, k, ::Val{:precomputed}; nndescent_kwargs = NamedTuple()) = _knn_from_dists(X, k)
 
 """
     knn_search(X, k, metric) -> knns, dists
@@ -44,11 +44,12 @@ Find the `k` nearest neighbors of each point.
 """
 function knn_search(X::AbstractVecOrMat,
                     k,
-                    metric::SemiMetric)
+                    metric::SemiMetric;
+                    nndescent_kwargs = NamedTuple())
     if size(X)[end] < 4096
         return knn_search(X, k, metric, Val(:pairwise))
     else
-        return knn_search(X, k, metric, Val(:approximate))
+        return knn_search(X, k, metric, Val(:approximate); nndescent_kwargs=nndescent_kwargs)
     end
 end
 
@@ -69,7 +70,6 @@ function knn_search(X::AbstractVector,
     k,
     metric,
     ::Val{:pairwise})
-
     num_points = length(X)
     T = result_type(metric, first(X), first(X))
     dist_mat = [i < j ? evaluate(metric, X[i], X[j]) : zero(T) for i in eachindex(X), j in eachindex(X)]
@@ -82,8 +82,9 @@ end
 function knn_search(X::AbstractVecOrMat,
                     k,
                     metric,
-                    ::Val{:approximate})
-    knngraph = nndescent(X, k, metric)
+                    ::Val{:approximate};
+                    nndescent_kwargs=NamedTuple())
+    knngraph = nndescent(X, k, metric; nndescent_kwargs...)
     return knn_matrices(knngraph)
 end
 

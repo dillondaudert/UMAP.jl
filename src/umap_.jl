@@ -96,6 +96,7 @@ function UMAP_(X::AbstractVecOrMat,
                b::Union{Real, Nothing} = nothing,
                far_dist::Real = 5.0,
                unknown_dist::Real = 1.0,
+               nndescent_kwargs = NamedTuple()
                )
     # argument checking
     size(X)[end] > n_neighbors > 0|| throw(ArgumentError("`size(X)[end]` must be greater than n_neighbors and n_neighbors must be greater than 0"))
@@ -108,7 +109,7 @@ function UMAP_(X::AbstractVecOrMat,
     y === nothing || length(y) == size(X)[end] || throw(ArgumentError("Categorical data `y` must have same length as number of data points in `X`"))
 
     # main algorithm
-    knns, dists = knn_search(X, n_neighbors, metric)
+    knns, dists = knn_search(X, n_neighbors, metric; nndescent_kwargs = nndescent_kwargs)
     graph = fuzzy_simplicial_set(knns, dists, n_neighbors, size(X)[end], local_connectivity, set_operation_ratio)
     
     if y !== nothing
