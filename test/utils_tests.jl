@@ -25,6 +25,17 @@
 
         end
 
+        @testset "query data tests" begin
+            X = [0.0 -2.0 0.0; 0.0 -1.0 2.0]
+            Q = [-2 0; 0 -1]
+            true_knns = [2 1; 1 2]
+            true_dists = [1.0 1.0; 2.0 2.0]
+            knns = [3 1 1; 2 3 2]
+            dists = [2.0 2.236 2.0; 2.236 3.606 3.606]
+            ret_knns, ret_dists = knn_search(X, Q, 2, Euclidean(), knns, dists)
+            @test ret_knns == true_knns
+            @test isapprox(ret_dists, true_dists, atol=1e-4)
+        end
     end
 
     @testset "combine_fuzzy_sets tests" begin

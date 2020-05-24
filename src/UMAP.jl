@@ -11,6 +11,6 @@ include("utils.jl")
 include("embeddings.jl")
 include("umap_.jl")
 
-export umap, UMAP_
+export umap, UMAP_, transform
 
 end # module
