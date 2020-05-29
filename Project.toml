@@ -1,7 +1,7 @@
 name = "UMAP"
 uuid = "c4f8c510-2410-5be4-91d7-4fbaeb39457e"
 authors = ["Dillon Daudert <dillongdaudert@gmail.com>"]
-version = "0.1.5"
+version = "0.1.6"
 
 [deps]
 Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
