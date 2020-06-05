@@ -1,38 +1,19 @@
 # nearest neighbor related functionality
 
-abstract type NeighborParams end
-
-# for finding approximate nearest neighbors
-struct DescentNeighbors{M, K} <: NeighborParams
-    n_neighbors::Int
-    metric::M
-    kwargs::K
-end
-
-# for precomputed distance matrix
-struct PrecomputedNeighbors{M} <: NeighborParams
-    n_neighbors::Int
-    dists::M
-end
-
 # finding neighbors
 
 # for each view, find the knns (fit)
 function knn_search(data::NamedTuple{T}, knn_params::NamedTuple{T}) where T
-    view_graphs = [knn_search(data[name], knn_params[name]) for name in keys(data)]
-    return NamedTuple{T}(tuple(view_graphs...))
+    return map(knn_search, data, knn_params)
 end
 
 # NOTE: here, data will need to be the UMAP result struct
 # for each view, find the knn graph for the query data
+# TODO: transform methods once result struct is better defined
 function knn_search(result, queries::NamedTuple{T}, knn_params::NamedTuple{T}) where T
     # if result::UMAPResult{DS, DT, C, V} where result.views::V, then
     # V will be a named tuple of UMAPViewResult here
-    view_graphs = [knn_search(result.data[name],
-                              queries[name],
-                              knn_params[name],
-                              result.views[name]) for name in keys(result.data)]
-    return NamedTuple{T}(tuple(view_graphs...))
+    return map(knn_search, result.data, queries, knn_params, result.views)
 end
 
 # find approximate neighbors
@@ -58,4 +39,15 @@ end
 
 function knn_search(data, queries, knn_params::PrecomputedNeighbors, view_result)
     return _knn_from_dists(knn_params.dists, knn_params.n_neighbors; ignore_diagonal=true)
+end
+
+function _knn_from_dists(dist_mat::AbstractMatrix{S}, k::Integer; ignore_diagonal=true) where {S <: Real}
+    # Ignore diagonal 0 elements (which will be smallest) when distance matrix represents pairwise distances of the same set
+    # If dist_mat represents distances between two different sets, diagonal elements be nontrivial
+    range = (1:k) .+ ignore_diagonal
+    knns_ = [partialsortperm(view(dist_mat, :, i), range) for i in 1:size(dist_mat, 2)]
+    dists_ = [dist_mat[:, i][knns_[i]] for i in eachindex(knns_)]
+    knns = hcat(knns_...)::Matrix{Int}
+    dists = hcat(dists_...)::Matrix{S}
+    return knns, dists
 end
