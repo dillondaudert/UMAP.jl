@@ -1,0 +1,74 @@
+@testset "simplicial sets tests" begin
+@testset "fuzzy_simplicial_set tests" begin
+    @testset "fit tests" begin
+        knns = [2 3 2; 3 1 1]
+        dists = [1.5 .5 .5; 2. 1.5 2.]
+        src_params = SourceViewParams(1, 1, 1)
+        @testset "simple test" begin
+            umap_graph = @inferred fuzzy_simplicial_set((knns, dists), src_params)
+            @test issymmetric(umap_graph)
+            @test all(0. .<= umap_graph .<= 1.)
+            @test size(umap_graph) == (3, 3)
+        end
+        @testset "named tuple tests" begin
+            umap_graph = fuzzy_simplicial_set((knns, dists), src_params)
+            view_umap_graph = @inferred fuzzy_simplicial_set((view=(knns, dists),), (view=src_params,))
+            @test all(umap_graph .≈ view_umap_graph.view)
+        end
+    end
+    @testset "transform tests" begin
+
+    end
+
+end
+@testset "merge views tests" begin
+
+end
+
+@testset "smooth_knn_dists" begin
+    dists = [0., 1., 2., 3., 4., 5.]
+    rho = 1
+    k = 6
+    local_connectivity = 1
+    bandwidth = 1.
+    niter = 64
+    sigma = smooth_knn_dist(dists, rho, k, bandwidth, niter)
+    psum(ds, r, s) = sum(exp.(-max.(ds .- r, 0.) ./ s))
+    @test psum(dists, rho, sigma) - log2(k)*bandwidth < SMOOTH_K_TOLERANCE
+
+    knn_dists = [0. 0. 0.;
+                 1. 2. 3.;
+                 2. 4. 5.;
+                 3. 4. 5.;
+                 4. 6. 6.;
+                 5. 6. 10.]
+    src_params = SourceViewParams(1, local_connectivity, bandwidth)
+    rhos, sigmas = smooth_knn_dists(knn_dists, k, src_params)
+    @test rhos == [1., 2., 3.]
+    diffs = [psum(knn_dists[:,i], rhos[i], sigmas[i]) for i in 1:3] .- log2(6)
+    @test all(diffs .< SMOOTH_K_TOLERANCE)
+
+    knn_dists = [0. 0. 0.;
+                 0. 1. 2.;
+                 0. 2. 3.]
+    rhos, sigmas = smooth_knn_dists(knn_dists, 2, src_params)
+    @test rhos == [0., 1., 2.]
+    src_params = SourceViewParams(1, 1.5, 1)
+    rhos, sigmas = smooth_knn_dists(knn_dists, 2, src_params)
+    @test rhos == [0., 1.5, 2.5]
+end
+
+@testset "compute_membership_strengths" begin
+    knns = [1 2 3; 2 1 2]
+    dists = [0. 0. 0.; 2. 2. 3.]
+    rhos = [2., 1., 4.]
+    sigmas = [1., 1., 1.]
+    true_rows = [1, 2, 2, 1, 3, 2]
+    true_cols = [1, 1, 2, 2, 3, 3]
+    true_vals = [0., 1., 0., exp(-1.), 0., 1.]
+    rows, cols, vals = compute_membership_strengths(knns, dists, rhos, sigmas)
+    @test rows == true_rows
+    @test cols == true_cols
+    @test vals == true_vals
+end
+end

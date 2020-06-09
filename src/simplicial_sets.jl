@@ -1,26 +1,49 @@
 # creating fuzzy simplicial set representations of data
 
-function fuzzy_simplicial_set(view_knn::NamedTuple{T},
-                              view_src_params::NamedTuple{T},
-                              src_params=nothing) where T
-    view_fuzzy_sets = map(fuzzy_simplicial_set, view_knn, view_src_params)
-    return merge_view_fuzzy_simplicial_sets(view_fuzzy_sets, src_params)
+"""
+    merge_view_sets(view_fuzzy_sets, params)
+
+Merge the fuzzy simplicial sets for each view of the data. This returns a single
+fuzzy simplicial set - the weighted, undirected UMAP graph - that captures the
+spatial relationships of the data points approximated by the manifold.
+"""
+function merge_view_sets end
+
+function merge_view_sets(view_fuzzy_sets::NamedTuple{T},
+                         gbl_params::SourceGlobalParams) where T
+    # TODO
+end
+
+# if no global params are passed, there must be exactly one view in the named
+# tuple - dispatch here.
+function merge_view_sets(view_fuzzy_sets::NamedTuple{R, T},
+                         ::Nothing) where {R, S, T <: Tuple{S}}
+    return view_fuzzy_sets[T[1]]
+end
+
+"""
+    fuzzy_simplicial_set
+"""
+# fit
+function fuzzy_simplicial_set(view_knns::NamedTuple{T},
+                              src_params::NamedTuple{T}) where T
+    view_fuzzy_sets = map(fuzzy_simplicial_set, view_knns, src_params)
+    return view_fuzzy_sets
 end
 
 # TODO: transform
 function fuzzy_simplicial_set(result,
-                              view_knn::NamedTuple{T},
-                              view_src_params::NamedTuple{T},
-                              src_params=nothing) where T
-    view_fuzzy_sets = map(fuzzy_simplicial_set, result, view_knn, view_src_params)
-    return merge_view_fuzzy_simplicial_sets(view_fuzzy_sets, src_params)
+                              view_knns::NamedTuple{T},
+                              src_params::NamedTuple{T}) where T
+    view_fuzzy_sets = map(fuzzy_simplicial_set, result, view_knns, src_params)
+    return view_fuzzy_sets
 end
 
 # create global fuzzy simplicial set for a single view (fit)
 function fuzzy_simplicial_set((knns, dists),
                               src_params::SourceViewParams)
 
-    σs, ρs = smooth_knn_dists(dists, size(knns, 1), src_params.local_connectivity, src_params.)
+    σs, ρs = smooth_knn_dists(dists, size(knns, 1), src_params)
 
     rows, cols, vals = compute_membership_strengths(knns, dists, σs, ρs)
     local_fs_sets = sparse(rows, cols, vals, size(knns, 2), size(knns, 2))

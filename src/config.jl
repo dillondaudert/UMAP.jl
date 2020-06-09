@@ -35,8 +35,40 @@ end
 Parameters for merging the fuzzy simplicial sets for each dataset view into one
 fuzzy simplicial set.
 """
-struct SourceParams
-    sets_mix_ratio
-    sets_operation_ratio
+struct SourceGlobalParams
+    sets_mix_ratio::Float64
+    set_operation_ratio::Float64
     # weights for each view specifically?
+end
+
+"""
+Configuration struct for the UMAP algorithm.
+"""
+struct UMAPConfig{K, S, G, T, O}
+    knn_params::K
+    src_params::S
+    gbl_params::G
+    tgt_params::T
+    opt_params::O
+end
+
+"""
+View-specific results.
+"""
+struct UMAPViewResult{K, D, R, S}
+    knns::K
+    dists::D
+    rhos::R
+    sigmas::S
+end
+
+
+"""
+Return result of the UMAP algorithm.
+"""
+struct UMAPResult{DS, DT, C, V}
+    data::DS
+    embedding::DT
+    config::C
+    views::V
 end

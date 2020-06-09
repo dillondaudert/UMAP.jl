@@ -78,9 +78,9 @@ end
     knn_search(X, Q, k, metric, knns, dists) -> knns, dists
 
 Given a matrix `X` and a matrix `Q`, use the given metric to compute the `k` nearest neighbors out of the
-columns of `X` from the queries (columns in `Q`). 
+columns of `X` from the queries (columns in `Q`).
 If the matrices are large, reconstruct the approximate nearest neighbors graph of `X` using the given `knns` and `dists`,
-representing indices and distances of pairwise neighbors of `X`, and use this to search for approximate nearest 
+representing indices and distances of pairwise neighbors of `X`, and use this to search for approximate nearest
 neighbors of `Q`.
 If the matrices are small, search for exact nearest neighbors of `Q` by computing all pairwise distances with `X`.
 
@@ -93,7 +93,7 @@ If the matrices are small, search for exact nearest neighbors of `Q` by computin
 - `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
 - `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
 """
-function knn_search(X::AbstractMatrix, 
+function knn_search(X::AbstractMatrix,
                     Q::AbstractMatrix,
                     k::Integer,
                     metric::SemiMetric,
@@ -105,18 +105,6 @@ function knn_search(X::AbstractMatrix,
         knngraph = HeapKNNGraph(collect(eachcol(X)), metric, knns, dists)
         return search(knngraph, collect(eachcol(Q)), k; max_candidates=8*k)
     end
-end
-
-
-function _knn_from_dists(dist_mat::AbstractMatrix{S}, k::Integer; ignore_diagonal=true) where {S <: Real}
-    # Ignore diagonal 0 elements (which will be smallest) when distance matrix represents pairwise distances of the same set
-    # If dist_mat represents distances between two different sets, diagonal elements be nontrivial
-    range = (1:k) .+ ignore_diagonal
-    knns_ = [partialsortperm(view(dist_mat, :, i), range) for i in 1:size(dist_mat, 2)]
-    dists_ = [dist_mat[:, i][knns_[i]] for i in eachindex(knns_)]
-    knns = hcat(knns_...)::Matrix{Int}
-    dists = hcat(dists_...)::Matrix{S}
-    return knns, dists
 end
 
 
