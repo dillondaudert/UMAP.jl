@@ -1,24 +1,24 @@
 # creating fuzzy simplicial set representations of data
 
 """
-    merge_view_sets(view_fuzzy_sets, params)
+    coalesce_views(view_fuzzy_sets, params)
 
 Merge the fuzzy simplicial sets for each view of the data. This returns a single
 fuzzy simplicial set - the weighted, undirected UMAP graph - that captures the
 spatial relationships of the data points approximated by the manifold.
 """
-function merge_view_sets end
+function coalesce_views end
 
-function merge_view_sets(view_fuzzy_sets::NamedTuple{T},
-                         gbl_params::SourceGlobalParams) where T
-    # TODO
+function coalesce_views(view_fuzzy_sets::NamedTuple{T},
+                        gbl_params) where T
+    return foldl((l, r) -> fuzzy_set_intersection(l, r, gbl_params), view_fuzzy_sets)
 end
 
 # if no global params are passed, there must be exactly one view in the named
 # tuple - dispatch here.
-function merge_view_sets(view_fuzzy_sets::NamedTuple{R, T},
-                         ::Nothing) where {R, S, T <: Tuple{S}}
-    return view_fuzzy_sets[T[1]]
+function coalesce_views(view_fuzzy_sets,
+                         _)
+    return view_fuzzy_sets
 end
 
 """

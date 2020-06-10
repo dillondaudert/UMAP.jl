@@ -21,8 +21,18 @@
     end
 
 end
-@testset "merge views tests" begin
-
+@testset "coalesce views tests" begin
+    knns_1 = [2 3 2; 3 1 1]
+    dists_1 = [1.5 .5 .5; 2. 1.5 2.]
+    src_params = SourceViewParams(1, 1, 1)
+    knns_2 = [1 2 3; 3 2 1]
+    dists_2 = [0.4 0.9 1.2; 0.8 1.1 2.1]
+    view_knns = (view_1=(knns_1, dists_1), view_2=(knns_2, dists_2))
+    view_params = (view_1=src_params, view_2=src_params)
+    view_graphs = fuzzy_simplicial_set(view_knns, view_params)
+    gbl_params = SourceGlobalParams(0.5)
+    @inferred coalesce_views(view_graphs, gbl_params)
+    @inferred coalesce_views(view_graphs.view_1, nothing)
 end
 
 @testset "smooth_knn_dists" begin

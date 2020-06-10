@@ -36,9 +36,7 @@ Parameters for merging the fuzzy simplicial sets for each dataset view into one
 fuzzy simplicial set.
 """
 struct SourceGlobalParams
-    sets_mix_ratio::Float64
-    set_operation_ratio::Float64
-    # weights for each view specifically?
+    mix_ratio::Float64
 end
 
 """

@@ -22,103 +22,44 @@ function fit_ab(min_dist, spread, ::Nothing, ::Nothing)
     return a, b
 end
 
-
-knn_search(X::AbstractMatrix, k, metric::Symbol) = knn_search(X, k, Val(metric))
-
-# treat given matrix `X` as distance matrix
-knn_search(X::AbstractMatrix, k, ::Val{:precomputed}) = _knn_from_dists(X, k)
-
-"""
-    knn_search(X, k, metric) -> knns, dists
-
-Find the `k` nearest neighbors of each point.
-
-`metric` may be of type:
-- ::Symbol - `knn_search` is dispatched to one of the following based on the evaluation of `metric`:
-- ::Val(:precomputed) - computes neighbors from `X` treated as a precomputed distance matrix.
-- ::SemiMetric - computes neighbors from `X` treated as samples, using the given metric.
-
-# Returns
-- `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
-- `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
-"""
-function knn_search(X::AbstractMatrix,
-                    k,
-                    metric::SemiMetric)
-    if size(X, 2) < 4096
-        return knn_search(X, k, metric, Val(:pairwise))
-    else
-        return knn_search(X, k, metric, Val(:approximate))
-    end
-end
-
-# compute all pairwise distances
-# return the nearest k to each point v, other than v itself
-function knn_search(X::AbstractMatrix{S},
-                    k,
-                    metric,
-                    ::Val{:pairwise}) where {S <: Real}
-    num_points = size(X, 2)
-    dist_mat = Array{S}(undef, num_points, num_points)
-    pairwise!(dist_mat, metric, X, dims=2)
-    # all_dists is symmetric distance matrix
-    return _knn_from_dists(dist_mat, k)
-end
-
-# find the approximate k nearest neighbors using NNDescent
-function knn_search(X::AbstractMatrix{S},
-                    k,
-                    metric,
-                    ::Val{:approximate}) where {S <: Real}
-    knngraph = nndescent(X, k, metric)
-    return knn_matrices(knngraph)
-end
-
-"""
-    knn_search(X, Q, k, metric, knns, dists) -> knns, dists
-
-Given a matrix `X` and a matrix `Q`, use the given metric to compute the `k` nearest neighbors out of the
-columns of `X` from the queries (columns in `Q`).
-If the matrices are large, reconstruct the approximate nearest neighbors graph of `X` using the given `knns` and `dists`,
-representing indices and distances of pairwise neighbors of `X`, and use this to search for approximate nearest
-neighbors of `Q`.
-If the matrices are small, search for exact nearest neighbors of `Q` by computing all pairwise distances with `X`.
-
-`metric` may be of type:
-- ::Symbol - `knn_search` is dispatched to one of the following based on the evaluation of `metric`:
-- ::Val(:precomputed) - computes neighbors from `X` treated as a precomputed distance matrix.
-- ::SemiMetric - computes neighbors from `X` treated as samples, using the given metric.
-
-# Returns
-- `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
-- `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
-"""
-function knn_search(X::AbstractMatrix,
-                    Q::AbstractMatrix,
-                    k::Integer,
-                    metric::SemiMetric,
-                    knns::AbstractMatrix{<:Integer},
-                    dists::AbstractMatrix{<:Real})
-    if size(X, 2) < 4096
-        return _knn_from_dists(pairwise(metric, X, Q, dims=2), k, ignore_diagonal=false)
-    else
-        knngraph = HeapKNNGraph(collect(eachcol(X)), metric, knns, dists)
-        return search(knngraph, collect(eachcol(Q)), k; max_candidates=8*k)
-    end
-end
-
-
 # combine local fuzzy simplicial sets
-@inline function combine_fuzzy_sets(fs_set::AbstractMatrix{T},
-                                    set_op_ratio) where {T}
+function combine_fuzzy_sets(fs_set,
+                            set_op_ratio)
     return set_op_ratio .* fuzzy_set_union(fs_set) .+
-           (one(T) - set_op_ratio) .* fuzzy_set_intersection(fs_set)
+           (1 - set_op_ratio) .* fuzzy_set_intersection(fs_set)
 end
 
-@inline function fuzzy_set_union(fs_set::AbstractMatrix)
+function fuzzy_set_union(fs_set)
     return fs_set .+ fs_set' .- (fs_set .* fs_set')
 end
 
-@inline function fuzzy_set_intersection(fs_set::AbstractMatrix)
+function fuzzy_set_intersection(fs_set)
     return fs_set .* fs_set'
+end
+
+function fuzzy_set_intersection(left_view, right_view, params)
+    # start with adding - this gets us a sparse matrix whose nonzero entries
+    # are the union of left and right entries
+    result = left_view .+ right_view
+    left_min = max(minimum(left_view.nzval) / 2, 1e-8)
+    right_min = max(minimum(right_view.nzval) / 2, 1e-8)
+    #
+    for ind in findall(!iszero, result)
+        # take the weighted intersection of the two sets, making sure not to
+        # zero out any results by setting minimum values
+        left_val = max(left_min, left_view[ind])
+        right_val = max(right_min, right_view[ind])
+        if left_val > left_min || right_val > right_min
+            result[ind] = _mix_values(left_val, right_val, params.mix_ratio)
+        end
+    end
+    return result
+end
+
+function _mix_values(x, y, ratio)
+    if ratio < 0.5
+        return x * y^(ratio / (1 - ratio))
+    else
+        return x^((1 - ratio) / ratio) * y
+    end
 end
