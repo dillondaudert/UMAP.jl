@@ -3,16 +3,17 @@
     @testset "fit tests" begin
         knns = [2 3 2; 3 1 1]
         dists = [1.5 .5 .5; 2. 1.5 2.]
+        knn_params = DescentNeighbors(2, Euclidean())
         src_params = SourceViewParams(1, 1, 1)
         @testset "simple test" begin
-            umap_graph = @inferred fuzzy_simplicial_set((knns, dists), src_params)
+            umap_graph = @inferred fuzzy_simplicial_set((knns, dists), knn_params, src_params)
             @test issymmetric(umap_graph)
             @test all(0. .<= umap_graph .<= 1.)
             @test size(umap_graph) == (3, 3)
         end
         @testset "named tuple tests" begin
-            umap_graph = fuzzy_simplicial_set((knns, dists), src_params)
-            view_umap_graph = @inferred fuzzy_simplicial_set((view=(knns, dists),), (view=src_params,))
+            umap_graph = fuzzy_simplicial_set((knns, dists), knn_params, src_params)
+            view_umap_graph = @inferred fuzzy_simplicial_set((view=(knns, dists),), (view=knn_params,), (view=src_params,))
             @test all(umap_graph .≈ view_umap_graph.view)
         end
     end
@@ -24,12 +25,14 @@ end
 @testset "coalesce views tests" begin
     knns_1 = [2 3 2; 3 1 1]
     dists_1 = [1.5 .5 .5; 2. 1.5 2.]
+    knn_params = DescentNeighbors(2, Euclidean())
     src_params = SourceViewParams(1, 1, 1)
     knns_2 = [1 2 3; 3 2 1]
     dists_2 = [0.4 0.9 1.2; 0.8 1.1 2.1]
     view_knns = (view_1=(knns_1, dists_1), view_2=(knns_2, dists_2))
-    view_params = (view_1=src_params, view_2=src_params)
-    view_graphs = fuzzy_simplicial_set(view_knns, view_params)
+    view_knn_params = (view_1=knn_params, view_2=knn_params)
+    view_src_params = (view_1=src_params, view_2=src_params)
+    view_graphs = fuzzy_simplicial_set(view_knns, view_knn_params, view_src_params)
     gbl_params = SourceGlobalParams(0.5)
     @inferred coalesce_views(view_graphs, gbl_params)
     @inferred coalesce_views(view_graphs.view_1, nothing)

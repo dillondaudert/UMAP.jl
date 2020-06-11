@@ -22,31 +22,65 @@ function coalesce_views(view_fuzzy_sets,
 end
 
 """
-    fuzzy_simplicial_set
+    fuzzy_simplicial_set(knns_dists, knn_params, src_params)
+    fuzzy_simplicial_set(data, knns_dists, knn_params, src_params)
 """
-# fit
-function fuzzy_simplicial_set(view_knns::NamedTuple{T},
+function fuzzy_simplicial_set end
+
+"""
+    fuzzy_simplicial_set(knns_dists::NamedTuple{T}, knn_params::NamedTuple{T}, src_params::NamedTuple{T}) -> NamedTuple{T}
+"""
+function fuzzy_simplicial_set(knns_dists::NamedTuple{T},
+                              knn_params::NamedTuple{T},
                               src_params::NamedTuple{T}) where T
-    view_fuzzy_sets = map(fuzzy_simplicial_set, view_knns, src_params)
+    view_fuzzy_sets = map(fuzzy_simplicial_set, knns_dists, knn_params, src_params)
     return view_fuzzy_sets
 end
 
-# TODO: transform
-function fuzzy_simplicial_set(result,
-                              view_knns::NamedTuple{T},
+# transform multiple views
+function fuzzy_simplicial_set(data::NamedTuple{T},
+                              knns_dists::NamedTuple{T},
+                              knn_params::NamedTuple{T},
                               src_params::NamedTuple{T}) where T
-    view_fuzzy_sets = map(fuzzy_simplicial_set, result, view_knns, src_params)
+    view_fuzzy_sets = map(fuzzy_simplicial_set, data, knns_dists, knn_params, src_params)
     return view_fuzzy_sets
 end
 
-# create global fuzzy simplicial set for a single view (fit)
+function fuzzy_simplicial_set((knns, dists), knn_params, src_params::SourceViewParams)
+    n_points = size(knns, 2)
+    return fuzzy_simplicial_set((knns, dists), n_points, knn_params, src_params, true)
+end
+
+function fuzzy_simplicial_set(data, knns_dists, knn_params, src_params::SourceViewParams)
+    n_points = length(data)
+    return fuzzy_simplicial_set(knns_dists, n_points, knn_params, src_params, false)
+end
+
+"""
+    fuzzy_simplicial_set(knns_dists, n_points, knn_params, src_params, combine=true) -> membership_graph::SparseMatrixCSC
+
+Construct the local fuzzy simplicial set of each point represented by its distances
+to its nearest neighbors, stored in `knns` and `dists`, normalizing the distances,
+and converting the metric space to a simplicial set (a weighted graph).
+
+`n_points` indicates the total number of points of the original data, while `knns` contains
+indices of some subset of those points (ie some subset of 1:`n_points`). If `knns` represents
+neighbors of the elements of some set with itself, then `knns` should have `n_points` number of
+columns. Otherwise, these two values may be inequivalent.
+
+If `combine` is true, use intersections and unions to combine local fuzzy sets of neighbors.
+The returned graph has size (`n_points`, size(knns, 2)).
+"""
 function fuzzy_simplicial_set((knns, dists),
-                              src_params::SourceViewParams)
+                              n_points::Integer,
+                              knn_params::NeighborParams,
+                              src_params::SourceViewParams,
+                              combine::Bool)
 
-    σs, ρs = smooth_knn_dists(dists, size(knns, 1), src_params)
+    σs, ρs = smooth_knn_dists(dists, knn_params.n_neighbors, src_params)
 
     rows, cols, vals = compute_membership_strengths(knns, dists, σs, ρs)
-    local_fs_sets = sparse(rows, cols, vals, size(knns, 2), size(knns, 2))
+    local_fs_sets = sparse(rows, cols, vals, n_points, size(knns, 2))
 
     fs_set = combine_fuzzy_sets(local_fs_sets, src_params.set_operation_ratio)
     return dropzeros(fs_set)
