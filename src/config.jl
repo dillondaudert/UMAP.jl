@@ -39,6 +39,17 @@ struct SourceGlobalParams
     mix_ratio::Float64
 end
 
+mutable struct TargetParams{M, I, D}
+    manifold::M
+    init::I
+    metric::D
+    # TODO: decide how to parameterize the membership fn
+    min_dist
+    spread
+    a
+    b
+end
+
 """
 Configuration struct for the UMAP algorithm.
 """
