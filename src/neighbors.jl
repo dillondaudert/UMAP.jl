@@ -1,34 +1,68 @@
 # nearest neighbor related functionality
 
 # finding neighbors
+"""
+    knn_search(data, knn_params)
+    knn_search(data, queries, knn_params, results)
+
+Find the (potentially approximate) k-nearest neighbors for each point in the
+dataset, according to knn_params. The data may consist of one or more 'views',
+passed in either directly (for a single view only) or as a NamedTuple, with
+corresponding knn_params (either an instance of <: NeighborParams or a NamedTuple
+of such parameters).
+
+For each (data_view, knn_params) pair, two KxN matrices are returned (knns, dists),
+holding the indices of the k-nearest neighbors and distances to those neighbors
+for each point in the dataset. When knn_params isa DescentNeighbors, these
+matrices are computed using NearestNeighborDescent. When knn_params isa
+PrecomputedNeighbors, the knn matrices are created from user-provided distances.
+
+If data and knn_params are NamedTuples, the returned knn_matrices will also be
+in a NamedTuple with the same keys as the inputs.
+"""
+function knn_search end
 
 # for each view, find the knns (fit)
+"""
+    knn_search(data::NamedTuple{T}, knn_params::NamedTuple{T}) -> NamedTuple{T}
+"""
 function knn_search(data::NamedTuple{T}, knn_params::NamedTuple{T}) where T
     return map(knn_search, data, knn_params)
 end
 
-# NOTE: here, data will need to be the UMAP result struct
-# for each view, find the knn graph for the query data
+
 # TODO: transform methods once result struct is better defined
-function knn_search(result, queries::NamedTuple{T}, knn_params::NamedTuple{T}) where T
+"""
+    knn_search(data::NamedTuple{T}, queries::NamedTuple{T}, knn_params::NamedTuple{T}, view_result::NamedTuple{T}) -> NamedTuple{T}
+"""
+function knn_search(data::NamedTuple{T}, queries::NamedTuple{T}, knn_params::NamedTuple{T}, view_result::NamedTuple{T}) where T
     # if result::UMAPResult{DS, DT, C, V} where result.views::V, then
     # V will be a named tuple of UMAPViewResult here
-    return map(knn_search, result.data, queries, knn_params, result.views)
+    return map(knn_search, data, queries, knn_params, view_result)
 end
 
 # find approximate neighbors
+"""
+    knn_search(data, knn_params::DescentNeighbors) -> (knns, dists)
 
+Find approximate nearest neighbors using nndescent.
+"""
 function knn_search(data, knn_params::DescentNeighbors)
     knn_graph = nndescent(data, knn_params.n_neighbors, knn_params.metric; knn_params.kwargs...)
     return knn_matrices(knn_graph)
 end
 
+"""
+    knn_search(data, queries, knn_params::DescentNeighbors, result) -> (knns, dists)
+
+Search for approximate nearest neighbors of queries in data using nndescent.
+"""
 function knn_search(data, queries, knn_params::DescentNeighbors, view_result)
-    orig_knn_graph = HeapKNNGraph(data_view,
+    orig_knn_graph = HeapKNNGraph(data,
                                   knn_params.metric,
-                                  result_view.knns,
-                                  result_view.dists)
-    return search(orig_knn_graph, queries_view, knn_params.n_neighbors; knn_params.kwargs...)
+                                  view_result.knns,
+                                  view_result.dists)
+    return search(orig_knn_graph, queries, knn_params.n_neighbors; knn_params.kwargs...)
 end
 
 # get neighbors from precomputed distance matrix
