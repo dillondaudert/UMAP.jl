@@ -15,7 +15,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 [compat]
 Arpack = "0.4"
 Distances = "0.8, 0.9"
-LsqFit = "0.6, 0.7, 0.8, 0.9, 0.10"
+LsqFit = "0.6, 0.7, 0.8, 0.9, 0.10, 0.11"
 NearestNeighborDescent = "0.3"
 julia = "1.3"
 
