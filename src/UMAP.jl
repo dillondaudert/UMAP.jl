@@ -11,6 +11,6 @@ include("utils.jl")
 include("embeddings.jl")
 include("umap_.jl")
 
-export umap, UMAP_, transform
+export umap, UMAP_, transform, Categorical, DataWithMetric
 
 end # module

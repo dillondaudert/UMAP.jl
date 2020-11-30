@@ -169,3 +169,37 @@ function categorical_intersect(graph, y; far_dist, unknown_dist)
     end
     sparse(I, J, V, size(graph)...)
 end
+
+function general_intersect(graph1, graph2; mix_weight=0.5)
+
+    left_min = max(minimum(nonzeros(graph1)) / 2.0, 1.0e-8)
+    right_min = min(max((1.0 - maximum(nonzeros(graph2))) / 2.0, 1.0e-8), 1e-4)
+
+
+    result = graph1 + graph2
+    I, J, V = findnz(result)
+    for n = eachindex(I, J, V)
+        i = I[n]
+        j = J[n]
+        left_val = left_min
+        right_val = right_min
+        
+
+    end
+
+
+    if mix_weight == 0.5
+        return graph1 .* graph2
+    elseif mix_weight < 0.5
+        exp = mix_weight / (1 - mix_weight)
+        left = max.(left_min, graph1)
+        right = max.(right_min, graph2) .^ exp
+    elseif mix_weight > 0.5
+        exp = (1 - mix_weight) / mix_weight
+        left = max.(left_min, graph1) .^ exp
+        right = max.(right_min, graph2)
+    
+    end
+    return ifelse.( (left .< left_min) .| (right .< right_min), graph1 .+ graph2, left .* right )
+
+end

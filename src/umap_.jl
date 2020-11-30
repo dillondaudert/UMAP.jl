@@ -1,7 +1,15 @@
 # an implementation of Uniform Manifold Approximation and Projection
 # for Dimension Reduction, L. McInnes, J. Healy, J. Melville, 2018.
 
-struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}, D<:AbstractVecOrMat, L <: Union{AbstractVector, Nothing}, K<:AbstractMatrix{<:Integer}, I<:AbstractMatrix{S}}
+struct DataWithMetric{D, M}
+    data::D
+    metric::M
+end
+
+struct Categorical end
+
+
+struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}, D<:DataWithMetric{<:AbstractVecOrMat}, L <: Union{DataWithMetric{<:AbstractVecOrMat}, Nothing}, K<:AbstractMatrix{<:Integer}, I<:AbstractMatrix{S}}
     graph::M
     embedding::N
     data::D
@@ -12,8 +20,8 @@ struct UMAP_{S <: Real, M <: AbstractMatrix{S}, N <: AbstractMatrix{S}, D<:Abstr
     function UMAP_{S, M, N, D, L, K, I}(graph, embedding, data, labels, knns, dists) where {S<:Real,
                                                                                  M<:AbstractMatrix{S},
                                                                                  N<:AbstractMatrix{S},
-                                                                                 D<:AbstractVecOrMat,
-                                                                                 L<:Union{AbstractVector, Nothing},
+                                                                                 D<:DataWithMetric{<:AbstractVecOrMat},
+                                                                                 L<:Union{DataWithMetric{<:AbstractVecOrMat}, Nothing},
                                                                                  K<:AbstractMatrix{<:Integer},
                                                                                  I<:AbstractMatrix{S}}
         issymmetric(graph) || isapprox(graph, graph') || error("UMAP_ constructor expected graph to be a symmetric matrix")
@@ -25,8 +33,8 @@ end
 function UMAP_(graph::M, embedding::N, data::D, labels::L, knns::K, dists::I) where {S<:Real,
                                                                           M<:AbstractMatrix{S},
                                                                           N<:AbstractMatrix{S},
-                                                                          D<:AbstractVecOrMat,
-                                                                          L<:Union{AbstractVector, Nothing},
+                                                                          D<:DataWithMetric,
+                                                                          L<:Union{<:DataWithMetric, Nothing},
                                                                           K<:AbstractMatrix{<:Integer},
                                                                           I<:AbstractMatrix{S}}
     return UMAP_{S, M, N, D, L, K, I}(graph, embedding, data, labels, knns, dists)
@@ -43,13 +51,15 @@ how many neighbors to consider as locally connected.
 
 See `UMAP_` for a description of keyword arguments.
 """
-function umap(args...; kwargs...)
+function umap(X, args...; metric = Euclidean(), kwargs...)
+
     # this is just a convenience function for now
-    return UMAP_(args...; kwargs...).embedding
+    return UMAP_(DataWithMetric(X, metric), args...; kwargs...).embedding
 end
 
+
 """
-    UMAP_(X::AbstractVecOrMat[, n_components=2]; <kwargs>) -> UMAP_ object
+    UMAP_(X::DataWithMetric, y::Union{DataWithMetric, Nothing}, [, n_components=2]; <kwargs>) -> UMAP_ object
 
 Create a model representing the embedding of data `X` into `n_components`-dimensional space. 
 The input data `X` may be a matrix (in which columns represent separate data points), or a vector of data points.
@@ -78,11 +88,10 @@ The returned model has the following fields:
 - `a = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 - `b = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 """
-function UMAP_(X::AbstractVecOrMat,
-               y::Union{AbstractVector, Nothing} = nothing,
+function UMAP_(X_dm::DataWithMetric{<:AbstractVecOrMat, <:Union{SemiMetric, Symbol}},
+               y_dm::Union{DataWithMetric, Nothing} = nothing,
                n_components::Integer = 2;
                n_neighbors::Integer = 15,
-               metric::Union{SemiMetric, Symbol} = Euclidean(),
                n_epochs::Integer = 300,
                learning_rate::Real = 1,
                init::Symbol = :spectral,
@@ -96,8 +105,16 @@ function UMAP_(X::AbstractVecOrMat,
                b::Union{Real, Nothing} = nothing,
                far_dist::Real = 5.0,
                unknown_dist::Real = 1.0,
-               nndescent_kwargs = NamedTuple()
+               nndescent_kwargs = NamedTuple(),
+               mix_weight = 0.5
                )
+    X = X_dm.data
+    metric = X_dm.metric
+    if y_dm !== nothing
+        y = y_dm.data
+        y_metric = y_dm.metric
+    end
+
     # argument checking
     size(X)[end] > n_neighbors > 0|| throw(ArgumentError("`size(X)[end]` must be greater than n_neighbors and n_neighbors must be greater than 0"))
     ndims(X) == 1 || size(X, 1) > n_components > 1 || throw(ArgumentError("size(X, 1) must be greater than n_components and n_components must be greater than 1"))
@@ -106,14 +123,21 @@ function UMAP_(X::AbstractVecOrMat,
     min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
     0 ≤ set_operation_ratio ≤ 1 || throw(ArgumentError("set_operation_ratio must lie in [0, 1]"))
     local_connectivity > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
-    y === nothing || length(y) == size(X)[end] || throw(ArgumentError("Categorical data `y` must have same length as number of data points in `X`"))
+    y_dm === nothing || size(y)[end] == size(X)[end] || throw(ArgumentError("Supervision data `y` must have same length as number of data points in `X`"))
 
     # main algorithm
     knns, dists = knn_search(X, n_neighbors, metric; nndescent_kwargs = nndescent_kwargs)
     graph = fuzzy_simplicial_set(knns, dists, n_neighbors, size(X)[end], local_connectivity, set_operation_ratio)
     
-    if y !== nothing
-        graph = categorical_intersect(graph, y; far_dist = far_dist, unknown_dist = unknown_dist)
+    if y_dm !== nothing
+        if y_metric isa Categorical
+            graph = categorical_intersect(graph, y; far_dist = far_dist, unknown_dist = unknown_dist)
+        else
+            y_knns, y_dists = knn_search(y, n_neighbors, y_metric; nndescent_kwargs = nndescent_kwargs)
+            y_graph = fuzzy_simplicial_set(y_knns, y_dists, n_neighbors, size(y)[end], local_connectivity, set_operation_ratio)
+
+            graph = general_intersect(graph, y_graph; mix_weight=mix_weight)
+        end
     end
 
     embedding = initialize_embedding(graph, n_components, Val(init))
@@ -122,7 +146,7 @@ function UMAP_(X::AbstractVecOrMat,
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
 
-    return UMAP_(graph, hcat(embedding...), X, y, knns, dists)
+    return UMAP_(graph, reduce(hcat, embedding), X_dm, y_dm, knns, dists)
 end
 
 """
