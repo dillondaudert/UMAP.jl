@@ -30,20 +30,21 @@ Distances.result_type(M, ::Int, ::Int) = Distances.result_type(M, Int, Int)
 let
     scene = plot_umap_comparison((unsup.embedding, y), (sup.embedding, y);
         titles=("UMAP.jl (unsupervised)", "UMAP.jl (supervised)"), markersize=5px)
-    save("MNIST_jl_unsup_vs_supervised_max_weight.png", scene, px_per_unit=3, resolution=(1440, 810))
+    save("MNIST_jl_unsup_vs_supervised.png", scene, px_per_unit=3, resolution=(1440, 810))
 end
 
 
-for mix_weight in (0.001, 0.25, 0.5, 0.75, 0.999)
+
+for mix_weight in (0.001, 0.25, 0.5, 0.75, 0.999), n_neighbors_meta in (20, 200)
     sup_cts = Embedding(DataView(X; metric=Euclidean(), n_neighbors, nndescent_kwargs), DataView(y;metric=Euclidean(), n_neighbors=n_neighbors_meta, nndescent_kwargs);  min_dist=0.001, n_epochs=200, mix_weight)
 
     scene = plot_umap_comparison((sup.embedding, y), (sup_cts.embedding, y);
-        titles=("UMAP.jl (supervised; categorical)", "UMAP.jl (supervised; continuous), mix_weight=$(mix_weight)"), markersize=5px)
-    save("MNIST_jl_vs_jl_supervised_cat_vs_cts_max_weight_$(mix_weight).png", scene, px_per_unit=3, resolution=(1440, 810))
+        titles=("UMAP.jl (supervised; categorical)", "UMAP.jl (supervised; continuous) $(n_neighbors_meta) neighbors), mix_weight=$(mix_weight)"), markersize=5px)
+    save("MNIST_jl_vs_jl_supervised_cat_vs_cts_max_weight_$(mix_weight)_neighbors_$(n_neighbors_meta).png", scene, px_per_unit=3, resolution=(1440, 810))
 
 
     scene = plot_umap_comparison((unsup.embedding, y), (sup_cts.embedding, y);
-    titles=("UMAP.jl (unsupervised)", "UMAP.jl (supervised; continuous), mix_weight=$(mix_weight)"), markersize=5px)
-save("MNIST_jl_vs_jl_unsupervised_vs_cts_max_weight_$(mix_weight).png", scene, px_per_unit=3, resolution=(1440, 810))
+    titles=("UMAP.jl (unsupervised)", "UMAP.jl (supervised; continuous) $(n_neighbors_meta) neighbors), mix_weight=$(mix_weight)"), markersize=5px)
+save("MNIST_jl_vs_jl_unsupervised_vs_cts_max_weight_$(mix_weight)_neighbors_$(n_neighbors_meta).png", scene, px_per_unit=3, resolution=(1440, 810))
 
 end
