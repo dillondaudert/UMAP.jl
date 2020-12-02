@@ -39,7 +39,7 @@ function plot_umap(embedding, color)
 end
 
 
-function plot_umap_comparison((e1, c1), (e2, c2); titles, title=nothing)
+function plot_umap_comparison((e1, c1), (e2, c2); titles, title=nothing, kwargs...)
     scene, layout = layoutscene()
 
     layout[1, 1] = ax1 = LAxis(scene, title=titles[1])
@@ -53,8 +53,8 @@ function plot_umap_comparison((e1, c1), (e2, c2); titles, title=nothing)
         hide_decorations!(umap_ax)
     end
 
-    plt1 = scatter!(ax1, Point2f0.(eachcol(e1)); color=c1, markersize=1px, strokecolor = :transparent)
-    plt2 = scatter!(ax2, Point2f0.(eachcol(e2)); color=c2, markersize=1px, strokecolor = :transparent)
+    plt1 = scatter!(ax1, Point2f0.(eachcol(e1)); color=c1, markersize=1px, strokecolor = :transparent, kwargs...)
+    plt2 = scatter!(ax2, Point2f0.(eachcol(e2)); color=c2, markersize=1px, strokecolor = :transparent, kwargs...)
 
     cbar = layout[:, 3] = LColorbar(scene, plt1, label="Number")
     cbar.width = Fixed(30)

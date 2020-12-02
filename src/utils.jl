@@ -154,9 +154,11 @@ end
     return fs_set .* fs_set'
 end
 
-function categorical_intersect(graph, y; far_dist, unknown_dist)
-    unknown_weight = exp(-unknown_dist)
-    far_weight = exp(-far_dist)
+function _fuzzy_intersection(metric1, metric2::Categorical, g::Graph, y_graph::Graph; kwargs...)
+    graph = g.graph
+    y = y_graph.knns.data_with_metric.data
+    unknown_weight = exp(-metric2.unknown_dist)
+    far_weight = exp(-metric2.far_dist)
     I, J, V = findnz(graph)
     for nz in eachindex(I,J,V)
         yi = y[I[nz]]
@@ -167,30 +169,15 @@ function categorical_intersect(graph, y; far_dist, unknown_dist)
             V[nz] *= far_weight
         end
     end
-    sparse(I, J, V, size(graph)...)
+    return sparse(I, J, V, size(graph)...)
 end
 
-function general_intersect(graph1, graph2; mix_weight=0.5)
-
+function _fuzzy_intersection(metric1, metric2, g1::Graph, g2::Graph; mix_weight = 0.5, kwargs...)
+    graph1 = g1.graph
+    graph2 = g2.graph
     left_min = max(minimum(nonzeros(graph1)) / 2.0, 1.0e-8)
     right_min = min(max((1.0 - maximum(nonzeros(graph2))) / 2.0, 1.0e-8), 1e-4)
-
-
-    result = graph1 + graph2
-    I, J, V = findnz(result)
-    for n = eachindex(I, J, V)
-        i = I[n]
-        j = J[n]
-        left_val = left_min
-        right_val = right_min
-        
-
-    end
-
-
-    if mix_weight == 0.5
-        return graph1 .* graph2
-    elseif mix_weight < 0.5
+    if mix_weight < 0.5
         exp = mix_weight / (1 - mix_weight)
         left = max.(left_min, graph1)
         right = max.(right_min, graph2) .^ exp
@@ -198,8 +185,9 @@ function general_intersect(graph1, graph2; mix_weight=0.5)
         exp = (1 - mix_weight) / mix_weight
         left = max.(left_min, graph1) .^ exp
         right = max.(right_min, graph2)
-    
+    else
+        left = max.(left_min, graph1)
+        right = max.(right_min, graph2)
     end
     return ifelse.( (left .< left_min) .| (right .< right_min), graph1 .+ graph2, left .* right )
-
 end
