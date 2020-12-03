@@ -58,6 +58,9 @@ function Graph(knns::KNNs)
     return Graph(knns, graph)
 end
 
+Graph(d::DataView) = Graph(KNNs(d))
+Graph(g::Graph) = g
+
 metric(x) = params(x).metric
 
 fuzzy_intersection(g1::Graph, g2::Graph; kwargs...) = Graph(nothing, _fuzzy_intersection(metric(g1), metric(g2), g1, g2; kwargs...))
@@ -81,12 +84,11 @@ function Embedding(g::Graph; kwargs...)
     return Embedding(g, reduce(hcat, embedding), embedding_params)
 end
 
-Embedding(d::DataView; kwargs...) = Embedding(Graph(KNNs(d)); kwargs...)
-
-function Embedding(d1::DataView, d2::DataView; mix_weight=0.5, kwargs...)
-    return Embedding(fuzzy_intersection(Graph(KNNs(d1)), Graph(KNNs(d2)); mix_weight=mix_weight); kwargs...)
+function Embedding(g1::Graph, g2::Graph; mix_weight=0.5, kwargs...)
+    return Embedding(fuzzy_intersection(g1, g2); mix_weight=mix_weight); kwargs...)
 end
 
+Embedding(args...; kwargs...) = Embedding(map(Graph, args); kwargs...)
 
 
 const SMOOTH_K_TOLERANCE = 1e-5
