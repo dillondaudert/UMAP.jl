@@ -85,7 +85,7 @@ function Embedding(g::Graph; kwargs...)
 end
 
 function Embedding(g1::Graph, g2::Graph; mix_weight=0.5, kwargs...)
-    return Embedding(fuzzy_intersection(g1, g2); mix_weight=mix_weight); kwargs...)
+    return Embedding(fuzzy_intersection(g1, g2); mix_weight=mix_weight, kwargs...)
 end
 
 Embedding(args...; kwargs...) = Embedding(map(Graph, args); kwargs...)
