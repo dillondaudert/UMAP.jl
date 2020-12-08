@@ -8,6 +8,8 @@ using UMAP: initialize_embedding, fuzzy_simplicial_set, compute_membership_stren
 using UMAP: DescentNeighbors, PrecomputedNeighbors
 using UMAP: SourceViewParams, SourceGlobalParams
 using UMAP: coalesce_views
+using UMAP: fit_ab
 
 include("neighbors_tests.jl")
 include("simplicial_sets_tests.jl")
+include("membership_fn_tests.jl")

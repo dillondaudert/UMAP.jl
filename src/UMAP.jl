@@ -13,6 +13,7 @@ include("config.jl")
 include("neighbors.jl")
 include("simplicial_sets.jl")
 include("embeddings.jl")
+include("membership_fn.jl")
 include("optimize.jl")
 
 export umap, UMAP_, transform
