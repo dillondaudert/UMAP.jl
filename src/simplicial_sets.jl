@@ -46,6 +46,11 @@ function fuzzy_simplicial_set(data::NamedTuple{T},
     return view_fuzzy_sets
 end
 
+"""
+    fuzzy_simplicial_set((knns, dists), knn_params, src_params::SourceViewParams)
+
+(Fit) Construct a global fuzzy simplicial set for a single data view.
+"""
 function fuzzy_simplicial_set((knns, dists), knn_params, src_params::SourceViewParams)
     n_points = size(knns, 2)
     return fuzzy_simplicial_set((knns, dists), n_points, knn_params, src_params, true)

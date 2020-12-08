@@ -1,0 +1,6 @@
+[deps]
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+NearestNeighborDescent = "dd2c4c9e-a32f-5b2f-b342-08c2f244fce8"
+Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
+StringDistances = "88034a9c-02f8-509d-84a9-84ec65e18404"
+UMAP = "c4f8c510-2410-5be4-91d7-4fbaeb39457e"
