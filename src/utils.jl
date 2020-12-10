@@ -173,21 +173,52 @@ function _fuzzy_intersection(metric1, metric2::Categorical, g::Graph, y_graph::G
 end
 
 function _fuzzy_intersection(metric1, metric2, g1::Graph, g2::Graph; mix_weight = 0.5, kwargs...)
-    graph1 = g1.graph
-    graph2 = g2.graph
-    left_min = max(minimum(nonzeros(graph1)) / 2.0, 1.0e-8)
-    right_min = min(max((1.0 - maximum(nonzeros(graph2))) / 2.0, 1.0e-8), 1e-4)
-    if mix_weight < 0.5
-        exp = mix_weight / (1 - mix_weight)
-        left = max.(left_min, graph1)
-        right = max.(right_min, graph2) .^ exp
-    elseif mix_weight > 0.5
-        exp = (1 - mix_weight) / mix_weight
-        left = max.(left_min, graph1) .^ exp
-        right = max.(right_min, graph2)
-    else
-        left = max.(left_min, graph1)
-        right = max.(right_min, graph2)
+    left = g1.graph
+    right = g2.graph
+
+    left_min = max(minimum(nonzeros(left)) / 2.0, 1.0e-8)
+    right_min = min(max((1.0 - maximum(nonzeros(right))) / 2.0, 1.0e-8), 1e-4)
+
+
+    result = left + right
+    result_I, result_J, result_V = findnz(result)
+
+    left_rows = rowvals(left)
+    left_vals = nonzeros(left)
+
+    right_rows = rowvals(right)
+    right_vals = nonzeros(right)
+
+    exp = mix_weight < 0.5 ? (mix_weight / (1-mix_weight)) : (1-mix_weight) / mix_weight
+
+    for idx in eachindex(result_I, result_J, result_V)
+        i = result_I[idx]
+        j = result_J[idx]
+
+        left_val = left_min
+        for k in nzrange(left, j)
+            if left_rows[k] == i
+                left_val = left_vals[k]
+            end
+        end
+
+        
+        right_val = left_min
+        for k in nzrange(right, j)
+            if right_rows[k] == i
+                right_val = right_vals[k]
+            end
+        end
+
+
+        if left_val > left_min || right_val > right_min
+            if mix_weight < 0.5
+                result_V[idx] = left_val * right_val^exp
+            else
+                result_V[idx] = left_val^exp * right_val
+            end
+        end
+
     end
-    return ifelse.( (left .< left_min) .| (right .< right_min), graph1 .+ graph2, left .* right )
+    return sparse(result_I, result_J, result_V)
 end
