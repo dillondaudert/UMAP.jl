@@ -3,11 +3,10 @@ using PyCall
 pyimport_conda("llvmlite", "llvmlite==0.33", "numba") # to try to avoid segfaults by getting Numba with LLVM 9 instead of 10
 const py_umap = pyimport_conda("umap", "umap-learn")
 
+# https://github.com/JuliaPy/PyCall.jl/issues/204#issuecomment-192333326
 PyCall.PyObject(S::SparseMatrixCSC) =
     pyimport("scipy.sparse")["csc_matrix"]((S.nzval, S.rowval .- 1, S.colptr .- 1), shape=size(S))
 
-Base.convert(::Type{SparseMatrixCSC}, o::PyObject) =
-    SparseMatrixCSC(o.m, o.n, o.indptr .+ 1, p.indices .+ 1, o.data)
 
 
 g1 = sprand(5000,5000,0.01)
