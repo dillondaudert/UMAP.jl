@@ -178,6 +178,33 @@ md"""
 - optimize target embedding
 """
 
+# ╔═╡ 8cb95f52-3b0d-11eb-209a-c5a6d17a89e7
+md"""
+## Initialize target embedding
+The target space and initialization method can be parameterized by the `TargetParams` struct:
+
+```julia
+struct TargetParams{M, D, I, F}
+	manifold::M
+	metric::D
+	init::I
+	memb_params::F
+end
+```
+
+It is possible to specify the target manifold, a distance metric in the target space `metric`, and an initialization method. 
+
+The default target space is d-dimensional Euclidean space, with the squared Euclidean distance metric. Two initialization methods are provided: random and spectral layout.
+"""
+
+# ╔═╡ be8795d0-3b0d-11eb-18fd-9f7d61210ae2
+md"""
+### Example: Initializing vectors in R^d
+"""
+
+# ╔═╡ cbdb30a2-3b0d-11eb-1167-dbf6e87d80bd
+tgt_params = UMAP.TargetParams(UMAP._EuclideanManifold{4}(), SqEuclidean(), UMAP.UniformInitialization(), nothing)
+
 # ╔═╡ Cell order:
 # ╠═dcd32c80-398b-11eb-2e05-456e126db257
 # ╠═0028c794-398c-11eb-3464-55d473eb6584
@@ -215,4 +242,7 @@ md"""
 # ╟─0ce99b28-3995-11eb-08c8-7fe41c8e5ff6
 # ╠═8f21a1b8-3995-11eb-189d-9b0dd552f1c8
 # ╠═fb400814-3995-11eb-0fc8-372701323b2c
-# ╟─d2915640-3998-11eb-22c5-adc30c539cd6
+# ╠═d2915640-3998-11eb-22c5-adc30c539cd6
+# ╟─8cb95f52-3b0d-11eb-209a-c5a6d17a89e7
+# ╟─be8795d0-3b0d-11eb-18fd-9f7d61210ae2
+# ╠═cbdb30a2-3b0d-11eb-1167-dbf6e87d80bd

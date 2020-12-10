@@ -39,15 +39,25 @@ struct SourceGlobalParams
     mix_ratio::Float64
 end
 
-mutable struct TargetParams{M, I, D}
+struct TargetParams{M, D, I, P}
     manifold::M
-    init::I
     metric::D
-    # TODO: decide how to parameterize the membership fn
+    init::I
+    memb_params::P
+end
+
+mutable struct MembershipFnParams
     min_dist
     spread
     a
     b
+end
+
+struct OptimizationParams
+    n_epochs::Int
+    lr::Float64
+    repulsion_strength::Float64
+    neg_sample_rate::Int
 end
 
 """
@@ -62,22 +72,13 @@ struct UMAPConfig{K, S, G, T, O}
 end
 
 """
-View-specific results.
-"""
-struct UMAPViewResult{K, D, R, S}
-    knns::K
-    dists::D
-    rhos::R
-    sigmas::S
-end
-
-
-"""
 Return result of the UMAP algorithm.
 """
-struct UMAPResult{DS, DT, C, V}
+struct UMAPResult{DS, DT, C, K, F, G}
     data::DS
     embedding::DT
     config::C
-    views::V
+    knns_dists::K
+    fs_sets::F
+    graph::G
 end
