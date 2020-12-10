@@ -199,11 +199,17 @@ The default target space is d-dimensional Euclidean space, with the squared Eucl
 
 # ╔═╡ be8795d0-3b0d-11eb-18fd-9f7d61210ae2
 md"""
-### Example: Initializing vectors in R^d
+### Example: Initializing vectors in R^2
 """
 
 # ╔═╡ cbdb30a2-3b0d-11eb-1167-dbf6e87d80bd
-tgt_params = UMAP.TargetParams(UMAP._EuclideanManifold{4}(), SqEuclidean(), UMAP.UniformInitialization(), nothing)
+tgt_params = UMAP.TargetParams(UMAP._EuclideanManifold{2}(), SqEuclidean(), UMAP.UniformInitialization(), nothing)
+
+# ╔═╡ 415b2066-3b0f-11eb-37c7-6fa74b7282b1
+umap_graph = UMAP.fuzzy_simplicial_set(knns_dists, knn_params, src_view_params);
+
+# ╔═╡ 880b3960-3b0f-11eb-33a5-a12e8248f6fe
+xs_embed = UMAP.initialize_embedding(umap_graph, tgt_params)
 
 # ╔═╡ Cell order:
 # ╠═dcd32c80-398b-11eb-2e05-456e126db257
@@ -246,3 +252,5 @@ tgt_params = UMAP.TargetParams(UMAP._EuclideanManifold{4}(), SqEuclidean(), UMAP
 # ╟─8cb95f52-3b0d-11eb-209a-c5a6d17a89e7
 # ╟─be8795d0-3b0d-11eb-18fd-9f7d61210ae2
 # ╠═cbdb30a2-3b0d-11eb-1167-dbf6e87d80bd
+# ╠═415b2066-3b0f-11eb-37c7-6fa74b7282b1
+# ╠═880b3960-3b0f-11eb-33a5-a12e8248f6fe

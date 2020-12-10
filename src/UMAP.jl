@@ -5,6 +5,7 @@ using Distances
 using LinearAlgebra
 using LsqFit: curve_fit
 using NearestNeighborDescent
+using Setfield
 using SparseArrays
 
 include("utils.jl")
@@ -15,6 +16,7 @@ include("simplicial_sets.jl")
 include("embeddings.jl")
 include("membership_fn.jl")
 include("optimize.jl")
+include("optimize_new.jl")
 
 export umap, UMAP_, transform
 

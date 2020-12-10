@@ -23,7 +23,8 @@ end
     fit_membership_fn(tgt_params::TargetParams)
 
 Find a smooth approximation for the membership strength of a 1-simplex between two
-points x, y. Returns a binary function.
+points x, y. Returns a binary function `f(x, y)` as well as the gradient functions
+`∇log(f(x, y))` and `∇log(1 - f(x, y))`.
 """
 function fit_membership_fn end
 
@@ -33,6 +34,13 @@ function fit_membership_fn(tgt_params::TargetParams)
                   tgt_params.a, 
                   tgt_params.b)
     fn = (x, y) -> 1 / (1 + a * tgt_params.metric(x, y)^b)
-    return fn
-end    
+    ∇logfn = pos_grad(fn, tgt_params)
+    ∇log1_fn = neg_grad(fn, tgt_params)
+    return fn, ∇logfn, ∇log1_fn
+end
+
+function pos_grad(fn, tgt_params::TargetParams{_EuclideanManifold, SqEuclidean})
+    function ∇logfn(x, y)
+        sdist = SqEuclidean()(x, y)
+        if 
 
