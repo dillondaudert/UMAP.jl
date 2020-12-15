@@ -88,7 +88,7 @@ Calculate the distance between `x` and `y` on the manifold `tgt_params.manifold`
 """
 function target_metric(tgt_params, x, y) end
 
-function target_metric(::TargetParams{::_EuclideanManifold, ::SqEuclidean}, x, y)
+function target_metric(::TargetParams{_EuclideanManifold{N}, SqEuclidean}, x, y) where N
     dist = SqEuclidean()(x, y)
     grad_dist = 2 * (x - y)
     return dist, grad_dist, -grad_dist
