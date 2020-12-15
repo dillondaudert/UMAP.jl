@@ -38,9 +38,3 @@ function fit_membership_fn(tgt_params::TargetParams)
     ∇log1_fn = neg_grad(fn, tgt_params)
     return fn, ∇logfn, ∇log1_fn
 end
-
-function pos_grad(fn, tgt_params::TargetParams{_EuclideanManifold, SqEuclidean})
-    function ∇logfn(x, y)
-        sdist = SqEuclidean()(x, y)
-        if 
-
