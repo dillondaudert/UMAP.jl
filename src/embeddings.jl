@@ -12,6 +12,7 @@ A simple, singleton type representing Euclidean space with dimension N. Points
 in this manifold are N-dimensional vectors.
 """
 struct _EuclideanManifold{N} end
+_EuclideanManifold(N::Integer) = _EuclideanManifold{N}()
 
 """
     initialize_embedding(umap_graph, tgt_params) -> embedding

@@ -9,12 +9,11 @@ using Setfield
 using SparseArrays
 
 include("utils.jl")
-include("umap_.jl")
+include("membership_fn.jl")
 include("config.jl")
 include("neighbors.jl")
 include("simplicial_sets.jl")
 include("embeddings.jl")
-include("membership_fn.jl")
 include("optimize_old.jl")
 include("optimize.jl")
 include("fit.jl")
