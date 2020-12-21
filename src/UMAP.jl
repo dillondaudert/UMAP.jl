@@ -14,7 +14,6 @@ include("config.jl")
 include("neighbors.jl")
 include("simplicial_sets.jl")
 include("embeddings.jl")
-include("optimize_old.jl")
 include("optimize.jl")
 include("fit.jl")
 
