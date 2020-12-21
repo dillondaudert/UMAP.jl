@@ -38,7 +38,7 @@ function _optimize_embedding!(embedding,
                               opt_params::OptimizationParams;
                               move_ref::Bool=true)
     
-    self_ref = embedding === ref_embedding
+    self_reference = embedding === ref_embedding
     a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
 
     for i in 1:size(umap_graph, 2)
