@@ -9,7 +9,7 @@ function fit(data, knn_params, src_params, gbl_params, tgt_params, opt_params)
     # 3. initialize the target embedding
     embedding = initialize_embedding(umap_graph, tgt_params)
     # 4. optimize the embedding
-    optimize_embedding!(umap_graph, opt_params)
+    optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)
 
     config = UMAPConfig(knn_params, src_params, gbl_params, tgt_params, opt_params)
     return UMAPResult(data, embedding, config, knns_dists, fs_sets, umap_graph)

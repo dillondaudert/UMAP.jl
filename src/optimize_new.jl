@@ -93,3 +93,32 @@ function target_metric(::TargetParams{_EuclideanManifold{N}, SqEuclidean}, x, y)
     grad_dist = 2 * (x - y)
     return dist, grad_dist, -grad_dist
 end
+
+"""
+A smooth approximation for the membership strength of the 1-simplex between two points x, y.
+"""
+function _ϕ(x, y, σ, a, b)
+    return inv(1 + a*σ(x, y)^b)
+end
+
+"""
+    cross_entropy(umap_graph, embedding, tgt_params)
+
+Calculate the fuzzy cross entropy loss of the embedding for this umap_graph.
+(NOTE: μ(x, y) = umap_graph[x, y]; ν(x, y) = )
+"""
+function cross_entropy(umap_graph, embedding, tgt_params)
+    a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
+    EPS = 1e-8
+    loss = zero(eltype(umap_graph))
+    # calculate loss for each edge in the graph
+    for I in eachindex(umap_graph)
+        i, j = Tuple(I)
+        mu_a = clamp(umap_graph[I], EPS, 1 - EPS)
+        nu_a = clamp(_ϕ(embedding[i], embedding[j], tgt_params.metric, a, b), EPS, 1 - EPS)
+
+        _loss = mu_a * log(mu_a / nu_a) + (1 - mu_a) * log((1 - mu_a) / (1 - nu_a))
+        loss += _loss
+    end
+    return loss
+end

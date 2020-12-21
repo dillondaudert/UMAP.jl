@@ -211,6 +211,55 @@ umap_graph = UMAP.fuzzy_simplicial_set(knns_dists, knn_params, src_view_params);
 # ╔═╡ 880b3960-3b0f-11eb-33a5-a12e8248f6fe
 xs_embed = UMAP.initialize_embedding(umap_graph, tgt_params)
 
+# ╔═╡ 544c3254-43a8-11eb-2645-3d26e34bd982
+md"""
+### MembershipFnParams
+These parameters control the layout of points embedded in the target space by adjusting the membership function. *TO DO*.
+
+```julia
+struct MembershipFnParams
+	min_dist
+	spread
+	a
+	b
+end
+```
+"""
+
+# ╔═╡ b8481434-43a9-11eb-3902-6d5426beda92
+a, b = UMAP.fit_ab(1, 1, nothing, nothing)
+
+# ╔═╡ 011969ec-43aa-11eb-1545-6b63b42277fe
+full_tgt_params = UMAP.TargetParams(UMAP._EuclideanManifold{2}(), SqEuclidean(), UMAP.UniformInitialization(), UMAP.MembershipFnParams(1., 1., a, b))
+
+# ╔═╡ b7ea70da-43a8-11eb-35b6-d1836e6849c5
+md"""
+## Optimize target embedding
+The embedding is optimized by minimizing the fuzzy set cross entropy loss between the 
+two fuzzy set representations of the data. 
+"""
+
+# ╔═╡ 0e8db138-43a9-11eb-1dba-dbddcfdd10f7
+md"""
+### Example: Optimize one epoch
+The optimization process is parameterized by the struct `OptimizationParams`:
+
+```julia
+struct OptimizationParams
+	n_epochs           # number of epochs to perform optimization
+	lr                 # learning rate
+    repulsion_strength # weight to give negative samples
+    neg_sample_rate    # number of negative samples per positive sample
+end
+```
+"""
+
+# ╔═╡ a3d69b10-43a9-11eb-1dba-03059f2afcb0
+opt_params = UMAP.OptimizationParams(1, 1., 1., 5)
+
+# ╔═╡ afcb98a0-43a9-11eb-2bc6-cbd18349b749
+UMAP.optimize_embedding!(xs_embed, umap_graph, full_tgt_params, opt_params)
+
 # ╔═╡ Cell order:
 # ╠═dcd32c80-398b-11eb-2e05-456e126db257
 # ╠═0028c794-398c-11eb-3464-55d473eb6584
@@ -254,3 +303,10 @@ xs_embed = UMAP.initialize_embedding(umap_graph, tgt_params)
 # ╠═cbdb30a2-3b0d-11eb-1167-dbf6e87d80bd
 # ╠═415b2066-3b0f-11eb-37c7-6fa74b7282b1
 # ╠═880b3960-3b0f-11eb-33a5-a12e8248f6fe
+# ╟─544c3254-43a8-11eb-2645-3d26e34bd982
+# ╠═b8481434-43a9-11eb-3902-6d5426beda92
+# ╠═011969ec-43aa-11eb-1545-6b63b42277fe
+# ╟─b7ea70da-43a8-11eb-35b6-d1836e6849c5
+# ╟─0e8db138-43a9-11eb-1dba-dbddcfdd10f7
+# ╠═a3d69b10-43a9-11eb-1dba-03059f2afcb0
+# ╠═afcb98a0-43a9-11eb-2bc6-cbd18349b749
