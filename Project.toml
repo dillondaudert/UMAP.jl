@@ -13,7 +13,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-Arpack = "0.4"
+Arpack = "0.4, 0.5"
 Distances = "0.8, 0.9, 0.10"
 LsqFit = "0.6, 0.7, 0.8, 0.9, 0.10, 0.11"
 NearestNeighborDescent = "0.3"
