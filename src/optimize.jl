@@ -65,7 +65,7 @@ function _optimize_embedding!(embedding,
                     end
                     dist, dist_lgrad, _ = target_metric(tgt_params, embedding[i], ref_embedding[k])
                     if dist > 0
-                        grad_coef = opt_params.repulsion_strenth * b / (a * dist^(b + 1) + dist)
+                        grad_coef = opt_params.repulsion_strength * b / (a * dist^(b + 1) + dist)
                     else
                         grad_coef = 0
                     end
