@@ -1,7 +1,7 @@
 
 function optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)
     _opt_params = opt_params
-    for e in opt_params.n_epochs
+    for e in 1:opt_params.n_epochs
         _optimize_embedding!(embedding, 
                              embedding, 
                              umap_graph, 
@@ -17,7 +17,7 @@ end
 
 function optimize_embedding!(embedding, ref_embedding, umap_graph, tgt_params, opt_params)
     _opt_params = opt_params
-    for e in opt_params.n_epochs
+    for e in 1:opt_params.n_epochs
         _optimize_embedding!(embedding, 
                              ref_embedding, 
                              umap_graph, 
