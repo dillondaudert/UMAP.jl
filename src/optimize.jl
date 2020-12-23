@@ -48,11 +48,10 @@ function _optimize_embedding!(embedding,
             if rand() <= p
                 dist, dist_lgrad, dist_rgrad = target_metric(tgt_params, embedding[i], ref_embedding[j])
                 if dist > 0
-                    w_l = inv(1 + a * dist^(2*b))
+                    grad_coef = -(a * b) / (dist * (a + dist^(-b)))
                 else
-                    w_l = 1
+                    grad_coef = 0
                 end
-                grad_coef = 2 * b * (w_l - 1) / (dist + 1e-6)
                 # update embedding according to clipped gradient
                 embedding[i] .+= opt_params.lr .* clamp.(grad_coef .* dist_lgrad, -4, 4)
                 if move_ref
@@ -66,11 +65,10 @@ function _optimize_embedding!(embedding,
                     end
                     dist, dist_lgrad, _ = target_metric(tgt_params, embedding[i], ref_embedding[k])
                     if dist > 0
-                        w_l = inv(1 + a * dist^(2*b))
+                        grad_coef = opt_params.repulsion_strenth * b / (a * dist^(b + 1) + dist)
                     else
-                        w_l = 1
+                        grad_coef = 0
                     end
-                    grad_coef = opt_params.repulsion_strength * 2 * b * w_l / (dist + 1e-6)
                     # update embedding according to clipped gradient
                     embedding[i] .+= opt_params.lr .* clamp.(grad_coef .* dist_lgrad, -4, 4)
                 end
