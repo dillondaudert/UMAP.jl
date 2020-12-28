@@ -34,28 +34,30 @@ end
 function _optimize_embedding!(embedding, 
                               ref_embedding, 
                               umap_graph, 
-                              tgt_params::TargetParams,
-                              opt_params::OptimizationParams;
-                              move_ref::Bool=true)
+                              tgt_params::TargetParams{_EuclideanManifold{N}, SqEuclidean, I, MembershipFnParams{T}},
+                              opt_params;
+                              move_ref::Bool=true) where {N, I, T}
     
     self_reference = embedding === ref_embedding
     a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
+    lr = opt_params.lr
 
     for i in 1:size(umap_graph, 2)
         for ind in nzrange(umap_graph, i)
             j = rowvals(umap_graph)[ind]
             p = nonzeros(umap_graph)[ind]
             if rand() <= p
-                dist, dist_lgrad, dist_rgrad = target_metric(tgt_params, embedding[i], ref_embedding[j])
+                dist = sqeuclidean(embedding[i], ref_embedding[j])
                 if dist > 0
                     grad_coef = -(a * b) / (dist * (a + dist^(-b)))
                 else
                     grad_coef = zero(dist)
                 end
                 # update embedding according to clipped gradient
-                embedding[i] .+= opt_params.lr .* clamp.(grad_coef .* dist_lgrad, -4, 4)
-                if move_ref
-                    ref_embedding[j] .+= opt_params.lr .* clamp.(grad_coef .* dist_rgrad, -4, 4)
+                @simd for d in eachindex(embedding[i])
+                    grad = clamp(grad_coef * 2 * (embedding[i][d] - ref_embedding[j][d]), -4, 4)
+                    embedding[i][d] += lr * grad
+                    ref_embedding[j][d] -= move_ref * lr * grad
                 end
                 # negative samples
                 for _ in 1:opt_params.neg_sample_rate
@@ -63,20 +65,63 @@ function _optimize_embedding!(embedding,
                     if i == k && self_reference
                         continue
                     end
-                    dist, dist_lgrad, _ = target_metric(tgt_params, embedding[i], ref_embedding[k])
+                    dist = sqeuclidean(embedding[i], ref_embedding[k])
                     if dist > 0
                         grad_coef = opt_params.repulsion_strength * b / (a * dist^(b + 1) + dist)
                     else
-                        grad_coef = zero(dist)
+                        grad_coef = 4 * one(dist)
                     end
                     # update embedding according to clipped gradient
-                    embedding[i] .+= opt_params.lr .* clamp.(grad_coef .* dist_lgrad, -4, 4)
+                    @simd for d in eachindex(embedding[i])
+                        grad = clamp(grad_coef * 2 * (embedding[i][d] - ref_embedding[k][d]), -4, 4)
+                        embedding[i][d] += lr * grad
+                    end
                 end
             end
         end
     end
     return embedding
 end
+
+function _update_embedding_pos!(embedding, 
+                                i,
+                                j, 
+                                move_ref, 
+                                tgt_params::TargetParams{_EuclideanManifold{N}, SqEuclidean},
+                                opt_params) where N
+    # specialized for sq euclidean metric
+    a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
+    lr = opt_params.lr
+    dist = sqeuclidean(embedding[i], embedding[j])
+    if dist > 0
+        grad_coef = -(a * b) / (dist * (a + dist^(-b)))
+    else
+        grad_coef = zero(dist)
+    end
+    @simd for d in eachindex(embedding[i])
+        grad = clamp(grad_coef * 2 * (embedding[i][d] - embedding[j][d]), -4, 4)
+        embedding[i][d] += lr * grad
+        embedding[j][d] -= move_ref * lr * grad
+    end
+    return
+end
+
+function _update_embedding_pos!(embedding, i, j, move_ref, tgt_params, opt_params)
+    a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
+    dist, dist_lgrad, dist_rgrad = target_metric(tgt_params, embedding[i], embedding[j])
+    if dist > 0
+        grad_coef = -(a * b) / (dist * (a + dist^(-b)))
+    else
+        grad_coef = zero(dist)
+    end
+    # update embedding according to clipped gradient
+    embedding[i] += opt_params.lr * clamp.(grad_coef * dist_lgrad, -4, 4)
+    if move_ref
+        embedding[j] += opt_params.lr * clamp.(grad_coef * dist_rgrad, -4, 4)
+    end
+    return
+end
+
 
 """
     target_metric(tgt_params, x, y) -> dist, grad_dist_x, grad_dist_y
@@ -87,8 +132,14 @@ Calculate the distance between `x` and `y` on the manifold `tgt_params.manifold`
 function target_metric(tgt_params, x, y) end
 
 function target_metric(::TargetParams{_EuclideanManifold{N}, SqEuclidean}, x, y) where N
-    dist = SqEuclidean()(x, y)
+    dist = sqeuclidean(x, y)
     grad_dist = 2 * (x - y)
+    return dist, grad_dist, -grad_dist
+end
+
+function target_metric(::TargetParams{_EuclideanManifold{N}, Euclidean}, x, y) where N
+    dist = euclidean(x, y)
+    grad_dist = (x - y) / (1e-8 + dist)
     return dist, grad_dist, -grad_dist
 end
 
