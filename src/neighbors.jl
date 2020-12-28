@@ -31,14 +31,11 @@ function knn_search(data::NamedTuple{T}, knn_params::NamedTuple{T}) where T
 end
 
 
-# TODO: transform methods once result struct is better defined
 """
-    knn_search(data::NamedTuple{T}, queries::NamedTuple{T}, knn_params::NamedTuple{T}, view_result::NamedTuple{T}) -> NamedTuple{T}
+    knn_search(data::NamedTuple{T}, queries::NamedTuple{T}, knn_params::NamedTuple{T}, result_knns_dists::NamedTuple{T}) -> NamedTuple{T}
 """
-function knn_search(data::NamedTuple{T}, queries::NamedTuple{T}, knn_params::NamedTuple{T}, view_result::NamedTuple{T}) where T
-    # if result::UMAPResult{DS, DT, C, V} where result.views::V, then
-    # V will be a named tuple of UMAPViewResult here
-    return map(knn_search, data, queries, knn_params, view_result)
+function knn_search(data::NamedTuple{T}, queries::NamedTuple{T}, knn_params::NamedTuple{T}, result_knns_dists::NamedTuple{T}) where T
+    return map(knn_search, data, queries, knn_params, result_knns_dists)
 end
 
 # find approximate neighbors
@@ -53,15 +50,15 @@ function knn_search(data, knn_params::DescentNeighbors)
 end
 
 """
-    knn_search(data, queries, knn_params::DescentNeighbors, result) -> (knns, dists)
+    knn_search(data, queries, knn_params::DescentNeighbors, result_knns_dists) -> (knns, dists)
 
 Search for approximate nearest neighbors of queries in data using nndescent.
 """
-function knn_search(data, queries, knn_params::DescentNeighbors, view_result)
+function knn_search(data, queries, knn_params::DescentNeighbors, (knns, dists))
     orig_knn_graph = HeapKNNGraph(data,
                                   knn_params.metric,
-                                  view_result.knns,
-                                  view_result.dists)
+                                  knns,
+                                  dists)
     return search(orig_knn_graph, queries, knn_params.n_neighbors; knn_params.kwargs...)
 end
 
@@ -71,8 +68,8 @@ function knn_search(data, knn_params::PrecomputedNeighbors)
     return _knn_from_dists(knn_params.dists, knn_params.n_neighbors)
 end
 
-function knn_search(data, queries, knn_params::PrecomputedNeighbors, view_result)
-    return _knn_from_dists(knn_params.dists, knn_params.n_neighbors; ignore_diagonal=true)
+function knn_search(data, queries, knn_params::PrecomputedNeighbors, knns_dists)
+    return _knn_from_dists(knn_params.dists, knn_params.n_neighbors; ignore_diagonal=false)
 end
 
 function _knn_from_dists(dist_mat::AbstractMatrix{S}, k::Integer; ignore_diagonal=true) where {S <: Real}

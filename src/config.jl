@@ -177,3 +177,11 @@ struct UMAPResult{DS, DT, C, K, F, G}
     fs_sets::F
     graph::G
 end
+
+struct UMAPTransformResult{DS, DT, K, F, G}
+    data::DS
+    embedding::DT
+    knns_dists::K
+    fs_sets::F
+    graph::G
+end

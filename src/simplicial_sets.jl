@@ -57,7 +57,8 @@ function fuzzy_simplicial_set((knns, dists), knn_params, src_params::SourceViewP
 end
 
 function fuzzy_simplicial_set(data, knns_dists, knn_params, src_params::SourceViewParams)
-    n_points = length(data)
+    # the length of the last axis tells us how many points there are
+    n_points = length(axes(data)[end])
     return fuzzy_simplicial_set(knns_dists, n_points, knn_params, src_params, false)
 end
 
@@ -87,7 +88,10 @@ function fuzzy_simplicial_set((knns, dists),
     rows, cols, vals = compute_membership_strengths(knns, dists, σs, ρs)
     local_fs_sets = sparse(rows, cols, vals, n_points, size(knns, 2))
 
-    fs_set = combine_fuzzy_sets(local_fs_sets, src_params.set_operation_ratio)
+    if combine
+        fs_set = combine_fuzzy_sets(local_fs_sets, src_params.set_operation_ratio)
+    else
+        fs_set = local_fs_sets
     return dropzeros(fs_set)
 end
 
