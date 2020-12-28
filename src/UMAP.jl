@@ -16,6 +16,7 @@ include("simplicial_sets.jl")
 include("embeddings.jl")
 include("optimize.jl")
 include("fit.jl")
+include("transform.jl")
 
 export umap, UMAP_, transform
 
