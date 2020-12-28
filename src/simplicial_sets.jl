@@ -92,6 +92,7 @@ function fuzzy_simplicial_set((knns, dists),
         fs_set = combine_fuzzy_sets(local_fs_sets, src_params.set_operation_ratio)
     else
         fs_set = local_fs_sets
+    end
     return dropzeros(fs_set)
 end
 
