@@ -50,7 +50,7 @@ function _optimize_embedding!(embedding,
                 if dist > 0
                     grad_coef = -(a * b) / (dist * (a + dist^(-b)))
                 else
-                    grad_coef = 0
+                    grad_coef = zero(dist)
                 end
                 # update embedding according to clipped gradient
                 embedding[i] .+= opt_params.lr .* clamp.(grad_coef .* dist_lgrad, -4, 4)
@@ -67,7 +67,7 @@ function _optimize_embedding!(embedding,
                     if dist > 0
                         grad_coef = opt_params.repulsion_strength * b / (a * dist^(b + 1) + dist)
                     else
-                        grad_coef = 0
+                        grad_coef = zero(dist)
                     end
                     # update embedding according to clipped gradient
                     embedding[i] .+= opt_params.lr .* clamp.(grad_coef .* dist_lgrad, -4, 4)
