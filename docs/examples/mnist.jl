@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.17
+# v0.12.18
 
 using Markdown
 using InteractiveUtils
@@ -35,7 +35,10 @@ UMAP.fit(mnist_x[:, 1:1000]);
 result = UMAP.fit(mnist_x; metric=CosineDist(), n_neighbors=10, min_dist=0.001, n_epochs=200, neg_sample_rate=5);
 
 # ╔═╡ 87f49caa-456e-11eb-121d-c1d163b2a361
-scatter(getindex.(result.embedding[1:1000], 1), getindex.(result.embedding[1:1000], 2), color=mnist_y, label=mnist_y)
+scatter(getindex.(result.embedding[1:1000], 1), getindex.(result.embedding[1:1000], 2), color=mnist_y)
+
+# ╔═╡ 1b8595b8-498f-11eb-0a85-9980c3f89f3b
+
 
 # ╔═╡ Cell order:
 # ╠═a0d99c2a-4550-11eb-257b-4dc0fe9c1489
@@ -48,3 +51,4 @@ scatter(getindex.(result.embedding[1:1000], 1), getindex.(result.embedding[1:100
 # ╟─73ea981a-4551-11eb-2ed0-2f550f277b00
 # ╠═917c40e4-4568-11eb-0c04-5f2e0b27d5c1
 # ╠═87f49caa-456e-11eb-121d-c1d163b2a361
+# ╟─1b8595b8-498f-11eb-0a85-9980c3f89f3b
