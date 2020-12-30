@@ -1,10 +1,10 @@
 @testset "simplicial sets tests" begin
 @testset "fuzzy_simplicial_set tests" begin
+    knns = [2 3 2; 3 1 1]
+    dists = [1.5 .5 .5; 2. 1.5 2.]
+    knn_params = DescentNeighbors(2, Euclidean())
+    src_params = SourceViewParams(1, 1, 1)
     @testset "fit tests" begin
-        knns = [2 3 2; 3 1 1]
-        dists = [1.5 .5 .5; 2. 1.5 2.]
-        knn_params = DescentNeighbors(2, Euclidean())
-        src_params = SourceViewParams(1, 1, 1)
         @testset "simple test" begin
             umap_graph = @inferred fuzzy_simplicial_set((knns, dists), knn_params, src_params)
             @test issymmetric(umap_graph)
@@ -18,7 +18,13 @@
         end
     end
     @testset "transform tests" begin
-
+        @testset "simple test" begin
+            # bogus data just for n_points
+            data = [rand(2) for _ in 1:5]
+            umap_graph = @inferred fuzzy_simplicial_set(data, (knns, dists), knn_params, src_params)
+            @test !issymmetric(umap_graph) # we don't symmetrize transform umap graph
+            @test size(umap_graph) == (5, 3)
+        end
     end
 
 end
