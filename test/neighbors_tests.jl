@@ -64,7 +64,48 @@
     end
 
     @testset "transform tests" begin
-        # TODO
+        # test basic transform knn_search
+        data = [rand(10) for _ in 1:100]
+        knn_params = DescentNeighbors(5, Euclidean())
+        # get the result from the fit step
+        knns_dists = knn_search(data, knn_params)
+        queries = [rand(10) for _ in 1:10]
+        RT = Tuple{Array{Int,2},Array{Float64,2}}
+        @inferred knn_search(data, queries, knn_params, knns_dists)
+        query_knns_dists = knn_search(data, queries, knn_params, knns_dists)
+        @test query_knns_dists isa RT
+
+        # as a matrix
+        data_mat = rand(10, 100)
+        queries_mat = rand(10, 10)
+        knns_dists = knn_search(data, knn_params)
+        @test_throws MethodError knn_search(data_mat, queries_mat, knn_params, knns_dists)
+
+        # views in named tuple test
+        @inferred knn_search((view1=data,), (view1=queries,), (view1=knn_params,), (view1=knns_dists,))
+        query_knns_dists = knn_search((view1=data,), (view1=queries,), (view1=knn_params,), (view1=knns_dists,))
+        @test query_knns_dists.view1 isa RT
+
+        # precomputed distances test 
+        dist_mat = [0. 2. 1.;
+                    2. 0. 3.;
+                    1. 3. 0.]
+        knns_dists = knn_search(nothing, PrecomputedNeighbors(2, dist_mat))
+        query_dist_mat = [1. 2.;
+                          3. 3.;
+                          2. 1.]
+        query_true_knns = [1 3;
+                           3 1;
+                           2 2]
+        query_true_dists = [1. 1.;
+                            2. 2.;
+                            3. 3.]
+        @inferred knn_search(nothing, nothing, PrecomputedNeighbors(3, query_dist_mat), knns_dists)
+        query_knns_dists = knn_search(nothing, nothing, PrecomputedNeighbors(3, query_dist_mat), knns_dists)
+        @test query_true_knns == query_knns_dists[1]
+        @test query_true_dists == query_knns_dists[2]
+
+        # test that 
     end
 
 end
