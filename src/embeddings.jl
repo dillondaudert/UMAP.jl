@@ -6,7 +6,7 @@ function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:spe
         embed = spectral_layout(graph, n_components)
         # expand
         expansion = 10 / maximum(embed)
-        embed .= (embed .* expansion) .+ (1//10000) .* randn.(T)
+        embed .= (embed .* expansion) .+ (1//10000) .* randn(T, size(embed))
         embed = collect(eachcol(embed))
     catch e
         @info "$e\nError encountered in spectral_layout; defaulting to random layout"
