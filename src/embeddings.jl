@@ -7,7 +7,6 @@ function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:spe
         # expand
         expansion = 10 / maximum(embed)
         embed .= (embed .* expansion) .+ (1//10000) .* randn.(T)
-        embed = collect(eachcol(embed))
     catch e
         @info "$e\nError encountered in spectral_layout; defaulting to random layout"
         embed = initialize_embedding(graph, n_components, Val(:random))
@@ -16,7 +15,7 @@ function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:spe
 end
 
 function initialize_embedding(graph::AbstractMatrix{T}, n_components, ::Val{:random}) where {T}
-    return [20 .* rand(T, n_components) .- 10 for _ in 1:size(graph, 1)]
+    20 .* rand(T, (n_components, size(graph, 1))) .- 10
 end
 
 """
@@ -29,9 +28,8 @@ The resulting embedding will have shape `(size(ref_embedding, 1), size(graph, 2)
 is the number of components (dimensions) of the `reference embedding`, and `size(graph, 2)` is the number of 
 samples in the resulting embedding. Its elements will have type T.
 """
-function initialize_embedding(graph::AbstractMatrix{<:Real}, ref_embedding::AbstractMatrix{T})::Vector{Vector{T}} where {T<:AbstractFloat}
-    embed = (ref_embedding * graph) ./ (sum(graph, dims=1) .+ eps(T))
-    return Vector{T}[eachcol(embed)...]
+function initialize_embedding(graph::AbstractMatrix{<:Real}, ref_embedding::AbstractMatrix{T})::Matrix{T} where {T<:AbstractFloat}
+    (ref_embedding * graph) ./ (sum(graph, dims=1) .+ eps(T))
 end
 
 """

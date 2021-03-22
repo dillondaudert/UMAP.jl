@@ -132,28 +132,22 @@
                  3 6 8 8] ./10
         ref_embedding = Float64[1 2 0;
                                 0 2 -1]
-        actual = [[9, 1], [8, 2], [3, -6], [3, -6]] ./10
+        actual = Float64[9 1; 8 2; 3 -6; 3 -6]' ./10
 
         embedding = initialize_embedding(graph, ref_embedding)
-        @test embedding isa AbstractVector{<:AbstractVector{Float64}}
-        @test length(embedding) == length(actual)
-        for i in 1:length(embedding)
-            @test length(embedding[i]) == length(actual[i])
-        end
+        @test embedding isa AbstractMatrix{Float64}
+        @test size(embedding) == size(actual)
         @test isapprox(embedding, actual, atol=1e-8)
 
         graph = Float16.(graph[:, [1,2]])
         graph[:, end] .= 0
         ref_embedding = Float16[1 2 0;
                                 0 2 -1]
-        actual = Vector{Float16}[[9, 1], [0, 0]] ./10
+        actual = Float16[9 1; 0 0]' ./10
 
         embedding = initialize_embedding(graph, ref_embedding)
-        @test embedding isa AbstractVector{<:AbstractVector{Float16}}
-        @test length(embedding) == length(actual)
-        for i in 1:length(embedding)
-            @test length(embedding[i]) == length(actual[i])
-        end
+        @test embedding isa AbstractMatrix{Float16}
+        @test size(embedding) == size(actual)
         @test isapprox(embedding, actual, atol=1e-2)
     end
 
