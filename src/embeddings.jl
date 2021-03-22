@@ -107,11 +107,9 @@ function optimize_embedding(graph::SparseMatrixCSC{T},
                     xj = view(ref_embedding, :, j)
 
                     sdist = evaluate(SqEuclidean(), xi, xj)
-                    if sdist > 0
-                        delta = (-2 * a * b * sdist^(b-1))/(1 + a*sdist^b)
-                    else
-                        delta = 0
-                    end
+                    sdist = max(sdist, eps())
+                    delta = (-2 * a * b * sdist^b)/(sdist*(1 + a*sdist^b))
+
                     @simd for d in eachindex(xi)
                         grad = clamp(delta * (xi[d] - xj[d]), -4, 4)
                         xi[d] += alpha * grad
@@ -128,11 +126,9 @@ function optimize_embedding(graph::SparseMatrixCSC{T},
                         xk = view(ref_embedding, :, k)
 
                         sdist = evaluate(SqEuclidean(), xi, xk)
-                        if sdist > 0
-                            delta = (2 * gamma * b) / ((1//1000 + sdist)*(1 + a*sdist^b))
-                        else
-                            delta = 0
-                        end
+                        sdist = max(sdist, eps())
+                        delta = (2 * gamma * b) / ((1//1000 + sdist)*(1 + a*sdist^b))
+
                         @simd for d in eachindex(xi)
                             if delta > 0
                                 grad = clamp(delta * (xi[d] - xk[d]), -4, 4)
