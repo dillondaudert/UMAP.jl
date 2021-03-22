@@ -68,8 +68,8 @@ Optimize "query" samples with respect to "reference" samples.
 
 # Arguments
 - `graph`: a sparse matrix of shape (n_samples, n_samples)
-- `query_embedding`: a vector of length (n_samples,) of vectors representing the embedded data points to be optimized ("query" samples)
-- `ref_embedding`: a vector of length (n_samples,) of vectors representing the embedded data points to optimize against ("reference" samples)
+- `query_embedding`: a matrix (n_components, n_samples) the embedded data points to be optimized ("query" samples)
+- `ref_embedding`: a matrix (n_components, n_samples) the embedded data points to be optimized against ("reference" samples)
 - `n_epochs`: the number of training epochs for optimization
 - `initial_alpha`: the initial learning rate
 - `gamma`: the repulsive strength of negative samples
@@ -80,9 +80,9 @@ Optimize "query" samples with respect to "reference" samples.
 # Keyword Arguments
 - `move_ref::Bool = false`: if true, also improve the embeddings in `ref_embedding`, else fix them and only improve embeddings in `query_embedding`.
 """
-function optimize_embedding(graph::SparseMatrixCSC{<:Real},
-                            query_embedding,
-                            ref_embedding,
+function optimize_embedding(graph::SparseMatrixCSC{T},
+                            query_embedding::AbstractMatrix{S},
+                            ref_embedding::AbstractMatrix{S},
                             n_epochs::Integer,
                             initial_alpha::Real,
                             min_dist::Real,
@@ -91,7 +91,7 @@ function optimize_embedding(graph::SparseMatrixCSC{<:Real},
                             neg_sample_rate::Integer,
                             _a::Union{Real, Nothing} = nothing,
                             _b::Union{Real, Nothing} = nothing;
-                            move_ref::Bool=false)
+                            move_ref::Bool=false) where {T <: Real, S <: Real}
     a, b = fit_ab(min_dist, spread, _a, _b)
     self_reference = query_embedding === ref_embedding
 
@@ -101,39 +101,45 @@ function optimize_embedding(graph::SparseMatrixCSC{<:Real},
             for ind in nzrange(graph, i)
                 j = rowvals(graph)[ind]
                 p = nonzeros(graph)[ind]
+
                 if rand() <= p
-                    sdist = evaluate(SqEuclidean(), query_embedding[i], ref_embedding[j])
+                    xi = view(query_embedding, :, i)
+                    xj = view(ref_embedding, :, j)
+
+                    sdist = evaluate(SqEuclidean(), xi, xj)
                     if sdist > 0
                         delta = (-2 * a * b * sdist^(b-1))/(1 + a*sdist^b)
                     else
                         delta = 0
                     end
-                    @simd for d in eachindex(query_embedding[i])
-                        grad = clamp(delta * (query_embedding[i][d] - ref_embedding[j][d]), -4, 4)
-                        query_embedding[i][d] += alpha * grad
+                    @simd for d in eachindex(xi)
+                        grad = clamp(delta * (xi[d] - xj[d]), -4, 4)
+                        xi[d] += alpha * grad
                         if move_ref
-                            ref_embedding[j][d] -= alpha * grad
+                            xj[d] -= alpha * grad
                         end
                     end
 
                     for _ in 1:neg_sample_rate
-                        k = rand(eachindex(ref_embedding))
+                        k = rand(1:size(ref_embedding, 2))
                         if i == k && self_reference
                             continue
                         end
-                        sdist = evaluate(SqEuclidean(), query_embedding[i], ref_embedding[k])
+                        xk = view(ref_embedding, :, k)
+
+                        sdist = evaluate(SqEuclidean(), xi, xk)
                         if sdist > 0
                             delta = (2 * gamma * b) / ((1//1000 + sdist)*(1 + a*sdist^b))
                         else
                             delta = 0
                         end
-                        @simd for d in eachindex(query_embedding[i])
+                        @simd for d in eachindex(xi)
                             if delta > 0
-                                grad = clamp(delta * (query_embedding[i][d] - ref_embedding[k][d]), -4, 4)
+                                grad = clamp(delta * (xi[d] - xk[d]), -4, 4)
                             else
                                 grad = 4
                             end
-                            query_embedding[i][d] += alpha * grad
+                            xi[d] += alpha * grad
                         end
                     end
 
