@@ -80,17 +80,17 @@ Optimize "query" samples with respect to "reference" samples.
 # Keyword Arguments
 - `move_ref::Bool = false`: if true, also improve the embeddings in `ref_embedding`, else fix them and only improve embeddings in `query_embedding`.
 """
-function optimize_embedding(graph,
+function optimize_embedding(graph::SparseMatrixCSC{<:Real},
                             query_embedding,
                             ref_embedding,
-                            n_epochs,
-                            initial_alpha,
-                            min_dist,
-                            spread,
-                            gamma,
-                            neg_sample_rate,
-                            _a=nothing,
-                            _b=nothing;
+                            n_epochs::Integer,
+                            initial_alpha::Real,
+                            min_dist::Real,
+                            spread::Real,
+                            gamma::Real,
+                            neg_sample_rate::Integer,
+                            _a::Union{Real, Nothing} = nothing,
+                            _b::Union{Real, Nothing} = nothing;
                             move_ref::Bool=false)
     a, b = fit_ab(min_dist, spread, _a, _b)
     self_reference = query_embedding === ref_embedding
