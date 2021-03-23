@@ -104,17 +104,13 @@
         gamma = 1.
         neg_sample_rate = 5
         for graph in [graph1, graph2, graph3]
-            ref_embedding = collect(eachcol(rand(2, size(graph, 1))))
+            ref_embedding = rand(2, size(graph, 1))
             old_ref_embedding = deepcopy(ref_embedding)
             query_embedding = rand(2, size(graph, 2))
-            query_embedding = [query_embedding[:, i] for i in 1:size(query_embedding, 2)]
-            res_embedding = optimize_embedding(graph, query_embedding, ref_embedding, n_epochs, initial_alpha, 
+            res_embedding = optimize_embedding(graph, query_embedding, ref_embedding, n_epochs, initial_alpha,
                                                min_dist, spread, gamma, neg_sample_rate, move_ref=false)
-            @test res_embedding isa Array{Array{Float64, 1}, 1}
-            @test length(res_embedding) == length(query_embedding)
-            for i in 1:length(res_embedding)
-                @test length(res_embedding[i]) == length(query_embedding[i])
-            end
+            @test res_embedding isa Array{Float64, 2}
+            @test size(res_embedding) == size(query_embedding)
             @test isapprox(old_ref_embedding, ref_embedding, atol=1e-4)
         end
     end
@@ -136,28 +132,22 @@
                  3 6 8 8] ./10
         ref_embedding = Float64[1 2 0;
                                 0 2 -1]
-        actual = [[9, 1], [8, 2], [3, -6], [3, -6]] ./10
+        actual = Float64[9 1; 8 2; 3 -6; 3 -6]' ./10
 
         embedding = initialize_embedding(graph, ref_embedding)
-        @test embedding isa AbstractVector{<:AbstractVector{Float64}}
-        @test length(embedding) == length(actual)
-        for i in 1:length(embedding)
-            @test length(embedding[i]) == length(actual[i])
-        end
+        @test embedding isa AbstractMatrix{Float64}
+        @test size(embedding) == size(actual)
         @test isapprox(embedding, actual, atol=1e-8)
 
         graph = Float16.(graph[:, [1,2]])
         graph[:, end] .= 0
         ref_embedding = Float16[1 2 0;
                                 0 2 -1]
-        actual = Vector{Float16}[[9, 1], [0, 0]] ./10
+        actual = Float16[9 1; 0 0]' ./10
 
         embedding = initialize_embedding(graph, ref_embedding)
-        @test embedding isa AbstractVector{<:AbstractVector{Float16}}
-        @test length(embedding) == length(actual)
-        for i in 1:length(embedding)
-            @test length(embedding[i]) == length(actual[i])
-        end
+        @test embedding isa AbstractMatrix{Float16}
+        @test size(embedding) == size(actual)
         @test isapprox(embedding, actual, atol=1e-2)
     end
 
@@ -176,7 +166,7 @@
             model = UMAP_(model.graph, model.embedding, rand(5, 9), model.knns, model.dists)
             @test_throws ArgumentError transform(model, query; n_neighbors=3) # data size error
         end
-        
+
         @testset "transform test" begin
             data = rand(5, 30)
             model = UMAP_(data, 2, n_neighbors=2, n_epochs=1)
