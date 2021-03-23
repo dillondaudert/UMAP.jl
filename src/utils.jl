@@ -12,12 +12,16 @@ Find a smooth approximation to the membership function of points embedded in ℜ
 This fits a smooth curve that approximates an exponential decay offset by `min_dist`,
 returning the parameters `(a, b)`.
 """
-function fit_ab(min_dist, spread, ::Nothing, ::Nothing)
-    ψ(d) = d >= min_dist ? exp(-(d - min_dist)/spread) : 1.
-    xs = LinRange(0., spread*3, 300)
+function fit_ab(min_dist::Real, spread::Real, ::Nothing, ::Nothing)
+    fit_ab(promote(min_dist, spread)..., nothing, nothing)
+end
+
+function fit_ab(min_dist::S, spread::S, ::Nothing, ::Nothing) where {S <: Real}
+    ψ(d) = d >= min_dist ? exp(-(d - min_dist)/spread) : one(S)
+    xs = LinRange{S}(0., spread*3, 300)
     ys = map(ψ, xs)
-    @. curve(x, p) = (1. + p[1]*x^(2*p[2]))^(-1)
-    result = curve_fit(curve, xs, ys, [1., 1.], lower=[0., -Inf])
+    @. curve(x, p) = (one(S) + p[1]*x^(2*p[2]))^(-1)
+    result = curve_fit(curve, xs, ys, S[1., 1.], lower=S[0., -Inf])
     a, b = result.param
     return a, b
 end
@@ -78,9 +82,9 @@ end
     knn_search(X, Q, k, metric, knns, dists) -> knns, dists
 
 Given a matrix `X` and a matrix `Q`, use the given metric to compute the `k` nearest neighbors out of the
-columns of `X` from the queries (columns in `Q`). 
+columns of `X` from the queries (columns in `Q`).
 If the matrices are large, reconstruct the approximate nearest neighbors graph of `X` using the given `knns` and `dists`,
-representing indices and distances of pairwise neighbors of `X`, and use this to search for approximate nearest 
+representing indices and distances of pairwise neighbors of `X`, and use this to search for approximate nearest
 neighbors of `Q`.
 If the matrices are small, search for exact nearest neighbors of `Q` by computing all pairwise distances with `X`.
 
@@ -93,7 +97,7 @@ If the matrices are small, search for exact nearest neighbors of `Q` by computin
 - `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
 - `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
 """
-function knn_search(X::AbstractMatrix, 
+function knn_search(X::AbstractMatrix,
                     Q::AbstractMatrix,
                     k::Integer,
                     metric::SemiMetric,

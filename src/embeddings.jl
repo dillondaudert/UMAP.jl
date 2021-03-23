@@ -90,7 +90,7 @@ function optimize_embedding(graph::SparseMatrixCSC{T},
                             _a::Union{Real, Nothing} = nothing,
                             _b::Union{Real, Nothing} = nothing;
                             move_ref::Bool=false) where {T <: Real, S <: Real}
-    a, b = fit_ab(min_dist, spread, _a, _b)
+    a, b = fit_ab(convert(S,min_dist), convert(S, spread), _a, _b)
     self_reference = query_embedding === ref_embedding
 
     alpha = initial_alpha
@@ -105,7 +105,7 @@ function optimize_embedding(graph::SparseMatrixCSC{T},
                     xj = view(ref_embedding, :, j)
 
                     sdist = evaluate(SqEuclidean(), xi, xj)
-                    sdist = max(sdist, eps())
+                    sdist = max(sdist, eps(S))
                     delta = (-2 * a * b * sdist^b)/(sdist*(1 + a*sdist^b))
 
                     @simd for d in eachindex(xi)
@@ -124,8 +124,8 @@ function optimize_embedding(graph::SparseMatrixCSC{T},
                         xk = view(ref_embedding, :, k)
 
                         sdist = evaluate(SqEuclidean(), xi, xk)
-                        sdist = max(sdist, eps())
-                        delta = (2 * gamma * b) / ((1//1000 + sdist)*(1 + a*sdist^b))
+                        sdist = max(sdist, eps(S))
+                        delta = (2 * gamma * b) / ((S(1//1000) + sdist)*(1 + a*sdist^b))
 
                         @simd for d in eachindex(xi)
                             if delta > 0
