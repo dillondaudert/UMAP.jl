@@ -79,7 +79,7 @@
         data_mat = rand(10, 100)
         queries_mat = rand(10, 10)
         knns_dists = knn_search(data, knn_params)
-        @test_throws MethodError knn_search(data_mat, queries_mat, knn_params, knns_dists)
+        @test knn_search(data_mat, queries_mat, knn_params, knns_dists) isa RT
 
         # views in named tuple test
         @inferred knn_search((view1=data,), (view1=queries,), (view1=knn_params,), (view1=knns_dists,))
