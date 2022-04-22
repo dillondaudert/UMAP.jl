@@ -1,8 +1,14 @@
 ### A Pluto.jl notebook ###
-# v0.12.17
+# v0.19.0
 
 using Markdown
 using InteractiveUtils
+
+# ╔═╡ 75d1e5a1-5468-4c82-b074-36e3a6c6f4ec
+import Pkg
+
+# ╔═╡ 6c24e46d-33d2-44e4-ad02-510338d3486f
+Pkg.activate(".")
 
 # ╔═╡ dcd32c80-398b-11eb-2e05-456e126db257
 using UMAP
@@ -227,7 +233,7 @@ end
 """
 
 # ╔═╡ b8481434-43a9-11eb-3902-6d5426beda92
-a, b = UMAP.fit_ab(1, 1, nothing, nothing)
+a, b = UMAP.fit_ab(1, 1)
 
 # ╔═╡ 011969ec-43aa-11eb-1545-6b63b42277fe
 full_tgt_params = UMAP.TargetParams(UMAP._EuclideanManifold{2}(), SqEuclidean(), UMAP.UniformInitialization(), UMAP.MembershipFnParams(1., 1., a, b))
@@ -261,6 +267,8 @@ opt_params = UMAP.OptimizationParams(1, 1., 1., 5)
 UMAP.optimize_embedding!(xs_embed, umap_graph, full_tgt_params, opt_params)
 
 # ╔═╡ Cell order:
+# ╠═75d1e5a1-5468-4c82-b074-36e3a6c6f4ec
+# ╠═6c24e46d-33d2-44e4-ad02-510338d3486f
 # ╠═dcd32c80-398b-11eb-2e05-456e126db257
 # ╠═0028c794-398c-11eb-3464-55d473eb6584
 # ╠═2467fefe-398c-11eb-3bc8-997aa34112d3

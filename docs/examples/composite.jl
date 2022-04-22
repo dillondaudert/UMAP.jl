@@ -1,8 +1,14 @@
 ### A Pluto.jl notebook ###
-# v0.12.18
+# v0.19.0
 
 using Markdown
 using InteractiveUtils
+
+# ╔═╡ 3525eb82-fd7c-4180-b459-ea25e1fc0642
+begin
+	import Pkg
+	Pkg.activate(".")
+end
 
 # ╔═╡ a10735ac-49f3-11eb-0ddb-bf4c5dc7614e
 using MLDatasets
@@ -107,6 +113,7 @@ scatter(getindex.(comp_res.embedding, 1), getindex.(comp_res.embedding, 2), colo
 # ╔═╡ Cell order:
 # ╟─6afa3536-49f3-11eb-0f84-b9b08c6c4fd4
 # ╟─87514cf6-49f3-11eb-01ba-4190509cbe58
+# ╠═3525eb82-fd7c-4180-b459-ea25e1fc0642
 # ╠═a10735ac-49f3-11eb-0ddb-bf4c5dc7614e
 # ╠═a669bf1a-49f3-11eb-1eba-1d44761b9fec
 # ╠═a7852e02-49f3-11eb-2572-6129ad6f7875
