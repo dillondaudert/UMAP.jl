@@ -11,7 +11,7 @@ function coalesce_views end
 
 function coalesce_views(view_fuzzy_sets::NamedTuple{T},
                         gbl_params) where T
-    return foldl((l, r) -> fuzzy_set_intersection(l, r, gbl_params), view_fuzzy_sets)
+    return foldl((l, r) -> general_simplicial_set_intersection(l, r, gbl_params), view_fuzzy_sets)
 end
 
 # if no global params are passed, there must be exactly one view in the named
@@ -89,7 +89,7 @@ function fuzzy_simplicial_set((knns, dists),
     local_fs_sets = sparse(rows, cols, vals, n_points, size(knns, 2))
 
     if combine
-        fs_set = combine_fuzzy_sets(local_fs_sets, src_params.set_operation_ratio)
+        fs_set = merge_local_simplicial_sets(local_fs_sets, src_params.set_operation_ratio)
     else
         fs_set = local_fs_sets
     end

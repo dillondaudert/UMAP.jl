@@ -8,9 +8,9 @@ using NearestNeighborDescent
 using Setfield
 using SparseArrays
 
+include("config.jl")
 include("utils.jl")
 include("membership_fn.jl")
-include("config.jl")
 include("neighbors.jl")
 include("simplicial_sets.jl")
 include("embeddings.jl")
