@@ -85,12 +85,12 @@ have complete confidence in at least one 1-simplex in the simplicial set.
 We can enforce this by locally rescaling confidences, and then remerging the
 different local simplicial sets together.
 """
-function reset_local_connectivity(simplicial_set, reset_local_metrics)
+function reset_local_connectivity(simplicial_set, reset_local_metric=true)
     # normalize columns 
     sset = _norm_sparse(simplicial_set)
     
-    if reset_local_metrics
-
+    if reset_local_metric
+        sset = reset_local_metrics!(sset)
     end
 
     sset = _fuzzy_set_union(sset)
@@ -111,8 +111,49 @@ function _norm_sparse(simplicial_set::AbstractSparseMatrix)
     return sparse(I, J, newVs, simplicial_set.m, simplicial_set.n)
 end
 
-function reset_local_metrics(simplicial_set)
-    
+function reset_local_metrics!(simplicial_set::AbstractSparseMatrix)
+
+    # for each column, reset the fuzzy set cardinality.
+    # modify each sparse column in-place here.
+    for col in axes(simplicial_set)[end]
+        colstart, colend = simplicial_set.colptr[col], simplicial_set.colptr[col+1]-1
+        simplicial_set.nzval[colstart:colend] .= _reset_fuzzy_set_cardinality(simplicial_set.nzval[colstat:colend])
+    end
+
+    return simplicial_set
 end
 
-function _reprocess_col() end
+"""
+Reset the cardinality of the fuzzy set (usually a column
+in a simplicial set) to be approximately log2(k).
+
+This step is necessary after we've combined the simplicial sets
+for multiple views of the same data.
+"""
+function _reset_fuzzy_set_cardinality(probs, k=15, niter=32)
+    target = log2(k)
+
+    lo = 0.
+    hi = Inf
+    mid = 1.
+
+    for _ in 1:niter
+        psum = sum(probs .^ mid)
+        if abs(psum - target) < SMOOTH_K_TOLERANCE
+            break
+        end
+
+        if psum < target
+            hi = mid
+            mid = (lo + hi) / 2
+        else
+            lo = mid
+            if isinf(hi)
+                mid *= 2
+            else
+                mid = (lo + hi) / 2
+            end
+        end
+    end
+    return probs .^ mid
+end

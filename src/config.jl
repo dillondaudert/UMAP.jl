@@ -1,5 +1,8 @@
 # parameter structs for configuring UMAP
 
+# CONSTANTS
+const SMOOTH_K_TOLERANCE = 1e-5
+
 # NEIGHBOR PARAMS
 """
 Structs for parameterizing the knn search step of UMAP.

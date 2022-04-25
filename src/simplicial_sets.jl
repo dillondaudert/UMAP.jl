@@ -11,7 +11,7 @@ function coalesce_views end
 
 function coalesce_views(view_fuzzy_sets::NamedTuple{T},
                         gbl_params) where T
-    return foldl((l, r) -> general_simplicial_set_intersection(l, r, gbl_params), view_fuzzy_sets)
+    return foldl((l, r) -> reset_local_connectivity(general_simplicial_set_intersection(l, r, gbl_params)), view_fuzzy_sets)
 end
 
 # if no global params are passed, there must be exactly one view in the named
@@ -97,8 +97,6 @@ function fuzzy_simplicial_set((knns, dists),
 end
 
 # SIMPLICIAL SET UTILITIES
-
-const SMOOTH_K_TOLERANCE = 1e-5
 
 """
     smooth_knn_dists(dists, k, src_params) -> knn_dists, nn_dists
