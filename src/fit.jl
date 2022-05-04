@@ -46,7 +46,7 @@ function fit(data,
 
     # SOURCE PARAMS
     src_params = SourceViewParams(set_operation_ratio, local_connectivity, bandwidth)
-    gbl_params = SourceGlobalParams(1)
+    gbl_params = SourceGlobalParams(0.5)
 
     # TARGET PARAMS
     memb_params = MembershipFnParams(min_dist, spread, a, b)
