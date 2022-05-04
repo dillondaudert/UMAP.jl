@@ -117,7 +117,7 @@ function reset_local_metrics!(simplicial_set::AbstractSparseMatrix)
     # modify each sparse column in-place here.
     for col in axes(simplicial_set)[end]
         colstart, colend = simplicial_set.colptr[col], simplicial_set.colptr[col+1]-1
-        simplicial_set.nzval[colstart:colend] .= _reset_fuzzy_set_cardinality(simplicial_set.nzval[colstat:colend])
+        simplicial_set.nzval[colstart:colend] .= _reset_fuzzy_set_cardinality(simplicial_set.nzval[colstart:colend])
     end
 
     return simplicial_set
