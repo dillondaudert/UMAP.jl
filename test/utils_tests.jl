@@ -12,15 +12,15 @@
     end
 
     @testset "general_simplicial_set_union tests" begin
-        left_view = [1e-9 0.5; 0.5 1e-9]
-        right_view = [1e-9 0.5; 1e-9 0.5]
+        left_view = sparse([1e-9 0.5; 0.5 1e-9])
+        right_view = sparse([1e-9 0.5; 1e-9 0.5])
         res = [2e-8 - (1e-8)^2 0.75; 0.5 + 1e-8 - 0.5*1e-8 0.5 + 1e-8 - 0.5*1e-8]
         @test general_simplicial_set_union(left_view, right_view) == res
     end
 
     @testset "general_simplicial_set_intersection tests" begin
-        left_view = [1e-9 0.5; 0.5 1e-9]
-        right_view = [1e-9 0.5; 1e-9 0.5]
+        left_view = sparse([1e-9 0.5; 0.5 1e-9])
+        right_view = sparse([1e-9 0.5; 1e-9 0.5])
         # (1, 1) should add the two values (both less than 1e-8)
         res = [2e-9 0.25; 1e-8*0.5 1e-8*0.5]
         @test general_simplicial_set_intersection(left_view, right_view, SourceGlobalParams(0.5)) == res
@@ -29,10 +29,10 @@
         @test general_simplicial_set_intersection(left_view, right_view, SourceGlobalParams(0.)) == left_res
         right_res = [2e-9 0.5; 1e-8 0.5]
         @test general_simplicial_set_intersection(left_view, right_view, SourceGlobalParams(1.)) == right_res
+
     end
 
     @testset "reset_local_connectivity tests" begin
-        @test_skip false
 
         @testset "_norm_sparse tests" begin
             A = rand(4, 4) .+ 1e-8 # add 1e-8 to eliminate any possible

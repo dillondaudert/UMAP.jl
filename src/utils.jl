@@ -18,16 +18,16 @@ function _fuzzy_set_intersection(fs_set)
 end
 
 """
-    general_simplicial_set_union(left_view, right_view, params)
+    general_simplicial_set_union(left_view, right_view)
 
 Take the union of two global fuzzy simplicial sets.
 """
-function general_simplicial_set_union(left_view, right_view)
+function general_simplicial_set_union(left_view::AbstractSparseMatrix, right_view::AbstractSparseMatrix)
     
     result = left_view + right_view
 
-    left_min = max(minimum(left_view) / 2, 1e-8)
-    right_min = max(minimum(right_view) / 2, 1e-8)
+    left_min = max(minimum(nonzeros(left_view)) / 2, 1e-8)
+    right_min = max(minimum(nonzeros(right_view)) / 2, 1e-8)
 
     for ind in findall(!iszero, result)
         # for each index that is nonzero in at least one of left/right
@@ -47,14 +47,14 @@ Since we don't want to completely lose edges that are only present in one of the
 multiply by at least `1e-8`. Furthermore, if the same edge in both sets has a strength below
 1e-8, these are added together instead of multiplying.
 """
-function general_simplicial_set_intersection(left_view, right_view, params::SourceGlobalParams)
+function general_simplicial_set_intersection(left_view::AbstractSparseMatrix, right_view::AbstractSparseMatrix, params::SourceGlobalParams)
     # start with adding - this gets us a sparse matrix whose nonzero entries
     # are the union of left and right entries
     result = left_view + right_view
     # these added values are replaced by the weighted intersection except when both left_view[ind] and
     # right_view[ind] are less than left_min/right_min respectively.
-    left_min = max(minimum(left_view) / 2, 1e-8)
-    right_min = max(minimum(right_view) / 2, 1e-8)
+    left_min = max(minimum(nonzeros(left_view)) / 2, 1e-8)
+    right_min = max(minimum(nonzeros(right_view)) / 2, 1e-8)
     #
     for ind in findall(!iszero, result)
         # take the weighted intersection of the two sets, making sure not to
