@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.0
+# v0.19.27
 
 using Markdown
 using InteractiveUtils
@@ -7,8 +7,8 @@ using InteractiveUtils
 # ╔═╡ 75d1e5a1-5468-4c82-b074-36e3a6c6f4ec
 import Pkg
 
-# ╔═╡ 6c24e46d-33d2-44e4-ad02-510338d3486f
-Pkg.activate(".")
+# ╔═╡ b9dd81e8-193e-45ad-8db9-885d59f02f1b
+Pkg.activate(@__DIR__)
 
 # ╔═╡ dcd32c80-398b-11eb-2e05-456e126db257
 using UMAP
@@ -51,10 +51,10 @@ A very simple example of this is to find 4 approximate nearest neighbors for vec
 """
 
 # ╔═╡ 8f641ed6-398c-11eb-1678-1d25fec1110e
-xs = [rand(5) for _ in 1:10];
+xs = [rand(10) for _ in 1:10];
 
 # ╔═╡ d8424a74-398c-11eb-2caa-07c75477d11e
-knn_params = UMAP.DescentNeighbors(4, Euclidean());
+knn_params = UMAP.DescentNeighbors(4, Euclidean())
 
 # ╔═╡ c1410072-398c-11eb-1398-47403e535012
 UMAP.knn_search(xs, knn_params)
@@ -103,7 +103,7 @@ For example, in addition to the vector data `xs` we might also have string data:
 """
 
 # ╔═╡ 16633022-3990-11eb-1e5a-7f96e5fca442
-xs_str = [join(rand('A':'Z', 5), "") for _ in 1:10];
+xs_str = [join(rand('A':'Z', 10), "") for _ in 1:10];
 
 # ╔═╡ 650f8432-3990-11eb-0217-37f490ec414c
 knn_params_str = UMAP.DescentNeighbors(4, RatcliffObershelp());
@@ -126,7 +126,7 @@ Once we have one or more set of knns for our data (one for each view), we can co
 
 `fuzzy_simplicial_set(...) -> umap_graph::SparseMatrixCSC`
 
-A global fuzzy simplicial set is constructed for each view of the data with construction paramaterized by the `SourceViewParams` struct. If there is more than one view, their results are combined to return a single fuzzy simplicial set (represented as a weighted, undirected graph).
+A global fuzzy simplicial set is constructed **for each view** of the data with construction paramaterized by the `SourceViewParams` struct. If there is more than one view, their results are combined to return a single fuzzy simplicial set (represented as a weighted, undirected graph).
 """
 
 # ╔═╡ 0009ca40-3993-11eb-3b0b-db3511e3d9a7
@@ -174,7 +174,7 @@ The views' fuzzy sets are combined left-to-right according to `mix_ratio`:
 src_gbl_params = UMAP.SourceGlobalParams(0.5)
 
 # ╔═╡ fb400814-3995-11eb-0fc8-372701323b2c
-UMAP.coalesce_views(fsset_views, src_gbl_params)
+_graph = UMAP.coalesce_views(fsset_views, src_gbl_params)
 
 # ╔═╡ d2915640-3998-11eb-22c5-adc30c539cd6
 md"""
@@ -268,7 +268,7 @@ UMAP.optimize_embedding!(xs_embed, umap_graph, full_tgt_params, opt_params)
 
 # ╔═╡ Cell order:
 # ╠═75d1e5a1-5468-4c82-b074-36e3a6c6f4ec
-# ╠═6c24e46d-33d2-44e4-ad02-510338d3486f
+# ╠═b9dd81e8-193e-45ad-8db9-885d59f02f1b
 # ╠═dcd32c80-398b-11eb-2e05-456e126db257
 # ╠═0028c794-398c-11eb-3464-55d473eb6584
 # ╠═2467fefe-398c-11eb-3bc8-997aa34112d3
