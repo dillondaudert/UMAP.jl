@@ -101,7 +101,7 @@ end
 
 function _norm_sparse(simplicial_set::AbstractSparseMatrix)
     # normalize columns of sparse matrix so max is 1 for each column
-    maxvals = maximum(simplicial_set, dims=1)
+    maxvals = maximum(simplicial_set, dims=2)
     I, J, V = findnz(simplicial_set)
     newVs = copy(V)
 

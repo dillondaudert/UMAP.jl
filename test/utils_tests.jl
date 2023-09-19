@@ -38,7 +38,7 @@
             A = rand(4, 4) .+ 1e-8 # add 1e-8 to eliminate any possible
                                    # issues with zeros (even though very rare)
             spA = sparse(A)
-            @test all(A ./ maximum(A, dims=1) .== UMAP._norm_sparse(spA))
+            @test all(A ./ maximum(A, dims=2) .== UMAP._norm_sparse(spA))
         end
     
         @testset "reset_local_metrics! tests" begin
