@@ -39,6 +39,17 @@
                 @test true_knns == res.view[1]
                 @test true_dists == res.view[2]
             end
+            @testset "precomputed knngraph neighbors" begin
+                data = [rand(10) for _ in 1:100]
+                descent_params = DescentNeighbors(5, Euclidean())
+                knns, dists = knn_search(data, descent_params)
+                knn_graph = HeapKNNGraph(data, descent_params.metric, knns, dists)
+                precomp_knn_params = PrecomputedNeighbors(5, knn_graph)
+                @inferred knn_search(data, precomp_knn_params)
+                knns2, dists2 = knn_search(data, precomp_knn_params)
+                @test knns2 == knns
+                @test dists2 == dists
+            end
         end
         @testset "multiple views tests" begin
             data = [rand(10) for _ in 1:100]

@@ -8,6 +8,7 @@ using UMAP: initialize_embedding, fuzzy_simplicial_set, compute_membership_stren
 using UMAP: DescentNeighbors, PrecomputedNeighbors
 using UMAP: SourceViewParams, SourceGlobalParams
 using UMAP: coalesce_views, merge_local_simplicial_sets, general_simplicial_set_intersection, general_simplicial_set_union, reset_local_metrics!
+using NearestNeighborDescent: HeapKNNGraph
 
 include("utils_tests.jl")
 include("neighbors_tests.jl")

@@ -31,7 +31,7 @@ Parameters for finding nearest neighbors from precomputed distances.
 """
 struct PrecomputedNeighbors{M} <: NeighborParams
     n_neighbors::Int
-    dists::M
+    dists_or_graph::M
 end
 
 # SOURCE PARAMS

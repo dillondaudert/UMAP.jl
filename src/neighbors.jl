@@ -62,14 +62,20 @@ function knn_search(data, queries, knn_params::DescentNeighbors, (knns, dists))
     return search(orig_knn_graph, queries, knn_params.n_neighbors; knn_params.kwargs...)
 end
 
-# get neighbors from precomputed distance matrix
-
-function knn_search(data, knn_params::PrecomputedNeighbors)
-    return _knn_from_dists(knn_params.dists, knn_params.n_neighbors)
+# get neighbors from precomputed KNNGraph
+function knn_search(data, knn_params::PrecomputedNeighbors{M}) where {M <: ApproximateKNNGraph}
+    knn_graph = knn_params.dists_or_graph
+    return knn_matrices(knn_graph)
 end
 
+# get neighbors from precomputed distance matrix
+# fit
+function knn_search(data, knn_params::PrecomputedNeighbors)
+    return _knn_from_dists(knn_params.dists_or_graph, knn_params.n_neighbors)
+end
+# transform
 function knn_search(data, queries, knn_params::PrecomputedNeighbors, knns_dists)
-    return _knn_from_dists(knn_params.dists, knn_params.n_neighbors; ignore_diagonal=false)
+    return _knn_from_dists(knn_params.dists_or_graph, knn_params.n_neighbors; ignore_diagonal=false)
 end
 
 function _knn_from_dists(dist_mat::AbstractMatrix{S}, k::Integer; ignore_diagonal=true) where {S <: Real}
