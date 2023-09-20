@@ -61,7 +61,7 @@ UMAP.knn_search(xs, knn_params)
 
 # ╔═╡ 9279de48-398d-11eb-1e07-1136141af11e
 md"""
-The return result in this case is a tuple of 4x10 (n_neighbors x n_points) matrices, one for the indices of the nearest neighbors and the second for the distances.
+The return result in this case is a tuple of 4x10 (`n_neighbors` x `n_points`) matrices, one for the indices of the nearest neighbors and the second for the distances.
 
 e.g. `knn_search(xs, knn_params) -> indices, distances`
 """
