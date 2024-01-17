@@ -1,0 +1,11 @@
+[deps]
+AbstractPlotting = "537997a7-5e4e-5d89-9595-2241ea00577e"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+UMAP = "c4f8c510-2410-5be4-91d7-4fbaeb39457e"
+
+[compat]
+AbstractPlotting = "0.13"
+MLDatasets = "0.5"
