@@ -110,7 +110,7 @@ function UMAP_(X::AbstractMatrix{S},
     # TODO: if target variable y is passed, then construct target graph
     #       in the same manner and do a fuzzy simpl set intersection
 
-    return UMAP_(graph, hcat(embedding...), X, knns, dists)
+    return UMAP_(graph, embedding, X, knns, dists)
 end
 
 """
@@ -167,10 +167,10 @@ function transform(model::UMAP_,
     graph = fuzzy_simplicial_set(knns, dists, n_neighbors, size(model.data, 2), local_connectivity, set_operation_ratio, false)
 
     embedding = initialize_embedding(graph, model.embedding)
-    ref_embedding = collect(eachcol(model.embedding))
+    ref_embedding = model.embedding
     embedding = optimize_embedding(graph, embedding, ref_embedding, n_epochs, learning_rate, min_dist, spread, repulsion_strength, neg_sample_rate, a, b, move_ref=false)
 
-    return reduce(hcat, embedding)
+    return embedding
 end
 
 
