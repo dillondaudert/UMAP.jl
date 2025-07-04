@@ -69,7 +69,7 @@ function initialize_embedding(ref_embedding::AbstractVector{V},
                               umap_graph::AbstractSparseMatrix{T},
                               tgt_params::TargetParams) where {V, T}
     embed = V[]
-    for col_ind in 1:size(umap_graph, 2)
+    for col_ind in axes(umap_graph, 2)
         col = umap_graph[:, col_ind]
         embed_point = sum(ref_embedding[col.nzind] .* col.nzval) / (sum(col) + eps(T))
         push!(embed, embed_point)

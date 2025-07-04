@@ -84,7 +84,7 @@ function _knn_from_dists(dist_mat::AbstractMatrix{S}, k::Integer; ignore_diagona
     range = (1:k) .+ ignore_diagonal
     knns  = Array{Int,2}(undef,k,size(dist_mat,2))
     dists = Array{S,2}(undef,k,size(dist_mat,2))
-    for i ∈ 1:size(dist_mat, 2)
+    for i in axes(dist_mat, 2)
         knns[:,i]  = partialsortperm(dist_mat[ :, i], range)
         dists[:,i] = dist_mat[knns[:,i],i]
     end

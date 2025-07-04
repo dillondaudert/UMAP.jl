@@ -112,7 +112,7 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
     nonzero_dists(dists) = @view dists[dists .> 0.]
     ρs = zeros(S, size(knn_dists, 2))
     σs = Array{S}(undef, size(knn_dists, 2))
-    for i in 1:size(knn_dists, 2)
+    for i in axes(knn_dists, 2)
         nz_dists = nonzero_dists(knn_dists[:, i])
         if length(nz_dists) >= local_connectivity
             index = floor(Int, local_connectivity)
@@ -172,7 +172,7 @@ function compute_membership_strengths(knns::AbstractMatrix{S},
     rows = sizehint!(S[], length(knns))
     cols = sizehint!(S[], length(knns))
     vals = sizehint!(T[], length(knns))
-    for i in 1:size(knns, 2), j in 1:size(knns, 1)
+    for i in axes(knns, 2), j in axes(knns, 1)
         @inbounds if i == knns[j, i] # dist to self
             d = 0.
         else

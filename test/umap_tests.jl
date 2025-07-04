@@ -40,12 +40,12 @@
             ref_embedding = collect(eachcol(rand(2, size(graph, 1))))
             old_ref_embedding = deepcopy(ref_embedding)
             query_embedding = rand(2, size(graph, 2))
-            query_embedding = [query_embedding[:, i] for i in 1:size(query_embedding, 2)]
+            query_embedding = [query_embedding[:, i] for i in axes(query_embedding, 2)]
             res_embedding = optimize_embedding(graph, query_embedding, ref_embedding, n_epochs, initial_alpha,
                                                min_dist, spread, gamma, neg_sample_rate, move_ref=false)
             @test res_embedding isa Array{Array{Float64, 1}, 1}
             @test length(res_embedding) == length(query_embedding)
-            for i in 1:length(res_embedding)
+            for i in eachindex(res_embedding)
                 @test length(res_embedding[i]) == length(query_embedding[i])
             end
             @test isapprox(old_ref_embedding, ref_embedding, atol=1e-4)
@@ -74,7 +74,7 @@
         embedding = initialize_embedding(graph, ref_embedding)
         @test embedding isa AbstractVector{<:AbstractVector{Float64}}
         @test length(embedding) == length(actual)
-        for i in 1:length(embedding)
+        for i in eachindex(embedding)
             @test length(embedding[i]) == length(actual[i])
         end
         @test isapprox(embedding, actual, atol=1e-8)
@@ -88,7 +88,7 @@
         embedding = initialize_embedding(graph, ref_embedding)
         @test embedding isa AbstractVector{<:AbstractVector{Float16}}
         @test length(embedding) == length(actual)
-        for i in 1:length(embedding)
+        for i in eachindex(embedding)
             @test length(embedding[i]) == length(actual[i])
         end
         @test isapprox(embedding, actual, atol=1e-2)

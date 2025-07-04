@@ -1,5 +1,4 @@
 # notes on the fuzzy set cross entropy loss for UMAP
-
 """
 Given two fuzzy simplicial sets, we can consider the 1-skeleta as
 a fuzzy graph (i.e. a set of edges, where each edge has a probability of existing
@@ -73,7 +72,7 @@ and constants `α`, `β`:
 The approximation parameters `α`, `β` are chosen by non-linear least squares
 fitting of the following function ψ:
 """
-ψ(x, y, σ, min_dist) = 1 if σ(x, y) ≤ min_dist else exp(-(σ(x, y) - min_dist))
+ψ(x, y, σ, min_dist) = σ(x, y) ≤ min_dist ? 1 : exp(-(σ(x, y) - min_dist))
 
 """
 Optimizing the embedding is therefore accomplished by the following, where
