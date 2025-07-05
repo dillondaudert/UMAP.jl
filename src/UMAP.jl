@@ -18,6 +18,6 @@ include("optimize.jl")
 include("fit.jl")
 include("transform.jl")
 
-export umap
+public fit, transform
 
 end # module

@@ -1,4 +1,10 @@
 
+"""
+    transform(result::UMAPResult, queries, knn_params, src_params, gbl_params, tgt_params, opt_params)
+
+Transform the UMAP result for new queries.
+This function takes the result of a UMAP fit and applies it to new queries, returning an `UMAPTransformResult`.
+"""
 function transform(result::UMAPResult,
                    queries,
                    knn_params,

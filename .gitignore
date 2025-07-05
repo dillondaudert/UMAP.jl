@@ -7,3 +7,4 @@ deps/deps.jl
 
 Manifest.toml
 .vscode/settings.json
+.DS_Store
