@@ -1,11 +1,20 @@
 # parameter structs for configuring UMAP
 
 # CONSTANTS
+"""
+    SMOOTH_K_TOLERANCE
+
+Tolerance for the smooth k-distance calculation.
+"""
 const SMOOTH_K_TOLERANCE = 1e-5
 
 # NEIGHBOR PARAMS
 """
 Structs for parameterizing the knn search step of UMAP.
+
+Subtyping `NeighborParams` allows for different methods of finding nearest neighbors.
+The `knn_search` function will dispatch on the type of `knn_params` to
+find the nearest neighbors in the data.
 """
 abstract type NeighborParams end
 
@@ -25,7 +34,7 @@ end
 DescentNeighbors(n_neighbors, metric) = DescentNeighbors(n_neighbors, metric, NamedTuple())
 
 """
-    PrecomputedNeighbors(n_neighbors, dists)
+    PrecomputedNeighbors(n_neighbors, dists_or_graphs)
 
 Parameters for finding nearest neighbors from precomputed distances.
 """

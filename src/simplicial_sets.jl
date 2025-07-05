@@ -29,6 +29,10 @@ function fuzzy_simplicial_set end
 
 """
     fuzzy_simplicial_set(knns_dists::NamedTuple{T}, knn_params::NamedTuple{T}, src_params::NamedTuple{T}) -> NamedTuple{T}
+
+(Fit) Construct a fuzzy simplicial set for each view of the data, returning a named tuple
+of fuzzy simplicial sets, one for each view. The keys of the named tuple are the
+keys of the input NamedTuples.
 """
 function fuzzy_simplicial_set(knns_dists::NamedTuple{T},
                               knn_params::NamedTuple{T},
@@ -37,7 +41,12 @@ function fuzzy_simplicial_set(knns_dists::NamedTuple{T},
     return view_fuzzy_sets
 end
 
-# transform multiple views
+"""
+    fuzzy_simplicial_set(data::NamedTuple{T}, knns_dists::NamedTuple{T}, knn_params::NamedTuple{T}, src_params::NamedTuple{T}) -> NamedTuple{T}
+
+(Transform) Construct a fuzzy simplicial set for each view of the data, returning a named tuple
+of fuzzy simplicial sets, one for each view.
+"""
 function fuzzy_simplicial_set(data::NamedTuple{T},
                               knns_dists::NamedTuple{T},
                               knn_params::NamedTuple{T},

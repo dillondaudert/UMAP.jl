@@ -1,6 +1,6 @@
 # generate the documentation
 
-using Documenter, UMAP
+using Documenter, UMAP, NearestNeighborDescent
 
 makedocs(
     #modules=[UMAP],
@@ -15,4 +15,8 @@ makedocs(
             "Internal" => "ref/internal.md",
         ],
     ]
+)
+
+deploydocs(
+    repo="github.com/dillondaudert/UMAP.jl.git",
 )

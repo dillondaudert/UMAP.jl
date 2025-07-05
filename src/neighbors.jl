@@ -25,6 +25,8 @@ function knn_search end
 # for each view, find the knns (fit)
 """
     knn_search(data::NamedTuple{T}, knn_params::NamedTuple{T}) -> NamedTuple{T}
+
+(FIT) Map `knn_search` over each view of the data and corresponding knn_params.
 """
 function knn_search(data::NamedTuple{T}, knn_params::NamedTuple{T}) where T
     return map(knn_search, data, knn_params)
@@ -33,6 +35,9 @@ end
 
 """
     knn_search(data::NamedTuple{T}, queries::NamedTuple{T}, knn_params::NamedTuple{T}, result_knns_dists::NamedTuple{T}) -> NamedTuple{T}
+
+(TRANSFORM) Map `knn_search` over each view of the data, queries, knn_params, and
+result_knns_dists.
 """
 function knn_search(data::NamedTuple{T}, queries::NamedTuple{T}, knn_params::NamedTuple{T}, result_knns_dists::NamedTuple{T}) where T
     return map(knn_search, data, queries, knn_params, result_knns_dists)
@@ -53,6 +58,7 @@ end
     knn_search(data, queries, knn_params::DescentNeighbors, result_knns_dists) -> (knns, dists)
 
 Search for approximate nearest neighbors of queries in data using nndescent.
+The (knns, dists) are used to reconstruct the original KNN graph.
 """
 function knn_search(data, queries, knn_params::DescentNeighbors, (knns, dists))
     orig_knn_graph = HeapKNNGraph(data,
@@ -63,21 +69,48 @@ function knn_search(data, queries, knn_params::DescentNeighbors, (knns, dists))
 end
 
 # get neighbors from precomputed KNNGraph
-function knn_search(data, knn_params::PrecomputedNeighbors{M}) where {M <: ApproximateKNNGraph}
+"""
+    knn_search(_, knn_params::PrecomputedNeighbors{M}) where {M <: ApproximateKNNGraph}
+
+Get neighbors from a precomputed KNNGraph.
+This method is used when the KNN graph has been precomputed using NearestNeighborDescent
+"""
+function knn_search(_, knn_params::PrecomputedNeighbors{M}) where {M <: ApproximateKNNGraph}
     knn_graph = knn_params.dists_or_graph
     return knn_matrices(knn_graph)
 end
 
-# get neighbors from precomputed distance matrix
-# fit
-function knn_search(data, knn_params::PrecomputedNeighbors)
+
+"""
+    knn_search(_, knn_params::PrecomputedNeighbors)
+
+(FIT) Get neighbors from a precomputed distance matrix.
+"""
+function knn_search(_, knn_params::PrecomputedNeighbors)
     return _knn_from_dists(knn_params.dists_or_graph, knn_params.n_neighbors)
 end
-# transform
-function knn_search(data, queries, knn_params::PrecomputedNeighbors, knns_dists)
+"""
+    knn_search(_, __, knn_params::PrecomputedNeighbors, knns_dists)
+
+(TRANSFORM) Get neighbors from a precomputed distance matrix.
+"""
+function knn_search(_, __, knn_params::PrecomputedNeighbors, knns_dists)
     return _knn_from_dists(knn_params.dists_or_graph, knn_params.n_neighbors; ignore_diagonal=false)
 end
 
+
+"""
+    _knn_from_dists(dist_mat::AbstractMatrix{S}, k::Integer; ignore_diagonal=true) where {S <: Real}
+
+Construct k-nearest neighbors and distances from a distance matrix.
+If `ignore_diagonal` is true, the diagonal elements (which are 0) will
+be ignored when determining the k-nearest neighbors. This is useful when
+the distance matrix represents pairwise distances of the same set, where
+the diagonal elements are the distances to themselves and will always be 0.
+
+Returns a tuple of two matrices: the first contains the indices of the k-nearest neighbors,
+and the second contains the corresponding distances to those neighbors.
+"""
 function _knn_from_dists(dist_mat::AbstractMatrix{S}, k::Integer; ignore_diagonal=true) where {S <: Real}
     # Ignore diagonal 0 elements (which will be smallest) when distance matrix represents pairwise distances of the same set
     # If dist_mat represents distances between two different sets, diagonal elements be nontrivial
