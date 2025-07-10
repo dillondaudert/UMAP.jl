@@ -5,7 +5,6 @@ on:
             - master
             - v0.2-dev
         tags: '*'
-    pull_request:
 
 jobs:
     build:
