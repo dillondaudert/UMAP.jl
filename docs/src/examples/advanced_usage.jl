@@ -4,22 +4,22 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 75d1e5a1-5468-4c82-b074-36e3a6c6f4ec
-import Pkg
-
-# ╔═╡ b9dd81e8-193e-45ad-8db9-885d59f02f1b
+# ╔═╡ f5d0fb68-3cc8-41c1-9775-a7bdb4e3aac1
 begin
-	Pkg.activate(".")
-	Pkg.instantiate()
-end
+	import Pkg
+	Pkg.activate(mktempdir())
+	Pkg.add(path="../../..")
+	Pkg.add("Distances")
+	Pkg.add("StringDistances")
+end; # hideall
 
-# ╔═╡ dcd32c80-398b-11eb-2e05-456e126db257
+# ╔═╡ ac958851-2b12-4f08-85aa-36193d43276e
 using UMAP
 
-# ╔═╡ 0028c794-398c-11eb-3464-55d473eb6584
+# ╔═╡ d1b241bc-2f6b-4853-b657-b5acbb8914e7
 using Distances
 
-# ╔═╡ 2467fefe-398c-11eb-3bc8-997aa34112d3
+# ╔═╡ ff3be6f0-f809-42b8-9457-2542e6002a2e
 using StringDistances
 
 # ╔═╡ 279cd6ba-398c-11eb-3726-017ceb9dea5c
@@ -270,11 +270,10 @@ opt_params = UMAP.OptimizationParams(1, 1., 1., 5)
 UMAP.optimize_embedding!(xs_embed, umap_graph, full_tgt_params, opt_params)
 
 # ╔═╡ Cell order:
-# ╠═75d1e5a1-5468-4c82-b074-36e3a6c6f4ec
-# ╠═b9dd81e8-193e-45ad-8db9-885d59f02f1b
-# ╠═dcd32c80-398b-11eb-2e05-456e126db257
-# ╠═0028c794-398c-11eb-3464-55d473eb6584
-# ╠═2467fefe-398c-11eb-3bc8-997aa34112d3
+# ╠═f5d0fb68-3cc8-41c1-9775-a7bdb4e3aac1
+# ╠═ac958851-2b12-4f08-85aa-36193d43276e
+# ╠═d1b241bc-2f6b-4853-b657-b5acbb8914e7
+# ╠═ff3be6f0-f809-42b8-9457-2542e6002a2e
 # ╟─279cd6ba-398c-11eb-3726-017ceb9dea5c
 # ╟─72b19124-3996-11eb-37cb-4184976b0d9b
 # ╟─2e7552d4-398c-11eb-2f64-63b8af73b208
