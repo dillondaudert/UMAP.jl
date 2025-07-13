@@ -1,5 +1,7 @@
 # UMAP.jl
-[![Coverage Status](https://coveralls.io/repos/github/dillondaudert/UMAP.jl/badge.svg?branch=master)](https://coveralls.io/github/dillondaudert/UMAP.jl?branch=master) [![codecov](https://codecov.io/gh/dillondaudert/UMAP.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/dillondaudert/UMAP.jl)
+| **Documentation** | **Build Status** | **Test Coverage** |
+|:-----------------:|:----------------:|:----------------:|
+| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![CI](https://github.com/dillondaudert/UMAP.jl/actions/workflows/CI.yml/badge.svg?branch=v0.2-dev)](https://github.com/dillondaudert/UMAP.jl/actions/workflows/CI.yml) | [![][codecov-img]][codecov-url] [![][coveralls-img]][coveralls-url] |
 
 A pure Julia implementation of the [Uniform Manifold Approximation and Projection](https://arxiv.org/abs/1802.03426) dimension reduction
 algorithm
@@ -80,3 +82,15 @@ Note that the memory allocation for the Python UMAP is unreliable, as Julia's be
 ## Disclaimer
 This implementation is a work-in-progress. If you encounter any issues, please create
 an issue or make a pull request.
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://dillondaudert.github.io/UMAP.jl/stable
+
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: https://dillondaudert.github.io/UMAP.jl/dev
+
+[codecov-img]: https://codecov.io/gh/dillondaudert/UMAP.jl/branch/v0.2-dev/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/dillondaudert/UMAP.jl
+
+[coveralls-img]: https://coveralls.io/repos/github/dillondaudert/UMAP.jl/badge.svg?branch=v0.2-dev
+[coveralls-url]: https://coveralls.io/github/dillondaudert/UMAP.jl?branch=v0.2-dev
