@@ -8,7 +8,10 @@ using InteractiveUtils
 import Pkg
 
 # ╔═╡ b9dd81e8-193e-45ad-8db9-885d59f02f1b
-Pkg.activate(@__DIR__)
+begin
+	Pkg.activate(".")
+	Pkg.instantiate()
+end
 
 # ╔═╡ dcd32c80-398b-11eb-2e05-456e126db257
 using UMAP
