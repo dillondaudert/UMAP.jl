@@ -1,6 +1,25 @@
 # generate the documentation
 
 using Documenter, UMAP, NearestNeighborDescent
+using PlutoStaticHTML
+
+# run Pluto notebooks to generate files for Documenter
+notebook_dir = joinpath(@__DIR__, "src", "examples")
+notebook_files = ["advanced_usage.jl"]
+build_opts = PlutoStaticHTML.BuildOptions(
+    notebook_dir;
+    output_format=documenter_output,
+    previous_dir=notebook_dir,
+)
+output_opts = PlutoStaticHTML.OutputOptions(;
+    show_output_above_code=true,
+)
+
+build_notebooks(
+    build_opts,
+    notebook_files,
+    output_opts
+)
 
 makedocs(
     #modules=[UMAP],
@@ -8,13 +27,16 @@ makedocs(
     authors="Dillon Daudert",
     pages=[
         "Home" => "index.md",
-        "Basic Usage" => "basic.md",
-        "Advanced Usage" => "advanced.md",
+        "Usage" => [
+            #"Basic Usage" => "examples/basic_usage.md",
+            "Advanced Usage" => "examples/advanced_usage.md",
+        ],
         "Reference" => [
             "Public" => "ref/public.md",
             "Internal" => "ref/internal.md",
         ],
-    ]
+    ],
+    warnonly=:doctest
 )
 
 deploydocs(
