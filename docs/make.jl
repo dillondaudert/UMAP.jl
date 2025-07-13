@@ -5,7 +5,7 @@ using PlutoStaticHTML
 
 # run Pluto notebooks to generate files for Documenter
 notebook_dir = joinpath(@__DIR__, "src", "examples")
-notebook_files = ["advanced_usage.jl"]
+notebook_files = ["advanced_usage.jl", "composite.jl"]
 build_opts = PlutoStaticHTML.BuildOptions(
     notebook_dir;
     output_format=documenter_output,
@@ -30,13 +30,17 @@ makedocs(
         "Usage" => [
             #"Basic Usage" => "examples/basic_usage.md",
             "Advanced Usage" => "examples/advanced_usage.md",
+            "Composite Views" => "examples/composite.md",
         ],
         "Reference" => [
             "Public" => "ref/public.md",
             "Internal" => "ref/internal.md",
         ],
     ],
-    warnonly=:doctest
+    warnonly=:doctest,
+    format=Documenter.HTML(
+        size_threshold=nothing, # disable size threshold for HTML output
+    )
 )
 
 deploydocs(

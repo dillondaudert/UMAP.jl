@@ -1,11 +1,17 @@
 ### A Pluto.jl notebook ###
-# v0.12.18
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
 
+# ╔═╡ 9f99b293-9ebe-4a92-ac63-e8d148d3dd62
+begin
+	using Pkg
+	Pkg.activate(@__DIR__)
+end
+
 # ╔═╡ a0d99c2a-4550-11eb-257b-4dc0fe9c1489
-using Plots
+using CairoMakie
 
 # ╔═╡ ad414d14-4550-11eb-30b1-e5144aa81188
 using MLDatasets
@@ -41,6 +47,7 @@ scatter(getindex.(result.embedding[1:1000], 1), getindex.(result.embedding[1:100
 
 
 # ╔═╡ Cell order:
+# ╠═9f99b293-9ebe-4a92-ac63-e8d148d3dd62
 # ╠═a0d99c2a-4550-11eb-257b-4dc0fe9c1489
 # ╠═ad414d14-4550-11eb-30b1-e5144aa81188
 # ╠═b063762a-4550-11eb-3fac-5d67635c5045
