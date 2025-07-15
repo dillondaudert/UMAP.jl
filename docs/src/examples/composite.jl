@@ -38,7 +38,7 @@ As a simple example, we can split the Fashion MNIST dataset in two: one with the
 """
 
 # ╔═╡ ff7bcd50-49f3-11eb-203e-e13e7df76d20
-n_points = 20_000
+n_points = 3_000
 
 # ╔═╡ b859e40c-49f3-11eb-2b4b-e7f11b310e5a
 fmnist_x = FashionMNIST(split=:train).features[:, :, 1:n_points];
