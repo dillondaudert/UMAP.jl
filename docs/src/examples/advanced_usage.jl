@@ -7,10 +7,7 @@ using InteractiveUtils
 # ╔═╡ f5d0fb68-3cc8-41c1-9775-a7bdb4e3aac1
 begin
 	import Pkg
-	Pkg.activate(mktempdir())
-	Pkg.add(path="../../..")
-	Pkg.add("Distances")
-	Pkg.add("StringDistances")
+	Pkg.activate(Base.current_project())
 end; # hideall
 
 # ╔═╡ ac958851-2b12-4f08-85aa-36193d43276e

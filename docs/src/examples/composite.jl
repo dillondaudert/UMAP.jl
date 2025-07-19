@@ -7,11 +7,7 @@ using InteractiveUtils
 # ╔═╡ feec560e-edd7-41b5-a357-1cf4fb67e9f7
 begin
 	import Pkg
-	Pkg.activate(mktempdir())
-	Pkg.add(path="../../..")
-	Pkg.add("Distances")
-	Pkg.add("MLDatasets")
-	Pkg.add("CairoMakie")
+	Pkg.activate(Base.current_project())
 end; # hideall
 
 # ╔═╡ a7852e02-49f3-11eb-2572-6129ad6f7875
