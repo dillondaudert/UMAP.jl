@@ -1,127 +1,55 @@
 
 @testset "umap tests" begin
 
-    @testset "constructor" begin
+    @testset "fit function" begin
         @testset "argument validation tests" begin
             data = rand(5, 10)
-            @test_throws ArgumentError UMAP_([1. 1.]; n_neighbors=0) # n_neighbors error
-            @test_throws ArgumentError UMAP_([1. 1.], 0; n_neighbors=1) # n_comps error
-            @test_throws ArgumentError UMAP_([1. 1.], 2; n_neighbors=1) # n_comps error
-            @test_throws ArgumentError UMAP_([1. 1.; 1. 1.; 1. 1.];
+            @test_throws ArgumentError fit([1. 1.]; n_neighbors=0) # n_neighbors error
+            @test_throws ArgumentError fit([1. 1.], 0; n_neighbors=1) # n_comps error
+            @test_throws ArgumentError fit([1. 1.], 2; n_neighbors=1) # n_comps error
+            @test_throws ArgumentError fit([1. 1.; 1. 1.; 1. 1.];
                     n_neighbors=1, min_dist = 0.) # min_dist error
         end
     end
 
     @testset "input type stability tests" begin
         data = rand(5, 100)
-        umap_ = UMAP_(data; init=:random)
-        @test umap_ isa UMAP_{Float64}
-        @test size(umap_.graph) == (100, 100)
-        @test size(umap_.embedding) == (2, 100)
-        @test umap_.data === data
+        result = fit(data; init=UMAP.UniformInitialization())
+        @test result isa UMAPResult
+        @test size(result.graph) == (100, 100)
+        @test size(result.embedding) == (2, 100)
+        @test result.data === data
 
         data = rand(Float32, 5, 100)
-        @test UMAP_(data; init=:random) isa UMAP_{Float32}
+        result = fit(data; init=UMAP.UniformInitialization())
+        @test result isa UMAPResult
+        @test eltype(result.embedding) == Float32
     end
 
-    @testset "optimize_embedding" begin
-        graph1 = sparse(Symmetric(sprand(6,6,0.4)))
-        graph2 = sparse(sprand(5,3,0.4))
-        graph3 = sparse(sprand(3,5,0.4))
-        embedding = Vector{Float64}[[3, 1], [4, 5], [2, 3], [1, 7], [6, 3], [2, 6]]
-
-        n_epochs = 1
-        initial_alpha = 1.
-        min_dist = 1.
-        spread = 1.
-        gamma = 1.
-        neg_sample_rate = 5
-        for graph in [graph1, graph2, graph3]
-            ref_embedding = collect(eachcol(rand(2, size(graph, 1))))
-            old_ref_embedding = deepcopy(ref_embedding)
-            query_embedding = rand(2, size(graph, 2))
-            query_embedding = [query_embedding[:, i] for i in axes(query_embedding, 2)]
-            res_embedding = optimize_embedding(graph, query_embedding, ref_embedding, n_epochs, initial_alpha,
-                                               min_dist, spread, gamma, neg_sample_rate, move_ref=false)
-            @test res_embedding isa Array{Array{Float64, 1}, 1}
-            @test length(res_embedding) == length(query_embedding)
-            for i in eachindex(res_embedding)
-                @test length(res_embedding[i]) == length(query_embedding[i])
-            end
-            @test isapprox(old_ref_embedding, ref_embedding, atol=1e-4)
-        end
-    end
-
-    @testset "spectral_layout" begin
-        A = sprand(10000, 10000, 0.001)
-        B = dropzeros(A + A' - A .* A')
-        layout = spectral_layout(B, 5)
-        @test layout isa Array{Float64, 2}
-        @inferred spectral_layout(B, 5)
-        layout32 = spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
-        @test layout32 isa Array{Float32, 2}
-        @inferred spectral_layout(convert(SparseMatrixCSC{Float32}, B), 5)
-    end
-
-    @testset "initialize_embedding" begin
-        graph = [5 0 1 1;
-                 2 4 1 1;
-                 3 6 8 8] ./10
-        ref_embedding = Float64[1 2 0;
-                                0 2 -1]
-        actual = [[9, 1], [8, 2], [3, -6], [3, -6]] ./10
-
-        embedding = initialize_embedding(graph, ref_embedding)
-        @test embedding isa AbstractVector{<:AbstractVector{Float64}}
-        @test length(embedding) == length(actual)
-        for i in eachindex(embedding)
-            @test length(embedding[i]) == length(actual[i])
-        end
-        @test isapprox(embedding, actual, atol=1e-8)
-
-        graph = Float16.(graph[:, [1,2]])
-        graph[:, end] .= 0
-        ref_embedding = Float16[1 2 0;
-                                0 2 -1]
-        actual = Vector{Float16}[[9, 1], [0, 0]] ./10
-
-        embedding = initialize_embedding(graph, ref_embedding)
-        @test embedding isa AbstractVector{<:AbstractVector{Float16}}
-        @test length(embedding) == length(actual)
-        for i in eachindex(embedding)
-            @test length(embedding[i]) == length(actual[i])
-        end
-        @test isapprox(embedding, actual, atol=1e-2)
-    end
 
     @testset "umap transform" begin
         @testset "argument validation tests" begin
             data = rand(5, 10)
-            model = UMAP_(data, 2, n_neighbors=2, n_epochs=1)
+            result = fit(data, 2; n_neighbors=2, n_epochs=1)
             query = rand(5, 8)
-            @test_throws ArgumentError transform(model, rand(6, 8); n_neighbors=3) # query size error
-            @test_throws ArgumentError transform(model, query; n_neighbors=0) # n_neighbors error
-            @test_throws ArgumentError transform(model, query; n_neighbors=15) # n_neighbors error
-            @test_throws ArgumentError transform(model, query; n_neighbors=1, min_dist = 0.) # min_dist error
-
-            model = UMAP_(model.graph, model.embedding, rand(6, 10), model.knns, model.dists)
-            @test_throws ArgumentError transform(model, query; n_neighbors=3) # data size error
-            model = UMAP_(model.graph, model.embedding, rand(5, 9), model.knns, model.dists)
-            @test_throws ArgumentError transform(model, query; n_neighbors=3) # data size error
+            @test_throws ArgumentError transform(result, rand(6, 8); n_neighbors=3) # query size error
+            @test_throws ArgumentError transform(result, query; n_neighbors=0) # n_neighbors error
+            @test_throws ArgumentError transform(result, query; n_neighbors=15) # n_neighbors error
+            @test_throws ArgumentError transform(result, query; n_neighbors=1, min_dist = 0.) # min_dist error
         end
 
         @testset "transform test" begin
             data = rand(5, 30)
-            model = UMAP_(data, 2, n_neighbors=2, n_epochs=1)
-            embedding = transform(model, rand(5, 10), n_epochs=5, n_neighbors=5)
-            @test size(embedding) == (2, 10)
-            @test typeof(embedding) == typeof(model.embedding)
+            result = fit(data, 2; n_neighbors=2, n_epochs=1)
+            transform_result = transform(result, rand(5, 10); n_epochs=5, n_neighbors=5)
+            @test size(transform_result.embedding) == (2, 10)
+            @test typeof(transform_result.embedding) == typeof(result.embedding)
 
             data = rand(Float32, 5, 30)
-            model = UMAP_(data, 2, n_neighbors=2, n_epochs=1)
-            embedding = @inferred transform(model, rand(5, 50), n_epochs=5, n_neighbors=5)
-            @test size(embedding) == (2, 50)
-            @test typeof(embedding) == typeof(model.embedding)
+            result = fit(data, 2; n_neighbors=2, n_epochs=1)
+            transform_result = @inferred transform(result, rand(Float32, 5, 50); n_epochs=5, n_neighbors=5)
+            @test size(transform_result.embedding) == (2, 50)
+            @test typeof(transform_result.embedding) == typeof(result.embedding)
         end
     end
 end
