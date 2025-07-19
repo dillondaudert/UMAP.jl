@@ -8,6 +8,7 @@ using InteractiveUtils
 begin
 	import Pkg
 	Pkg.activate(Base.current_project())
+	Pkg.instantiate()
 end; # hideall
 
 # ╔═╡ ac958851-2b12-4f08-85aa-36193d43276e
