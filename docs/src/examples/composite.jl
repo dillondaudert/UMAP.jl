@@ -7,7 +7,12 @@ using InteractiveUtils
 # ╔═╡ feec560e-edd7-41b5-a357-1cf4fb67e9f7
 begin
 	import Pkg
-	Pkg.activate(Base.current_project())
+	Pkg.activate(mktempdir())
+	Pkg.develop(Pkg.PackageSpec(path="../../.."))
+	Pkg.add("Distances")
+	Pkg.add("StringDistances")
+	Pkg.add("MLDatasets")
+	Pkg.add("CairoMakie")
 	Pkg.instantiate()
 end; # hideall
 
