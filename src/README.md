@@ -1,172 +1,293 @@
-# UMAP.jl Source Code Overview
+# UMAP.jl Source Code Architecture
 
-This directory contains the source code for the UMAP (Uniform Manifold Approximation and Projection) Julia implementation. This is a **work-in-progress** implementation that appears to be in the middle of a major refactoring from an older codebase.
+This document provides a comprehensive "theory-building" mental model of the UMAP.jl codebase, documenting the key abstractions and how they fit together.
 
-## Current Status: 🚧 **INCOMPLETE/BROKEN** 🚧
+## Overview
 
-The codebase is currently in a transitional state and **will not work** as-is. The main issues are:
+UMAP.jl implements the Uniform Manifold Approximation and Projection (UMAP) algorithm for dimensionality reduction. The implementation is structured as a functional pipeline with clear separation of concerns across multiple stages.
 
-1. **Missing main interface**: The exported `umap` function is not implemented
-2. **Missing utility functions**: Several functions referenced in the code don't exist
-3. **Incomplete integration**: The new modular structure isn't fully connected
+## Core Pipeline
 
-## File Overview
+The UMAP algorithm flows through four main stages:
 
-### Core Module Files
+1. **K-Nearest Neighbors Search** → finds approximate nearest neighbors for each point
+2. **Fuzzy Simplicial Set Construction** → builds a topological representation of the data
+3. **Embedding Initialization** → creates initial positions in the target space
+4. **Embedding Optimization** → refines the embedding via gradient descent
 
-#### `UMAP.jl` - Main Module File
-- **Purpose**: Main module definition and exports
-- **Status**: 🔴 **BROKEN** - References non-existent `umap_.jl` file  
-- **Exports**: `umap` (not implemented), `UMAP_` (not implemented), `transform` (not implemented)
-- **Dependencies**: Arpack, Distances, LinearAlgebra, LsqFit, NearestNeighborDescent, Setfield, SparseArrays
-- **Missing**: The `umap_.jl` include is referencing a file that doesn't exist in the new structure
+## File Organization
 
-#### `config.jl` - Configuration & Parameter Structs
-- **Purpose**: Defines all parameter structs and configuration types for UMAP
-- **Status**: ✅ **COMPLETE** - Appears fully implemented
-- **Key Types**:
-  - `NeighborParams` (abstract) with `DescentNeighbors` and `PrecomputedNeighbors`
-  - `SourceViewParams` for manifold representation parameters
-  - `SourceGlobalParams` for merging multiple views
-  - `TargetParams` for embedding configuration
-  - `MembershipFnParams` for membership function parameters
-  - `OptimizationParams` for optimization settings
-  - `UMAPConfig`, `UMAPResult`, `UMAPTransformResult` for results
-- **Relations**: Used by all other modules for configuration
+| File | Purpose |
+|------|---------|
+| `UMAP.jl` | Module definition and includes |
+| `config.jl` | Configuration types and parameters |
+| `neighbors.jl` | K-nearest neighbor search |
+| `membership_fn.jl` | Membership function fitting |
+| `simplicial_sets.jl` | Fuzzy simplicial set construction |
+| `embeddings.jl` | Embedding initialization |
+| `optimize.jl` | Embedding optimization via SGD |
+| `fit.jl` | Main fitting function |
+| `transform.jl` | Transform new data using fitted model |
+| `utils.jl` | Utility functions for set operations and evaluation |
 
-### Core Algorithm Files
+## Key Type Abstractions
 
-#### `neighbors.jl` - Nearest Neighbor Search
-- **Purpose**: Handles k-nearest neighbor search for different data types
-- **Status**: 🟡 **INCOMPLETE** - Missing utility functions
-- **Key Functions**:
-  - `knn_search` with multiple method dispatch for different data/parameter types
-  - Support for approximate neighbors via NearestNeighborDescent
-  - Support for precomputed distances and KNN graphs
-- **Missing**: 
-  - `knn_matrices` function (referenced but not defined)
-  - `HeapKNNGraph` type/constructor (from NearestNeighborDescent?)
-  - `ApproximateKNNGraph` type
-- **Relations**: Used by `fit.jl` and `transform.jl`
+### Configuration Types
 
-#### `simplicial_sets.jl` - Fuzzy Simplicial Set Construction
-- **Purpose**: Constructs fuzzy simplicial sets from k-nearest neighbor graphs
-- **Status**: 🟡 **MOSTLY COMPLETE** - Has one TODO
-- **Key Functions**:
-  - `fuzzy_simplicial_set` for single and multiple views
-  - `coalesce_views` for merging multiple view representations
-  - `smooth_knn_dists` for distance normalization
-  - `compute_membership_strengths` for edge weight computation
-- **TODO**: Line 158 - "set according to min k dist scale"
-- **Relations**: Uses `neighbors.jl` output, feeds into `embeddings.jl`
+The algorithm is parameterized by five categories of configuration:
 
-#### `embeddings.jl` - Embedding Initialization
-- **Purpose**: Initializes target embedding points in the target manifold
-- **Status**: ✅ **COMPLETE** - Appears fully implemented
-- **Key Features**:
-  - Spectral initialization using eigenvectors
-  - Uniform random initialization
-  - Reference-based initialization for transforms
-  - Support for different manifold types (currently only Euclidean)
-- **Relations**: Uses output from `simplicial_sets.jl`, feeds into `optimize.jl`
+#### 1. Neighbor Search Parameters (`NeighborParams`)
+Abstract base type with two concrete implementations:
 
-#### `optimize.jl` - Embedding Optimization
-- **Purpose**: Optimizes the embedding using gradient descent
-- **Status**: ✅ **COMPLETE** - Appears fully implemented
-- **Key Functions**:
-  - `optimize_embedding!` for both fit and transform scenarios
-  - Gradient computation for attractive and repulsive forces
-  - Cross-entropy loss calculation
-  - Support for different distance metrics on target manifold
-- **Relations**: Uses embeddings from `embeddings.jl`, produces final result
+- **`DescentNeighbors{M, K}`**: Uses approximate nearest neighbor search via NearestNeighborDescent
+  - Fields: `n_neighbors::Int`, `metric::M`, `kwargs::K`
 
-### High-Level Interface Files
+- **`PrecomputedNeighbors{M}`**: Uses precomputed distances or KNN graphs
+  - Fields: `n_neighbors::Int`, `dists_or_graph::M`
 
-#### `fit.jl` - Main Fitting Interface
-- **Purpose**: Main interface for fitting UMAP to data
-- **Status**: 🟡 **INCOMPLETE** - Missing main `umap` function
-- **Key Functions**:
-  - `fit` with keyword arguments (complete)
-  - `fit` with explicit parameters (complete)
-- **Missing**: The main `umap` function that should wrap `fit`
-- **Relations**: Orchestrates the entire pipeline using all other modules
+#### 2. Source (Input Space) Parameters
 
-#### `transform.jl` - Transform Interface
-- **Purpose**: Transform new data using existing UMAP model
-- **Status**: 🟡 **INCOMPLETE** - Function exists but not exported/connected
-- **Key Functions**:
-  - `transform` for applying fitted model to new data
-- **Missing**: Integration with main interface, proper result type handling
-- **Relations**: Uses similar pipeline as `fit.jl` but with reference embedding
+- **`SourceViewParams{T<:Real}`**: Controls fuzzy simplicial set construction per data view
+  - `set_operation_ratio::T` — blend between union (1.0) and intersection (0.0)
+  - `local_connectivity::T` — number of neighbors assumed locally connected
+  - `bandwidth::T` — bandwidth for smooth k-distance calculation
 
-### Utility Files
+- **`SourceGlobalParams{T<:Real}`**: Controls merging of multiple views
+  - `mix_ratio::T` — ratio for weighted intersection of views
 
-#### `utils.jl` - Utility Functions
-- **Purpose**: Various utility functions for set operations and evaluation
-- **Status**: ✅ **COMPLETE** - Appears fully implemented
-- **Key Functions**:
-  - Fuzzy set operations (union, intersection, merging)
-  - Local connectivity reset functions
-  - Trustworthiness evaluation for embeddings
-  - Matrix utilities for sparse operations
-- **Relations**: Used throughout the codebase for various operations
+#### 3. Target (Embedding Space) Parameters
 
-#### `membership_fn.jl` - Membership Function Fitting
-- **Purpose**: Fits smooth membership function parameters
-- **Status**: ✅ **COMPLETE** - Small but complete
-- **Key Functions**:
-  - `fit_ab` for fitting membership function parameters
-- **Relations**: Used by `config.jl` for `MembershipFnParams`
+- **`TargetParams{M, D, I, P}`**: Controls the embedding space
+  - `manifold::M` — target manifold (typically `_EuclideanManifold{N}`)
+  - `metric::D` — distance metric (e.g., `SqEuclidean()`, `Euclidean()`)
+  - `init::I` — initialization method
+  - `memb_params::P` — membership function parameters
 
-## Dependencies & Integration
+- **`MembershipFnParams{T<:Real}`**: Parameters for the target membership function
+  - `min_dist::T` — minimum spacing in embedding
+  - `spread::T` — effective scale of embedded points
+  - `a::T`, `b::T` — curve fitting parameters (computed from min_dist/spread if not provided)
 
-### External Dependencies
-- **NearestNeighborDescent.jl**: For approximate k-NN search
-- **Distances.jl**: For distance metrics
-- **LsqFit.jl**: For curve fitting in membership functions
-- **Arpack.jl**: For spectral initialization
-- **SparseArrays.jl**: For sparse matrix operations
-- **LinearAlgebra.jl**: For linear algebra operations
+- **`AbstractInitialization`**: Base type for initialization methods
+  - `SpectralInitialization` — uses spectral decomposition of graph Laplacian
+  - `UniformInitialization` — random uniform initialization
 
-### Missing Dependencies
-The code references several functions/types that may need to be imported or implemented:
-- `knn_matrices` (possibly from NearestNeighborDescent?)
-- `HeapKNNGraph` (possibly from NearestNeighborDescent?)
-- `ApproximateKNNGraph` (possibly from NearestNeighborDescent?)
+#### 4. Optimization Parameters
 
-## What Needs to Be Done
+- **`OptimizationParams`**: Controls stochastic gradient descent
+  - `n_epochs::Int` — number of optimization epochs
+  - `lr::Float64` — initial learning rate
+  - `repulsion_strength::Float64` — weighting of negative samples
+  - `neg_sample_rate::Int` — number of negative samples per positive sample
 
-### High Priority (Required to make it work)
-1. **Implement main `umap` function** - Create the main user interface
-2. **Fix missing utility functions** - Implement or properly import `knn_matrices`, `HeapKNNGraph`, etc.
-3. **Remove `umap_.jl` reference** - Update `UMAP.jl` to not include the non-existent file
-4. **Connect transform functionality** - Ensure `transform` is properly exported and integrated
+#### 5. Complete Configuration
 
-### Medium Priority (Improvements)
-1. **Complete TODO in `simplicial_sets.jl`** - Set according to min k dist scale
-2. **Add more comprehensive error handling**
-3. **Add input validation throughout**
-4. **Optimize performance where possible**
+- **`UMAPConfig{K, S, G, T, O}`**: Bundles all parameters together
+  - Fields: `knn_params`, `src_params`, `gbl_params`, `tgt_params`, `opt_params`
 
-### Low Priority (Future features)
-1. **Add support for other manifold types** (beyond Euclidean)
-2. **Add support for different initialization methods**
-3. **Add parallel processing support**
-4. **Add more distance metrics**
+### Result Types
 
-## Testing Status
+- **`UMAPResult{DS, DT, C, K, F, G}`**: Complete result of fitting UMAP
+  - `data::DS` — original data
+  - `embedding::DT` — computed embedding
+  - `config::C` — configuration used
+  - `knns_dists::K` — k-nearest neighbors and distances
+  - `fs_sets::F` — fuzzy simplicial sets (per view)
+  - `graph::G` — final UMAP graph (coalesced views)
 
-The test suite (`test/` directory) appears to be testing an older API that expects functions like `UMAP_()` and different parameter structures. The tests will need to be updated to work with the new modular structure.
+- **`UMAPTransformResult{DS, DT, K, F, G}`**: Result of transforming new data
+  - Similar structure but without config (uses existing config from fit)
 
-## Algorithm Overview
+## Core Functions by Stage
 
-The UMAP algorithm implemented here follows this general flow:
+### Stage 1: K-Nearest Neighbors Search (`neighbors.jl`)
 
-1. **Neighbor Search** (`neighbors.jl`): Find k-nearest neighbors of each point
-2. **Simplicial Set Construction** (`simplicial_sets.jl`): Build fuzzy simplicial sets from neighbors
-3. **View Coalescing** (`simplicial_sets.jl`): Merge multiple data views if present
-4. **Embedding Initialization** (`embeddings.jl`): Initialize points in target space
-5. **Optimization** (`optimize.jl`): Optimize embedding via gradient descent
-6. **Result Packaging** (`fit.jl`): Package results into appropriate return types
+**`knn_search(data, knn_params) -> (knns, dists)`**
 
-The modular design separates concerns well and should be maintainable once the missing pieces are implemented.
+Dispatches based on `knn_params` type:
+- For `DescentNeighbors`: calls `nndescent()` from NearestNeighborDescent.jl
+- For `PrecomputedNeighbors`: extracts from precomputed graph or constructs from distance matrix via `_knn_from_dists()`
+
+**Multi-view support**: When `data` and `knn_params` are `NamedTuple`s, maps `knn_search` over each view.
+
+**Transform variant**: `knn_search(data, queries, knn_params, result_knns_dists)` searches for neighbors of new queries in existing data.
+
+Key helper:
+- `_knn_from_dists(dist_mat, k; ignore_diagonal)` — extracts k-nearest neighbors from distance matrix
+
+### Stage 2: Fuzzy Simplicial Set Construction (`simplicial_sets.jl`)
+
+**`fuzzy_simplicial_set(knns_dists, knn_params, src_params) -> SparseMatrixCSC`**
+
+Converts k-nearest neighbor graph to fuzzy simplicial set (weighted graph):
+
+1. **`smooth_knn_dists(dists, k, src_params) -> (ρs, σs)`**
+   - Computes smooth approximations to k-nearest neighbor distances
+   - `ρs`: distances to nearest neighbors (with local connectivity interpolation)
+   - `σs`: normalizing distances (found via binary search to match target perplexity)
+
+2. **`compute_membership_strengths(knns, dists, σs, ρs) -> (rows, cols, vals)`**
+   - Converts distances to membership strengths: `exp(-max(d - ρ, 0) / σ)`
+   - Returns sparse matrix components
+
+3. **`merge_local_simplicial_sets(local_fs_set, set_op_ratio) -> SparseMatrixCSC`**
+   - Combines local fuzzy simplicial sets via fuzzy set union/intersection
+   - `set_op_ratio` interpolates between pure union and pure intersection
+
+**Multi-view support**:
+- `fuzzy_simplicial_set` maps over multiple views when inputs are `NamedTuple`s
+- `coalesce_views(view_fuzzy_sets, gbl_params)` merges multiple views using `general_simplicial_set_intersection()`
+
+### Stage 3: Embedding Initialization (`embeddings.jl`)
+
+**`initialize_embedding(umap_graph, tgt_params) -> embedding`**
+
+Creates initial embedding, dispatching on manifold type and initialization method:
+
+- **`SpectralInitialization`**:
+  - `spectral_layout(graph, embed_dim)` computes normalized graph Laplacian
+  - Extracts 2nd through (embed_dim+1)th smallest eigenvectors via Arpack
+  - Falls back to random initialization if spectral decomposition fails
+
+- **`UniformInitialization`**:
+  - Random uniform initialization in `[-10, 10]^N`
+
+**Transform variant**: `initialize_embedding(ref_embedding, umap_graph, tgt_params)` initializes new points as weighted averages of reference embedding.
+
+### Stage 4: Embedding Optimization (`optimize.jl`)
+
+**`optimize_embedding!(embedding, umap_graph, tgt_params, opt_params) -> embedding`**
+
+Optimizes embedding via stochastic gradient descent with:
+- **Attractive forces**: for edges in `umap_graph`, pull points together
+- **Repulsive forces**: for random negative samples, push points apart
+
+Core optimization loop in `_optimize_embedding!()`:
+- For each edge `(i, j)` with weight `p`:
+  - Sample edge with probability `p`
+  - Compute distance and gradient using target metric
+  - Apply attractive force: gradient ∝ `-a*b / (dist * (a + dist^(-b)))`
+  - Sample `neg_sample_rate` random points
+  - Apply repulsive force: gradient ∝ `repulsion_strength*b / (a*dist^(b+1) + dist)`
+- Gradients clipped to `[-4, 4]`
+- Learning rate decays linearly across epochs
+
+**Transform variant**: `optimize_embedding!(embedding, ref_embedding, umap_graph, ...)` optimizes query embedding against fixed reference embedding.
+
+**Membership function**: `fit_ab(min_dist, spread)` fits smooth curve to approximate exponential decay, returning parameters `(a, b)` used in gradient computation.
+
+## High-Level API Functions
+
+### `fit(data, n_components; kwargs...) -> UMAPResult`
+
+Main entry point. Creates configuration from kwargs, then calls pipeline:
+
+```julia
+knns_dists = knn_search(data, knn_params)
+fs_sets = fuzzy_simplicial_set(knns_dists, knn_params, src_params)
+umap_graph = coalesce_views(fs_sets, gbl_params)
+embedding = initialize_embedding(umap_graph, tgt_params)
+optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)
+```
+
+Returns `UMAPResult` containing all intermediate results.
+
+### `transform(result::UMAPResult, queries; kwargs...) -> UMAPTransformResult`
+
+Embeds new queries using existing model:
+
+```julia
+knns_dists = knn_search(result.data, queries, knn_params, result.knns_dists)
+fs_sets = fuzzy_simplicial_set(result.data, knns_dists, knn_params, src_params)
+query_graph = coalesce_views(fs_sets, gbl_params)
+query_embedding = initialize_embedding(query_graph, tgt_params)
+optimize_embedding!(query_embedding, result.embedding, query_graph, tgt_params, opt_params)
+```
+
+## Utility Functions (`utils.jl`)
+
+### Fuzzy Set Operations
+
+- **`merge_local_simplicial_sets(fs_set, set_op_ratio)`**: Merges local sets via interpolation
+- **`_fuzzy_set_union(fs_set)`**: `A ∪ B = A + B - A*B`
+- **`_fuzzy_set_intersection(fs_set)`**: `A ∩ B = A*B`
+
+### Multi-View Merging
+
+- **`general_simplicial_set_union(left, right)`**: Union of two global fuzzy sets
+- **`general_simplicial_set_intersection(left, right, params)`**: Weighted intersection with mix ratio
+- **`reset_local_connectivity(simplicial_set)`**: Rescales confidences to maintain local connectivity after merging
+
+### Evaluation Metrics
+
+- **`trustworthiness(X, X_embed, n_neighbors, metric)`**: Measures how well neighborhood structure is preserved
+
+## Design Patterns
+
+### 1. Multiple Dispatch for Extensibility
+
+The codebase uses Julia's multiple dispatch extensively:
+- `knn_search` dispatches on `NeighborParams` subtypes
+- `initialize_embedding` dispatches on manifold and initialization types
+- `_optimize_embedding!` specializes for specific manifold/metric combinations
+
+### 2. Multi-View Architecture
+
+The algorithm supports multiple "views" of data (different representations or modalities):
+- Views are represented as `NamedTuple`s with consistent keys
+- Functions map over views automatically when inputs are `NamedTuple`s
+- Views are merged using `coalesce_views()` with configurable intersection strategy
+
+### 3. Configuration via Type Parameters
+
+Configuration structs use type parameters to:
+- Enable specialization and optimization
+- Avoid runtime type instabilities
+- Make intent explicit (e.g., `DescentNeighbors` vs `PrecomputedNeighbors`)
+
+### 4. Fit/Transform Split
+
+Clear separation between:
+- **Fit**: learns structure from data (combines local fuzzy sets)
+- **Transform**: applies learned structure to new data (doesn't combine, just computes memberships)
+
+Controlled by `combine` parameter in `fuzzy_simplicial_set`.
+
+## Key Algorithms
+
+### Smooth K-Distance Calculation
+
+Binary search to find `σ` such that `∑ exp(-max(d - ρ, 0)/σ) ≈ log₂(k) * bandwidth`:
+- Ensures perplexity approximates `k`
+- `ρ` provides local connectivity offset
+
+### Spectral Initialization
+
+Computes normalized graph Laplacian `L = I - D^(-1/2) * G * D^(-1/2)` and extracts smallest eigenvectors (except the first, which is constant).
+
+### Stochastic Gradient Descent
+
+Edge-sampling SGD with:
+- Probabilistic edge selection (sample edge with probability equal to edge weight)
+- Negative sampling for repulsion
+- Gradient clipping for stability
+- Linear learning rate decay
+
+## Constants
+
+- **`SMOOTH_K_TOLERANCE = 1e-5`**: Tolerance for binary search in smooth k-distance and fuzzy set cardinality calculations
+
+## Summary
+
+This codebase implements a clean, functional pipeline for UMAP with:
+- **Strong typing**: Configuration via parameterized types
+- **Multiple dispatch**: Extensible algorithms via dispatch on types
+- **Multi-view support**: Built-in support for multi-modal data
+- **Modularity**: Clear separation of stages (neighbors → fuzzy sets → embedding → optimization)
+- **Fit/transform pattern**: Separate fitting and transformation of new data
+
+The architecture makes it straightforward to:
+- Add new neighbor search methods (extend `NeighborParams`)
+- Support new manifolds (extend `initialize_embedding` and `_optimize_embedding!`)
+- Experiment with initialization strategies (extend `AbstractInitialization`)
+- Customize fuzzy set operations (modify `merge_local_simplicial_sets`)
