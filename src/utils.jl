@@ -169,6 +169,7 @@ Compute the trustworthiness of an embedding `X_embed` compared to `X`.
 https://scikit-learn.org/stable/modules/generated/sklearn.manifold.trustworthiness.html
 """
 function trustworthiness(X, X_embed, n_neighbors, metric)
+    # FIXME: check this implementation, currently can't be used.
 
     n_points = length(axes(X)[end])
     if n_points != length(axes(X_embed)[end])

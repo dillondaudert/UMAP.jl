@@ -65,9 +65,9 @@ struct SourceViewParams{T<:Real}
     "bandwidth"
     bandwidth::T
     function SourceViewParams{T}(set_op_ratio, local_conn, bandwidth) where {T <: Real}
-        0 ≤ set_op_ratio ≤ 1 || error("set_op_ratio must be between 0 and 1")
-        local_conn > 0 || error("local_connectivity must be greater than 0")
-        bandwidth > 0 || error("bandwidth must be greater than 0")
+        0 ≤ set_op_ratio ≤ 1 || throw(ArgumentError("set_op_ratio must be between 0 and 1"))
+        local_conn > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
+        bandwidth > 0 || throw(ArgumentError("bandwidth must be greater than 0"))
         new(set_op_ratio, local_conn, bandwidth)
     end
 end
@@ -87,7 +87,7 @@ fuzzy simplicial set, otherwise known as the UMAP graph.
 struct SourceGlobalParams{T <: Real}
     mix_ratio::T
     function SourceGlobalParams{T}(mix_ratio) where {T <: Real}
-        0 ≤ mix_ratio ≤ 1 || error("mix_ratio must be between 0 and 1")
+        0 ≤ mix_ratio ≤ 1 || throw(ArgumentError("mix_ratio must be between 0 and 1"))
         new(mix_ratio)
     end
 end
@@ -121,8 +121,8 @@ mutable struct MembershipFnParams{T <: Real}
     a::T
     b::T
     function MembershipFnParams{T}(min_dist, spread, a, b) where {T <: Real}
-        min_dist > 0 || error("min_dist must be greater than 0")
-        spread > 0 || error("spread must be greater than 0")
+        min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
+        spread > 0 || throw(ArgumentError("spread must be greater than 0"))
         new(min_dist, spread, a, b)
     end
 end
@@ -160,9 +160,9 @@ struct OptimizationParams
     """
     neg_sample_rate::Int
     function OptimizationParams(n_epochs, lr, repulsion_strength, neg_sample_rate)
-        n_epochs > 0 || error("n_epochs must be greater than 0, got $n_epochs")
-        lr ≥ 0 || error("learning_rate must be non-negative, got $lr")
-        neg_sample_rate ≥ 0 || error("neg_sample_rate must be non-negative, got $neg_sample_rate")
+        n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 0, got $n_epochs"))
+        lr ≥ 0 || throw(ArgumentError("learning_rate must be non-negative, got $lr"))
+        neg_sample_rate ≥ 0 || throw(ArgumentError("neg_sample_rate must be non-negative, got $neg_sample_rate"))
         new(n_epochs, lr, repulsion_strength, neg_sample_rate)
     end
 end
