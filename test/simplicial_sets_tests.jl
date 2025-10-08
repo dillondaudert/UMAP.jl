@@ -1,3 +1,6 @@
+using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_dist, compute_membership_strengths,
+            DescentNeighbors, SourceViewParams, SourceGlobalParams
+
 @testset "simplicial sets tests" begin
 @testset "fuzzy_simplicial_set tests" begin
     knns = [2 3 2; 3 1 1]

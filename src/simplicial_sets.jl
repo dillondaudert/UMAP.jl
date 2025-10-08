@@ -144,10 +144,10 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
 end
 
 # calculate sigma for an individual point
-@fastmath function smooth_knn_dist(dists::AbstractVector, ρ, k, bandwidth, niter=64)
+function smooth_knn_dist(dists::AbstractVector, ρ, k, bandwidth, niter=64)
     target = log2(k)*bandwidth
     lo, mid, hi = 0., 1., Inf
-    for n in 1:niter
+    for _ in 1:niter
         psum = sum(exp.(-max.(dists .- ρ, 0.)./mid))
         if abs(psum - target) < SMOOTH_K_TOLERANCE
             break
