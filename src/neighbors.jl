@@ -90,11 +90,11 @@ function knn_search(_, knn_params::PrecomputedNeighbors)
     return _knn_from_dists(knn_params.dists_or_graph, knn_params.n_neighbors)
 end
 """
-    knn_search(_, __, knn_params::PrecomputedNeighbors, knns_dists)
+    knn_search(_, __, knn_params::PrecomputedNeighbors, ___)
 
 (TRANSFORM) Get neighbors from a precomputed distance matrix.
 """
-function knn_search(_, __, knn_params::PrecomputedNeighbors, knns_dists)
+function knn_search(_, __, knn_params::PrecomputedNeighbors, ___)
     return _knn_from_dists(knn_params.dists_or_graph, knn_params.n_neighbors; ignore_diagonal=false)
 end
 
