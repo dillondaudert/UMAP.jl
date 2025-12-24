@@ -6,7 +6,7 @@ using SparseArrays
 # for other packages, we use import to keep namespaces clear
 import Arpack
 import Distances
-using LsqFit: curve_fit
+import LsqFit
 using NearestNeighborDescent
 using Setfield
 

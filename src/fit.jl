@@ -23,7 +23,7 @@ Embed `data` into a `n_components`-dimensional space. Returns a `UMAPResult`.
 function fit(data,
              n_components = 2;
              n_neighbors = 15,
-             metric = Euclidean(),
+             metric = Distances.Euclidean(),
              n_epochs = 300,
              learning_rate = 1,
              init::AbstractInitialization = SpectralInitialization(),
@@ -50,7 +50,7 @@ function fit(data,
 
     # TARGET PARAMS
     memb_params = MembershipFnParams(min_dist, spread, a, b)
-    tgt_params = TargetParams(_EuclideanManifold(n_components), SqEuclidean(), init, memb_params)
+    tgt_params = TargetParams(_EuclideanManifold(n_components), Distances.SqEuclidean(), init, memb_params)
 
     # OPTIMIZATION PARAMS
     opt_params = OptimizationParams(n_epochs, learning_rate, repulsion_strength, neg_sample_rate)
