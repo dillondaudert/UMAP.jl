@@ -36,7 +36,7 @@ function optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)
                              _opt_params;
                              move_ref=true)
         alpha = (1 - e / opt_params.n_epochs) * opt_params.lr
-        _opt_params = @set _opt_params.lr = alpha
+        _opt_params = Setfield.@set _opt_params.lr = alpha
     end
 
     return embedding
@@ -52,7 +52,7 @@ function optimize_embedding!(embedding, ref_embedding, umap_graph, tgt_params, o
                              _opt_params;
                              move_ref=false)
         alpha = (1 - e / opt_params.n_epochs) * opt_params.lr
-        _opt_params = @set _opt_params.lr = alpha
+        _opt_params = Setfield.@set _opt_params.lr = alpha
     end
 
     return embedding
