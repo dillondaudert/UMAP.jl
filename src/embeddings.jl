@@ -14,6 +14,24 @@ in this manifold are N-dimensional vectors.
 struct _EuclideanManifold{N} end
 _EuclideanManifold(N::Integer) = _EuclideanManifold{N}()
 
+
+"""
+    TargetParams{M, D, I, P}(manifold::M, metric::D, init::I, memb_params::P)
+
+Parameters for controlling the target embedding, e.g. the manifold, distance metric, initialization 
+method.
+"""
+struct TargetParams{M, D, I, P}
+    "The target manifold in which to embed the data"
+    manifold::M
+    "The metric used to compute distances on the target manifold"
+    metric::D
+    "The method of initialization for points on the target manifold"
+    init::I
+    "Parameters for the membership function of the target embedding (see MembershipFnParams)"
+    memb_params::P
+end
+
 """
     initialize_embedding(umap_graph, tgt_params) -> embedding
 
@@ -60,14 +78,14 @@ the columns of `ref_embedding`, where weights are values from the columns of `um
 """
 function initialize_embedding(ref_embedding::AbstractMatrix,
                               umap_graph::AbstractMatrix,
-                              tgt_params::TargetParams)
+                              ::TargetParams)
     embed = (ref_embedding * umap_graph) ./ (sum(umap_graph, dims=1) .+ eps(eltype(ref_embedding)))
     return collect(eachcol(embed))
 end
 
 function initialize_embedding(ref_embedding::AbstractVector{V},
                               umap_graph::AbstractSparseMatrix{T},
-                              tgt_params::TargetParams) where {V, T}
+                              ::TargetParams) where {V, T}
     embed = V[]
     for col_ind in axes(umap_graph, 2)
         col = umap_graph[:, col_ind]

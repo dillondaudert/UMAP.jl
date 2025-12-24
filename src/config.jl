@@ -1,5 +1,6 @@
 # parameter structs for configuring UMAP
 
+
 # CONSTANTS
 """
     SMOOTH_K_TOLERANCE
@@ -7,24 +8,6 @@
 Tolerance for the smooth k-distance calculation.
 """
 const SMOOTH_K_TOLERANCE = 1.0e-5
-
-"""
-    TargetParams{M, D, I, P}(manifold::M, metric::D, init::I, memb_params::P)
-
-Parameters for controlling the target embedding, e.g. the manifold, distance metric, initialization 
-method.
-"""
-struct TargetParams{M, D, I, P}
-    "The target manifold in which to embed the data"
-    manifold::M
-    "The metric used to compute distances on the target manifold"
-    metric::D
-    "The method of initialization for points on the target manifold"
-    init::I
-    "Parameters for the membership function of the target embedding (see MembershipFnParams)"
-    memb_params::P
-end
-
 
 """
     OptimizationParams(n_epochs, learning_rate, repulsion_strength, neg_sample_rate)
