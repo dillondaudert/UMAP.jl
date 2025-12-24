@@ -1,5 +1,41 @@
 # nearest neighbor related functionality
 
+# NEIGHBOR PARAMS
+"""
+Structs for parameterizing the knn search step of UMAP.
+
+Subtyping `NeighborParams` allows for different methods of finding nearest neighbors.
+The `knn_search` function will dispatch on the type of `knn_params` to
+find the nearest neighbors in the data.
+"""
+abstract type NeighborParams end
+
+"""
+    DescentNeighbors(n_neighbors, metric, kwargs)
+
+Parameters for finding approximate nearest neighbors using NearestNeighborDescent.
+"""
+struct DescentNeighbors{M, K} <: NeighborParams
+    "The number of neighbors to consider as connected. The more neighbors, the more global structure is captured in the data."
+    n_neighbors::Int
+    "A distance function for comparing two points"
+    metric::M
+    "Keyword arguments to pass to NearestNeighborDescent.nndescent()"
+    kwargs::K
+end
+DescentNeighbors(n_neighbors, metric) = DescentNeighbors(n_neighbors, metric, NamedTuple())
+
+"""
+    PrecomputedNeighbors(n_neighbors, dists_or_graphs)
+
+Parameters for finding nearest neighbors from precomputed distances.
+"""
+struct PrecomputedNeighbors{M} <: NeighborParams
+    n_neighbors::Int
+    dists_or_graph::M
+end
+
+
 # finding neighbors
 """
     knn_search(data, knn_params)
