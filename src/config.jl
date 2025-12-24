@@ -8,57 +8,6 @@ Tolerance for the smooth k-distance calculation.
 """
 const SMOOTH_K_TOLERANCE = 1.0e-5
 
-
-# SOURCE PARAMS
-"""
-    SourceViewParams(set_operation_ratio, local_connectivity, bandwidth)
-
-Struct for parameterizing the representation of the data in the source (original)
-manifold; i.e. constructing fuzzy simplicial sets of each view of the dataset.
-"""
-struct SourceViewParams{T <: Real}
-    """
-    The ratio of set union to set intersection used to combine local fuzzy simplicial sets, 
-    from 0 (100% intersection) to 1 (100% union)
-    """
-    set_operation_ratio::T
-    """
-    The number of nearest neighbors that should be assumed to be locally connected. 
-    The higher this value, the more connected the manifold becomes. 
-    This should not be set higher than the intrinsic dimension of the manifold.
-    """
-    local_connectivity::T
-    "bandwidth"
-    bandwidth::T
-    function SourceViewParams{T}(set_op_ratio, local_conn, bandwidth) where {T <: Real}
-        0 ≤ set_op_ratio ≤ 1 || throw(ArgumentError("set_op_ratio must be between 0 and 1"))
-        local_conn > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
-        bandwidth > 0 || throw(ArgumentError("bandwidth must be greater than 0"))
-        return new(set_op_ratio, local_conn, bandwidth)
-    end
-end
-function SourceViewParams(set_op_ratio::T, local_conn::T, bandwidth::T) where {T <: Real}
-    return SourceViewParams{T}(set_op_ratio, local_conn, bandwidth)
-end
-function SourceViewParams(set_op_ratio::Real, local_conn::Real, bandwidth::Real)
-    return SourceViewParams(promote(set_op_ratio, local_conn, bandwidth)...)
-end
-
-"""
-    SourceGlobalParams{T}(mix_ratio)
-
-Parameters for merging the fuzzy simplicial sets for each dataset view into one
-fuzzy simplicial set, otherwise known as the UMAP graph.
-"""
-struct SourceGlobalParams{T <: Real}
-    mix_ratio::T
-    function SourceGlobalParams{T}(mix_ratio) where {T <: Real}
-        0 ≤ mix_ratio ≤ 1 || throw(ArgumentError("mix_ratio must be between 0 and 1"))
-        return new(mix_ratio)
-    end
-end
-SourceGlobalParams(mix_ratio::T) where {T <: Real} = SourceGlobalParams{T}(mix_ratio)
-
 """
     TargetParams{M, D, I, P}(manifold::M, metric::D, init::I, memb_params::P)
 
