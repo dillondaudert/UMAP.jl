@@ -8,13 +8,13 @@ using NearestNeighborDescent
 using Setfield
 using SparseArrays
 
-include("config.jl")
 include("utils.jl")
 include("membership_fn.jl")
 include("neighbors.jl")
 include("simplicial_sets.jl")
 include("embeddings.jl")
 include("optimize.jl")
+include("config.jl")
 include("fit.jl")
 include("transform.jl")
 
