@@ -6,7 +6,7 @@
 
 Tolerance for the smooth k-distance calculation.
 """
-const SMOOTH_K_TOLERANCE = 1e-5
+const SMOOTH_K_TOLERANCE = 1.0e-5
 
 # NEIGHBOR PARAMS
 """
@@ -50,7 +50,7 @@ end
 Struct for parameterizing the representation of the data in the source (original)
 manifold; i.e. constructing fuzzy simplicial sets of each view of the dataset.
 """
-struct SourceViewParams{T<:Real}
+struct SourceViewParams{T <: Real}
     """
     The ratio of set union to set intersection used to combine local fuzzy simplicial sets, 
     from 0 (100% intersection) to 1 (100% union)
@@ -68,14 +68,14 @@ struct SourceViewParams{T<:Real}
         0 ≤ set_op_ratio ≤ 1 || throw(ArgumentError("set_op_ratio must be between 0 and 1"))
         local_conn > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
         bandwidth > 0 || throw(ArgumentError("bandwidth must be greater than 0"))
-        new(set_op_ratio, local_conn, bandwidth)
+        return new(set_op_ratio, local_conn, bandwidth)
     end
 end
 function SourceViewParams(set_op_ratio::T, local_conn::T, bandwidth::T) where {T <: Real}
-    SourceViewParams{T}(set_op_ratio, local_conn, bandwidth)
+    return SourceViewParams{T}(set_op_ratio, local_conn, bandwidth)
 end
 function SourceViewParams(set_op_ratio::Real, local_conn::Real, bandwidth::Real)
-    SourceViewParams(promote(set_op_ratio, local_conn, bandwidth)...)
+    return SourceViewParams(promote(set_op_ratio, local_conn, bandwidth)...)
 end
 
 """
@@ -88,7 +88,7 @@ struct SourceGlobalParams{T <: Real}
     mix_ratio::T
     function SourceGlobalParams{T}(mix_ratio) where {T <: Real}
         0 ≤ mix_ratio ≤ 1 || throw(ArgumentError("mix_ratio must be between 0 and 1"))
-        new(mix_ratio)
+        return new(mix_ratio)
     end
 end
 SourceGlobalParams(mix_ratio::T) where {T <: Real} = SourceGlobalParams{T}(mix_ratio)
@@ -123,23 +123,23 @@ mutable struct MembershipFnParams{T <: Real}
     function MembershipFnParams{T}(min_dist, spread, a, b) where {T <: Real}
         min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
         spread > 0 || throw(ArgumentError("spread must be greater than 0"))
-        new(min_dist, spread, a, b)
+        return new(min_dist, spread, a, b)
     end
 end
 function MembershipFnParams(min_dist::T, spread::T, a::T, b::T) where {T <: Real}
-    MembershipFnParams{T}(min_dist, spread, a, b)
+    return MembershipFnParams{T}(min_dist, spread, a, b)
 end
 # autopromote
 function MembershipFnParams(min_dist::Real, spread::Real, a::Real, b::Real)
-    MembershipFnParams(promote(min_dist, spread, a, b)...)
+    return MembershipFnParams(promote(min_dist, spread, a, b)...)
 end
 # calculate a, b with binary search
 function MembershipFnParams(min_dist::Real, spread::Real, ::Nothing, ::Nothing)
     a, b = fit_ab(min_dist, spread)
-    MembershipFnParams(min_dist, spread, a, b)
+    return MembershipFnParams(min_dist, spread, a, b)
 end
 function MembershipFnParams(min_dist::Real, spread::Real)
-    MembershipFnParams(min_dist, spread, nothing, nothing)
+    return MembershipFnParams(min_dist, spread, nothing, nothing)
 end
 
 """
@@ -163,7 +163,7 @@ struct OptimizationParams
         n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 0, got $n_epochs"))
         lr ≥ 0 || throw(ArgumentError("learning_rate must be non-negative, got $lr"))
         neg_sample_rate ≥ 0 || throw(ArgumentError("neg_sample_rate must be non-negative, got $neg_sample_rate"))
-        new(n_epochs, lr, repulsion_strength, neg_sample_rate)
+        return new(n_epochs, lr, repulsion_strength, neg_sample_rate)
     end
 end
 
