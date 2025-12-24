@@ -1,12 +1,14 @@
 module UMAP
 
-using Arpack
-using Distances
+# for stdlibs, we use:
 using LinearAlgebra
+using SparseArrays
+# for other packages, we use import to keep namespaces clear
+import Arpack
+using Distances
 using LsqFit: curve_fit
 using NearestNeighborDescent
 using Setfield
-using SparseArrays
 
 include("utils.jl")
 include("membership_fn.jl")

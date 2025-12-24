@@ -84,7 +84,7 @@ function initialize_embedding(ref_embedding::AbstractMatrix,
 end
 
 function initialize_embedding(ref_embedding::AbstractVector{V},
-                              umap_graph::AbstractSparseMatrix{T},
+                              umap_graph::SparseMatrixCSC{T},
                               ::TargetParams) where {V, T}
     embed = V[]
     for col_ind in axes(umap_graph, 2)
@@ -112,7 +112,7 @@ function spectral_layout(graph::SparseMatrixCSC{T},
     k = embed_dim+1
     num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L, 1))))
     # get the 2nd - embed_dim+1th smallest eigenvectors
-    eigenvals, eigenvecs = eigs(L; nev=k,
+    eigenvals, eigenvecs = Arpack.eigs(L; nev=k,
                                    ncv=num_lanczos_vectors,
                                    which=:SM,
                                    tol=1e-4,
