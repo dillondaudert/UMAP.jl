@@ -1,14 +1,5 @@
 # parameter structs for configuring UMAP
 
-
-# CONSTANTS
-"""
-    SMOOTH_K_TOLERANCE
-
-Tolerance for the smooth k-distance calculation.
-"""
-const SMOOTH_K_TOLERANCE = 1.0e-5
-
 """
     OptimizationParams(n_epochs, learning_rate, repulsion_strength, neg_sample_rate)
 
