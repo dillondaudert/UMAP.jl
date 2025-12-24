@@ -7,7 +7,7 @@ using SparseArrays
 import Arpack
 import Distances
 import LsqFit
-using NearestNeighborDescent
+import NearestNeighborDescent as NND
 using Setfield
 
 include("utils.jl")

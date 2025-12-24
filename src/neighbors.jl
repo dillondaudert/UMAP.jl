@@ -86,8 +86,8 @@ end
 Find approximate nearest neighbors using nndescent.
 """
 function knn_search(data, knn_params::DescentNeighbors)
-    knn_graph = nndescent(data, knn_params.n_neighbors, knn_params.metric; knn_params.kwargs...)
-    return knn_matrices(knn_graph)
+    knn_graph = NND.nndescent(data, knn_params.n_neighbors, knn_params.metric; knn_params.kwargs...)
+    return NND.knn_matrices(knn_graph)
 end
 
 """
@@ -97,11 +97,11 @@ Search for approximate nearest neighbors of queries in data using nndescent.
 The (knns, dists) are used to reconstruct the original KNN graph.
 """
 function knn_search(data, queries, knn_params::DescentNeighbors, (knns, dists))
-    orig_knn_graph = HeapKNNGraph(data,
-                                  knn_params.metric,
-                                  knns,
-                                  dists)
-    return search(orig_knn_graph, queries, knn_params.n_neighbors; knn_params.kwargs...)
+    orig_knn_graph = NND.HeapKNNGraph(data,
+                                      knn_params.metric,
+                                      knns,
+                                      dists)
+    return NND.search(orig_knn_graph, queries, knn_params.n_neighbors; knn_params.kwargs...)
 end
 
 # get neighbors from precomputed KNNGraph
@@ -111,9 +111,9 @@ end
 Get neighbors from a precomputed KNNGraph.
 This method is used when the KNN graph has been precomputed using NearestNeighborDescent
 """
-function knn_search(_, knn_params::PrecomputedNeighbors{M}) where {M <: ApproximateKNNGraph}
+function knn_search(_, knn_params::PrecomputedNeighbors{M}) where {M <: NND.ApproximateKNNGraph}
     knn_graph = knn_params.dists_or_graph
-    return knn_matrices(knn_graph)
+    return NND.knn_matrices(knn_graph)
 end
 
 
