@@ -61,7 +61,7 @@ end
 function _optimize_embedding!(embedding, 
                               ref_embedding, 
                               umap_graph, 
-                              tgt_params::TargetParams{_EuclideanManifold{N}, SqEuclidean, I, MembershipFnParams{T}},
+                              tgt_params::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean, I, MembershipFnParams{T}},
                               opt_params;
                               move_ref::Bool=true) where {N, I, T}
     
@@ -74,7 +74,7 @@ function _optimize_embedding!(embedding,
             j = rowvals(umap_graph)[ind]
             p = nonzeros(umap_graph)[ind]
             if rand() <= p
-                dist = sqeuclidean(embedding[i], ref_embedding[j])
+                dist = Distances.sqeuclidean(embedding[i], ref_embedding[j])
                 if dist > 0
                     grad_coef = -(a * b) / (dist * (a + dist^(-b)))
                 else
@@ -92,7 +92,7 @@ function _optimize_embedding!(embedding,
                     if i == k && self_reference
                         continue
                     end
-                    dist = sqeuclidean(embedding[i], ref_embedding[k])
+                    dist = Distances.sqeuclidean(embedding[i], ref_embedding[k])
                     if dist > 0
                         grad_coef = opt_params.repulsion_strength * b / (a * dist^(b + 1) + dist)
                     else
@@ -114,12 +114,12 @@ function _update_embedding_pos!(embedding,
                                 i,
                                 j, 
                                 move_ref, 
-                                tgt_params::TargetParams{_EuclideanManifold{N}, SqEuclidean},
+                                tgt_params::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean},
                                 opt_params) where N
     # specialized for sq euclidean metric
     a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
     lr = opt_params.lr
-    dist = sqeuclidean(embedding[i], embedding[j])
+    dist = Distances.sqeuclidean(embedding[i], embedding[j])
     if dist > 0
         grad_coef = -(a * b) / (dist * (a + dist^(-b)))
     else
@@ -158,14 +158,14 @@ Calculate the distance between `x` and `y` on the manifold `tgt_params.manifold`
 """
 function target_metric(tgt_params, x, y) end
 
-function target_metric(::TargetParams{_EuclideanManifold{N}, SqEuclidean}, x, y) where N
-    dist = sqeuclidean(x, y)
+function target_metric(::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean}, x, y) where N
+    dist = Distances.sqeuclidean(x, y)
     grad_dist = 2 * (x - y)
     return dist, grad_dist, -grad_dist
 end
 
-function target_metric(::TargetParams{_EuclideanManifold{N}, Euclidean}, x, y) where N
-    dist = euclidean(x, y)
+function target_metric(::TargetParams{_EuclideanManifold{N}, Distances.Euclidean}, x, y) where N
+    dist = Distances.euclidean(x, y)
     grad_dist = (x - y) / (1e-8 + dist)
     return dist, grad_dist, -grad_dist
 end

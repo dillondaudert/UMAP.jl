@@ -5,7 +5,7 @@ using LinearAlgebra
 using SparseArrays
 # for other packages, we use import to keep namespaces clear
 import Arpack
-using Distances
+import Distances
 using LsqFit: curve_fit
 using NearestNeighborDescent
 using Setfield
