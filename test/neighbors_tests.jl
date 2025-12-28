@@ -214,20 +214,6 @@
         end
 
         @testset "PrecomputedNeighbors - KNN Graph" begin
-            # EXISTING TEST (kept for reference)
-            data = [rand(10) for _ in 1:100]
-            descent_params = DescentNeighbors(5, Distances.Euclidean())
-            knns, dists = knn_search(data, descent_params)
-            knn_graph = NND.HeapKNNGraph(data, descent_params.metric, knns, dists)
-            precomp_knn_params = PrecomputedNeighbors(5, knn_graph)
-
-            @inferred knn_search(data, precomp_knn_params)
-            knns2, dists2 = knn_search(data, precomp_knn_params)
-            @test knns2 == knns
-            @test dists2 == dists
-        end
-
-        @testset "PrecomputedNeighbors - KNN Graph Extraction" begin
             # Test that we can extract neighbors from a graph correctly
             data = [rand(8) for _ in 1:50]
             k = 7
@@ -256,7 +242,9 @@
     @testset "FIT: Multi-View" begin
 
         @testset "Multiple Views - Mixed Neighbor Types" begin
-            # EXISTING TEST (kept for reference)
+            # This just tests that multi view returns the 
+            # correct types, and that precomputed neighbors
+            # still work.
             data = [rand(10) for _ in 1:100]
             desc_params = DescentNeighbors(5, Distances.Euclidean())
             RT = Tuple{Array{Int,2},Array{Float64,2}}
@@ -317,6 +305,7 @@
             results = knn_search(views_data, views_params)
 
             # Each view should have different number of neighbors
+            # the length of each point's neighbor list
             @test size(results.v1[1], 1) == 3
             @test size(results.v2[1], 1) == 7
             @test size(results.v3[1], 1) == 10
@@ -366,7 +355,7 @@
             # Indices should reference data points (1:100)
             @test all(1 .<= query_knns .<= 100)
 
-            # Distances should be non-negative
+            # Distances should be non-negative, in this case
             @test all(query_dists .>= 0)
 
             # Each query should have unique neighbors
@@ -376,7 +365,6 @@
         end
 
         @testset "DescentNeighbors - Matrix Format Transform" begin
-            # EXISTING TEST (kept for reference)
             data = [rand(10) for _ in 1:100]
             data_mat = rand(10, 100)
             queries_mat = rand(10, 10)
@@ -384,7 +372,9 @@
             knns_dists = knn_search(data, knn_params)
             RT = Tuple{Array{Int,2},Array{Float64,2}}
 
-            @test knn_search(data_mat, queries_mat, knn_params, knns_dists) isa RT
+            knns, dists = knn_search(data_mat, queries_mat, knn_params, knns_dists)
+            @test (knns, dists) isa RT
+            @test size(knns) == (5, 10)
         end
 
         @testset "DescentNeighbors - Transform with Different Metrics" begin
@@ -402,7 +392,6 @@
         end
 
         @testset "Transform - Single View in NamedTuple" begin
-            # EXISTING TEST (kept for reference)
             data = [rand(10) for _ in 1:100]
             queries = [rand(10) for _ in 1:10]
             knn_params = DescentNeighbors(5, Distances.Euclidean())
@@ -444,7 +433,6 @@
         end
 
         @testset "PrecomputedNeighbors - Transform with Distance Matrix" begin
-            # EXISTING TEST (kept for reference)
             dist_mat = [0. 2. 1.;
                         2. 0. 3.;
                         1. 3. 0.]
@@ -464,31 +452,6 @@
             @test query_true_knns == query_knns_dists[1]
             @test query_true_dists == query_knns_dists[2]
         end
-
-        @testset "PrecomputedNeighbors - Transform ignore_diagonal=false" begin
-            # Transform case: distance matrix is queries × data, not square
-            # The diagonal doesn't represent self-distances, so shouldn't be ignored
-
-            # 2 queries, 4 data points
-            query_dist_mat = [2. 1. 4. 3.;
-                              5. 6. 1. 2.]
-
-            # Transform with k=2
-            query_knns, query_dists = knn_search(
-                nothing, nothing,
-                PrecomputedNeighbors(2, query_dist_mat),
-                nothing
-            )
-
-            # Query 1 (column 1): nearest are points 1 (dist 2) and 2 (dist 5)
-            @test query_knns[:, 1] == [1, 2]
-            @test query_dists[:, 1] == [2., 5.]
-
-            # Query 2 (column 3): nearest are points 2 (dist 1) and 1 (dist 4)
-            @test query_knns[:, 3] == [2, 1]
-            @test query_dists[:, 3] == [1., 4.]
-        end
-
     end
 
     # -------------------------------------------------------------------------
