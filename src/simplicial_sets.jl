@@ -81,8 +81,14 @@ function coalesce_views(view_fuzzy_sets,
 end
 
 """
-    fuzzy_simplicial_set(knns_dists, knn_params, src_params)
-    fuzzy_simplicial_set(data, knns_dists, knn_params, src_params)
+Construct the UMAP graph, i.e. the global fuzzy simplicial set. This is
+represented as a symmetric, sparse matrix where each value is the 
+probability that an edge exists between points (row, col).
+
+For multiple views, there will be one UMAP graph per view - later combined
+via `coalesce_views`. 
+
+For transforming new data, this graph is notably not symmetric.
 """
 function fuzzy_simplicial_set end
 
@@ -96,8 +102,7 @@ keys of the input NamedTuples.
 function fuzzy_simplicial_set(knns_dists::NamedTuple{T},
                               knn_params::NamedTuple{T},
                               src_params::NamedTuple{T}) where T
-    view_fuzzy_sets = map(fuzzy_simplicial_set, knns_dists, knn_params, src_params)
-    return view_fuzzy_sets
+    return map(fuzzy_simplicial_set, knns_dists, knn_params, src_params)
 end
 
 """
@@ -110,8 +115,7 @@ function fuzzy_simplicial_set(data::NamedTuple{T},
                               knns_dists::NamedTuple{T},
                               knn_params::NamedTuple{T},
                               src_params::NamedTuple{T}) where T
-    view_fuzzy_sets = map(fuzzy_simplicial_set, data, knns_dists, knn_params, src_params)
-    return view_fuzzy_sets
+    return map(fuzzy_simplicial_set, data, knns_dists, knn_params, src_params)
 end
 
 """
@@ -140,7 +144,7 @@ and converting the metric space to a simplicial set (a weighted graph).
 `n_points` indicates the total number of points of the original data, while `knns` contains
 indices of some subset of those points (ie some subset of 1:`n_points`). If `knns` represents
 neighbors of the elements of some set with itself, then `knns` should have `n_points` number of
-columns. Otherwise, these two values may be inequivalent.
+columns. Otherwise, these two values may be different.
 
 If `combine` is true, use intersections and unions to combine local fuzzy sets of neighbors.
 The returned graph has size (`n_points`, size(knns, 2)).
@@ -272,9 +276,9 @@ end
 """
     general_simplicial_set_union(left_view, right_view)
 
-Take the union of two global fuzzy simplicial sets.
+Take the union of two _global_ fuzzy simplicial sets.
 """
-function general_simplicial_set_union(left_view::AbstractSparseMatrix, right_view::AbstractSparseMatrix)
+function general_simplicial_set_union(left_view::M, right_view::M) where {M <: AbstractSparseMatrix}
     
     result = left_view + right_view
 
@@ -299,7 +303,7 @@ Since we don't want to completely lose edges that are only present in one of the
 multiply by at least `1e-8`. Furthermore, if the same edge in both sets has a strength below
 1e-8, these are added together instead of multiplying.
 """
-function general_simplicial_set_intersection(left_view::AbstractSparseMatrix, right_view::AbstractSparseMatrix, params::SourceGlobalParams)
+function general_simplicial_set_intersection(left_view::M, right_view::M, params::SourceGlobalParams) where {M <: AbstractSparseMatrix}
     # start with adding - this gets us a sparse matrix whose nonzero entries
     # are the union of left and right entries
     result = left_view + right_view
