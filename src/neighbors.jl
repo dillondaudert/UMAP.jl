@@ -22,18 +22,30 @@ struct DescentNeighbors{M, K} <: NeighborParams
     metric::M
     "Keyword arguments to pass to NearestNeighborDescent.nndescent()"
     kwargs::K
+    function DescentNeighbors{M, K}(n_neighbors, metric, kwargs) where {M, K}
+        # enforce invariants
+        n_neighbors <= 0 ? error("n_neighbors must be greater than 0") : new(n_neighbors, metric, kwargs)
+    end
 end
+DescentNeighbors(n_neighbors::Int, metric::M, kwargs::K) where {M, K} = DescentNeighbors{M, K}(n_neighbors, metric, kwargs)
 DescentNeighbors(n_neighbors, metric) = DescentNeighbors(n_neighbors, metric, NamedTuple())
 
 """
     PrecomputedNeighbors(n_neighbors, dists_or_graphs)
 
-Parameters for finding nearest neighbors from precomputed distances.
+Parameters for finding nearest neighbors from precomputed distances. 
+    `dists_or_graphs` can either be a matrix (pairwise distances) or
+    a NearestNeighborDescent.ApproximateKNNGraph.
 """
 struct PrecomputedNeighbors{M} <: NeighborParams
     n_neighbors::Int
     dists_or_graph::M
+    function PrecomputedNeighbors{M}(n_neighbors, dists_or_graph) where {M}
+        n_neighbors <= 0 ? error("n_neighbors must be greater than 0") : new(n_neighbors, dists_or_graph)
+    end
 end
+PrecomputedNeighbors(n_neighbors::Int, dists::M) where {M <: AbstractMatrix} = PrecomputedNeighbors{M}(n_neighbors, dists)
+PrecomputedNeighbors(n_neighbors::Int, graph::G) where {G <: NND.ApproximateKNNGraph} = PrecomputedNeighbors{G}(n_neighbors, graph)
 
 
 # finding neighbors

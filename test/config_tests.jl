@@ -25,53 +25,7 @@ using Distances: Euclidean, SqEuclidean, Cityblock, Chebyshev
     #
     # =============================================================================
 
-    # -------------------------------------------------------------------------
-    # NeighborParams Types
-    # -------------------------------------------------------------------------
-
-    @testset "DescentNeighbors" begin
-        # VALID CASES
-        @testset "Valid Construction" begin
-            # Basic construction with metric
-            params = UMAP.DescentNeighbors(15, Euclidean())
-            @test params.n_neighbors == 15
-            @test params.metric == Euclidean()
-            @test params.kwargs == NamedTuple()
-
-            # Construction with kwargs
-            params_kwargs = UMAP.DescentNeighbors(20, SqEuclidean(), (max_iters=10,))
-            @test params_kwargs.n_neighbors == 20
-            @test params_kwargs.kwargs.max_iters == 10
-
-            # Test with different metrics
-            @test UMAP.DescentNeighbors(10, Cityblock()).metric == Cityblock()
-            @test UMAP.DescentNeighbors(10, Chebyshev()).metric == Chebyshev()
-        end
-
-        # SUGGESTIONS FOR ADDITIONAL TESTS:
-        # TODO: Add tests for invalid n_neighbors (0, negative) if validation added
-        # TODO: Test with custom distance functions
-        # TODO: Test kwargs propagation to nndescent
-    end
-
-    @testset "PrecomputedNeighbors" begin
-        # VALID CASES
-        @testset "Valid Construction" begin
-            # With distance matrix
-            dists = rand(100, 100)
-            params = UMAP.PrecomputedNeighbors(15, dists)
-            @test params.n_neighbors == 15
-            @test params.dists_or_graph === dists
-
-            # With KNN graph (tested in integration with neighbors.jl)
-            # This is tested in neighbors_tests.jl since it requires NND types
-        end
-
-        # SUGGESTIONS FOR ADDITIONAL TESTS:
-        # TODO: Test that n_neighbors doesn't exceed available neighbors in graph/matrix
-        # TODO: Test with empty/malformed distance matrices
-        # TODO: Test with non-square distance matrices (for transform case)
-    end
+ 
 
     # -------------------------------------------------------------------------
     # SourceViewParams

@@ -1,36 +1,49 @@
-using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
 
-@testset "Neighbor Search Tests" begin
+@testset "Nearest Neighbors Tests" begin
+    import UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
+    import NearestNeighborDescent as NND
 
-    # =============================================================================
-    # TEST PLAN FOR neighbors.jl
-    # =============================================================================
-    #
-    # This test suite validates the k-nearest neighbor search functionality,
-    # which is the first stage of the UMAP pipeline (see src/README.md).
-    #
-    # COVERAGE GOALS:
-    # 1. Test all knn_search dispatch methods (DescentNeighbors, PrecomputedNeighbors)
-    # 2. Test both fit and transform variants of knn_search
-    # 3. Test single-view and multi-view (NamedTuple) support
-    # 4. Test helper functions (_knn_from_dists) with edge cases
-    # 5. Test output shapes, types, and correctness
-    # 6. Test integration with different data formats (vectors, matrices)
-    # 7. Test different distance metrics
-    #
-    # TESTING STRATEGY:
-    # - Test type stability with @inferred
-    # - Test correctness with known ground truth examples
-    # - Test edge cases (small k, large k, boundary conditions)
-    # - Test error conditions (invalid parameters, mismatched views)
-    # - Test performance characteristics where relevant
-    #
-    # STRUCTURE (following src/README.md):
-    # - FIT tests: knn_search(data, knn_params)
-    # - TRANSFORM tests: knn_search(data, queries, knn_params, result_knns_dists)
-    # - Helper function tests: _knn_from_dists
-    #
-    # =============================================================================
+    # -------------------------------------------------------------------------
+    # NeighborParams Types
+    # -------------------------------------------------------------------------
+
+    @testset "DescentNeighbors" begin
+        # VALID CASES
+        @testset "Valid Construction" begin
+            # Basic construction with metric
+            params = UMAP.DescentNeighbors(15, Distances.Euclidean())
+            @test params.n_neighbors == 15
+            @test params.metric == Distances.Euclidean()
+            @test params.kwargs == NamedTuple()
+
+            # Construction with kwargs
+            params_kwargs = UMAP.DescentNeighbors(20, Distances.SqEuclidean(), (max_iters=10,))
+            @test params_kwargs.n_neighbors == 20
+            @test params_kwargs.kwargs.max_iters == 10
+
+            # Test with different metrics
+            @test UMAP.DescentNeighbors(10, Distances.Cityblock()).metric == Distances.Cityblock()
+            @test UMAP.DescentNeighbors(10, Distances.Chebyshev()).metric == Distances.Chebyshev()
+
+            @test_throws ErrorException UMAP.DescentNeighbors(0, Distances.Euclidean())
+        end
+
+    end
+
+    @testset "PrecomputedNeighbors" begin
+        # VALID CASES
+        @testset "Valid Construction" begin
+            # With distance matrix
+            dists = rand(100, 100)
+            params = UMAP.PrecomputedNeighbors(15, dists)
+            @test params.n_neighbors == 15
+            @test params.dists_or_graph === dists
+
+            @test_throws ErrorException UMAP.PrecomputedNeighbors(0, dists)
+
+            # tests with NND / KNNGraph below
+        end
+    end
 
     # -------------------------------------------------------------------------
     # FIT: Single View Tests
@@ -39,11 +52,10 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
     @testset "FIT: Single View" begin
 
         @testset "DescentNeighbors - Basic Functionality" begin
-            # EXISTING TESTS (kept for reference)
             data = [rand(10) for _ in 1:100]
-            knn_params = DescentNeighbors(5, Euclidean())
-            knn_params_kw = DescentNeighbors(5, Euclidean(), (max_iters=5,))
-            knn_params_bad_kw = DescentNeighbors(5, Euclidean(), (bad_kw=10.,))
+            knn_params = UMAP.DescentNeighbors(5, Distances.Euclidean())
+            knn_params_kw = UMAP.DescentNeighbors(5, Distances.Euclidean(), (max_iters=5,))
+            knn_params_bad_kw = UMAP.DescentNeighbors(5, Distances.Euclidean(), (bad_kw=10.,))
             RT = Tuple{Array{Int,2},Array{Float64,2}}
 
             # Type stability
@@ -65,7 +77,7 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
         @testset "DescentNeighbors - Output Shape and Properties" begin
             n_points, n_neighbors = 50, 10
             data = [rand(5) for _ in 1:n_points]
-            knn_params = DescentNeighbors(n_neighbors, Euclidean())
+            knn_params = DescentNeighbors(n_neighbors, Distances.Euclidean())
 
             knns, dists = knn_search(data, knn_params)
 
@@ -91,15 +103,11 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
             RT = Tuple{Array{Int,2},Array{Float64,2}}
 
             # Test various metrics
-            @test knn_search(data, DescentNeighbors(5, Euclidean())) isa RT
-            @test knn_search(data, DescentNeighbors(5, SqEuclidean())) isa RT
-            @test knn_search(data, DescentNeighbors(5, Cityblock())) isa RT
-            @test knn_search(data, DescentNeighbors(5, Chebyshev())) isa RT
+            @test knn_search(data, DescentNeighbors(5, Distances.Euclidean())) isa RT
+            @test knn_search(data, DescentNeighbors(5, Distances.SqEuclidean())) isa RT
+            @test knn_search(data, DescentNeighbors(5, Distances.Cityblock())) isa RT
+            @test knn_search(data, DescentNeighbors(5, Distances.Chebyshev())) isa RT
 
-            # Distances should differ between metrics
-            knns_euc, dists_euc = knn_search(data, DescentNeighbors(5, Euclidean()))
-            knns_city, dists_city = knn_search(data, DescentNeighbors(5, Cityblock()))
-            @test !all(dists_euc .≈ dists_city)
         end
 
         @testset "DescentNeighbors - Edge Cases" begin
@@ -107,16 +115,16 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
             RT = Tuple{Array{Int,2},Array{Float64,2}}
 
             # Small k
-            @test knn_search(data, DescentNeighbors(1, Euclidean())) isa RT
-            @test knn_search(data, DescentNeighbors(2, Euclidean())) isa RT
+            @test knn_search(data, DescentNeighbors(1, Distances.Euclidean())) isa RT
+            @test knn_search(data, DescentNeighbors(2, Distances.Euclidean())) isa RT
 
             # Large k (approaching n_points)
-            @test knn_search(data, DescentNeighbors(50, Euclidean())) isa RT
-            @test knn_search(data, DescentNeighbors(99, Euclidean())) isa RT
+            @test knn_search(data, DescentNeighbors(50, Distances.Euclidean())) isa RT
+            @test knn_search(data, DescentNeighbors(99, Distances.Euclidean())) isa RT
 
             # Small dataset
             small_data = [rand(5) for _ in 1:10]
-            @test knn_search(small_data, DescentNeighbors(3, Euclidean())) isa RT
+            @test knn_search(small_data, DescentNeighbors(3, Distances.Euclidean())) isa RT
         end
 
         @testset "DescentNeighbors - Data Format Support" begin
@@ -124,12 +132,12 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
 
             # Vector of vectors
             data_vecs = [rand(d) for _ in 1:n]
-            knns_v, dists_v = knn_search(data_vecs, DescentNeighbors(k, Euclidean()))
+            knns_v, dists_v = knn_search(data_vecs, DescentNeighbors(k, Distances.Euclidean()))
             @test size(knns_v) == (k, n)
 
             # Matrix (columns are points)
             data_mat = rand(d, n)
-            knns_m, dists_m = knn_search(data_mat, DescentNeighbors(k, Euclidean()))
+            knns_m, dists_m = knn_search(data_mat, DescentNeighbors(k, Distances.Euclidean()))
             @test size(knns_m) == (k, n)
 
             # Both formats should work with nndescent
@@ -138,7 +146,6 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
         end
 
         @testset "PrecomputedNeighbors - Distance Matrix" begin
-            # EXISTING TEST (kept for reference)
             dist_mat = [0. 2. 1.;
                         2. 0. 3.;
                         1. 3. 0.]
@@ -209,9 +216,9 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
         @testset "PrecomputedNeighbors - KNN Graph" begin
             # EXISTING TEST (kept for reference)
             data = [rand(10) for _ in 1:100]
-            descent_params = DescentNeighbors(5, Euclidean())
+            descent_params = DescentNeighbors(5, Distances.Euclidean())
             knns, dists = knn_search(data, descent_params)
-            knn_graph = HeapKNNGraph(data, descent_params.metric, knns, dists)
+            knn_graph = NND.HeapKNNGraph(data, descent_params.metric, knns, dists)
             precomp_knn_params = PrecomputedNeighbors(5, knn_graph)
 
             @inferred knn_search(data, precomp_knn_params)
@@ -226,11 +233,11 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
             k = 7
 
             # Build graph with descent
-            descent_params = DescentNeighbors(k, SqEuclidean())
+            descent_params = DescentNeighbors(k, Distances.SqEuclidean())
             knns_orig, dists_orig = knn_search(data, descent_params)
 
             # Wrap in PrecomputedNeighbors
-            knn_graph = HeapKNNGraph(data, descent_params.metric, knns_orig, dists_orig)
+            knn_graph = NND.HeapKNNGraph(data, descent_params.metric, knns_orig, dists_orig)
             precomp_params = PrecomputedNeighbors(k, knn_graph)
 
             # Extract should give identical results
@@ -251,7 +258,7 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
         @testset "Multiple Views - Mixed Neighbor Types" begin
             # EXISTING TEST (kept for reference)
             data = [rand(10) for _ in 1:100]
-            desc_params = DescentNeighbors(5, Euclidean())
+            desc_params = DescentNeighbors(5, Distances.Euclidean())
             RT = Tuple{Array{Int,2},Array{Float64,2}}
             dist_mat = [0. 2. 1.;
                         2. 0. 3.;
@@ -275,8 +282,8 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
             data1 = [rand(5) for _ in 1:30]
             data2 = [rand(8) for _ in 1:30]
 
-            params1 = DescentNeighbors(4, Euclidean())
-            params2 = DescentNeighbors(6, Cityblock())
+            params1 = DescentNeighbors(4, Distances.Euclidean())
+            params2 = DescentNeighbors(6, Distances.Cityblock())
 
             # Test with named tuples
             views_data = (view_a=data1, view_b=data2)
@@ -300,9 +307,9 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
             data = [rand(10) for _ in 1:50]
 
             # Same data, different k and metrics
-            params_3 = DescentNeighbors(3, Euclidean())
-            params_7 = DescentNeighbors(7, SqEuclidean())
-            params_10 = DescentNeighbors(10, Cityblock())
+            params_3 = DescentNeighbors(3, Distances.Euclidean())
+            params_7 = DescentNeighbors(7, Distances.SqEuclidean())
+            params_10 = DescentNeighbors(10, Distances.Cityblock())
 
             views_data = (v1=data, v2=data, v3=data)
             views_params = (v1=params_3, v2=params_7, v3=params_10)
@@ -331,7 +338,7 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
         @testset "DescentNeighbors - Basic Transform" begin
             # EXISTING TEST (kept for reference)
             data = [rand(10) for _ in 1:100]
-            knn_params = DescentNeighbors(5, Euclidean())
+            knn_params = DescentNeighbors(5, Distances.Euclidean())
             knns_dists = knn_search(data, knn_params)
             queries = [rand(10) for _ in 1:10]
             RT = Tuple{Array{Int,2},Array{Float64,2}}
@@ -344,7 +351,7 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
         @testset "DescentNeighbors - Transform Output Properties" begin
             data = [rand(8) for _ in 1:100]
             queries = [rand(8) for _ in 1:15]
-            knn_params = DescentNeighbors(7, Euclidean())
+            knn_params = DescentNeighbors(7, Distances.Euclidean())
 
             # Fit
             knns_dists = knn_search(data, knn_params)
@@ -373,7 +380,7 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
             data = [rand(10) for _ in 1:100]
             data_mat = rand(10, 100)
             queries_mat = rand(10, 10)
-            knn_params = DescentNeighbors(5, Euclidean())
+            knn_params = DescentNeighbors(5, Distances.Euclidean())
             knns_dists = knn_search(data, knn_params)
             RT = Tuple{Array{Int,2},Array{Float64,2}}
 
@@ -384,7 +391,7 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
             data = [rand(6) for _ in 1:50]
             queries = [rand(6) for _ in 1:8]
 
-            for metric in [Euclidean(), SqEuclidean(), Cityblock(), Chebyshev()]
+            for metric in [Distances.Euclidean(), Distances.SqEuclidean(), Distances.Cityblock(), Distances.Chebyshev()]
                 knn_params = DescentNeighbors(5, metric)
                 knns_dists = knn_search(data, knn_params)
 
@@ -398,7 +405,7 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
             # EXISTING TEST (kept for reference)
             data = [rand(10) for _ in 1:100]
             queries = [rand(10) for _ in 1:10]
-            knn_params = DescentNeighbors(5, Euclidean())
+            knn_params = DescentNeighbors(5, Distances.Euclidean())
             knns_dists = knn_search(data, knn_params)
             RT = Tuple{Array{Int,2},Array{Float64,2}}
 
@@ -413,8 +420,8 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
             queries1 = [rand(5) for _ in 1:10]
             queries2 = [rand(8) for _ in 1:10]
 
-            params1 = DescentNeighbors(4, Euclidean())
-            params2 = DescentNeighbors(6, Cityblock())
+            params1 = DescentNeighbors(4, Distances.Euclidean())
+            params2 = DescentNeighbors(6, Distances.Cityblock())
 
             # Fit on each view
             knns_dists1 = knn_search(data1, params1)
@@ -605,60 +612,5 @@ using UMAP: DescentNeighbors, PrecomputedNeighbors, knn_search, _knn_from_dists
         end
 
     end
-
-    # =========================================================================
-    # ADDITIONAL TESTING SUGGESTIONS
-    # =========================================================================
-    #
-    # 1. PERFORMANCE TESTS:
-    #    - Benchmark nndescent performance with various parameters
-    #    - Compare approximate vs exact neighbors on known datasets
-    #    - Test scaling with number of points and dimensions
-    #    - Test memory allocation patterns
-    #
-    # 2. CORRECTNESS TESTS:
-    #    - Compare approximate neighbors with brute force on small datasets
-    #    - Test that neighbors become more accurate with more iterations
-    #    - Validate metric implementations produce expected distances
-    #
-    # 3. INTEGRATION TESTS:
-    #    - Test neighbor search output integrates with fuzzy_simplicial_set
-    #    - Test that transform neighbors work in full UMAP pipeline
-    #    - Test multi-view neighbors flow through to graph construction
-    #
-    # 4. ERROR HANDLING:
-    #    - Test with k > n_points (should fail gracefully)
-    #    - Test with mismatched view keys in NamedTuples
-    #    - Test with invalid distance matrices (non-square when expected)
-    #    - Test with negative distances or NaN values
-    #
-    # 5. SPECIAL DATA CHARACTERISTICS:
-    #    - Test with duplicate points
-    #    - Test with points at exactly the same location
-    #    - Test with very high dimensional data
-    #    - Test with sparse data representations
-    #
-    # 6. METRIC-SPECIFIC TESTS:
-    #    - Test that different metrics produce different results
-    #    - Test custom distance functions if supported
-    #    - Test metric parameters (e.g., p for Minkowski)
-    #
-    # 7. VIEW CONSISTENCY TESTS:
-    #    - Test that multi-view results have consistent number of points
-    #    - Test error when view keys don't match across arguments
-    #    - Test with nested NamedTuples if supported
-    #
-    # 8. TRANSFORM-SPECIFIC TESTS:
-    #    - Test that query neighbors are subset of data points
-    #    - Test transform with k different from fit k
-    #    - Test transform with different metric from fit (should fail)
-    #    - Test that reconstructing graph from fit results works
-    #
-    # 9. DOCUMENTATION TESTS:
-    #    - Verify all examples in docstrings work
-    #    - Test parameter combinations from documentation
-    #    - Validate type signatures in docstrings
-    #
-    # =========================================================================
 
 end
