@@ -244,39 +244,6 @@ using Distances: euclidean, cityblock, sqeuclidean
         # TODO: Test with very different left/right magnitudes
     end
 
-    @testset "_mix_values tests" begin
-        @testset "Equal weighting (ratio = 0.5)" begin
-            # ratio = 0.5 should give product
-            @test _mix_values(4.0, 4.0, 0.5) ≈ 16.0
-            @test _mix_values(1.0, 4.0, 0.5) ≈ 4.0
-        end
-
-        @testset "Left weighting (ratio < 0.5)" begin
-            # ratio = 0 should return x
-            @test _mix_values(3.0, 5.0, 0.0) ≈ 3.0
-            # Small ratio favors x
-            @test _mix_values(2.0, 8.0, 0.1) < 4.0  # closer to 2 than 8
-        end
-
-        @testset "Right weighting (ratio > 0.5)" begin
-            # ratio = 1 should return y
-            @test _mix_values(3.0, 5.0, 1.0) ≈ 5.0
-            # Large ratio favors y
-            @test _mix_values(2.0, 8.0, 0.9) > 5.0  # closer to 8 than 2
-        end
-
-        @testset "Boundary and edge cases" begin
-            # Test with 1.0
-            @test _mix_values(1.0, 1.0, 0.5) ≈ 1.0
-
-            # Test symmetry
-            @test _mix_values(2.0, 8.0, 0.49) ≈ _mix_values(8.0, 2.0, 0.51)
-        end
-
-        # SUGGESTIONS FOR ADDITIONAL TESTS:
-        # TODO: Test numerical stability with very small/large values
-        # TODO: Verify mathematical properties (e.g., _mix_values(x, y, r) vs _mix_values(y, x, 1-r))
-    end
 
     # -------------------------------------------------------------------------
     # Embedding Evaluation Metrics

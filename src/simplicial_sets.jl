@@ -324,6 +324,14 @@ function general_simplicial_set_intersection(left_view::M, right_view::M, params
     return result
 end
 
+"""
+    _mix_values(x, y, ratio)
+
+For ratio in [0, 1], return a modified multiplication of x and y.
+For ratio = 0, return x
+For ratio = 1, return y
+For ratio = 0.5, return x*y
+"""
 function _mix_values(x, y, ratio)
     if ratio < 0.5
         return x * y^(ratio / (1 - ratio))
