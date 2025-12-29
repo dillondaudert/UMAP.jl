@@ -19,7 +19,7 @@
         graph = dropzeros(graph + graph')
         
         tgt_params = UMAP.TargetParams(UMAP._EuclideanManifold(2), 
-                                     SqEuclidean(), 
+                                     Distances.SqEuclidean(), 
                                      UMAP.SpectralInitialization(),
                                      UMAP.MembershipFnParams(0.1, 1.0))
         
@@ -32,7 +32,7 @@
         
         # Test uniform initialization
         tgt_params_uniform = UMAP.TargetParams(UMAP._EuclideanManifold(2), 
-                                             SqEuclidean(), 
+                                             Distances.SqEuclidean(), 
                                              UMAP.UniformInitialization(),
                                              UMAP.MembershipFnParams(0.1, 1.0))
         
@@ -48,7 +48,7 @@
         # Test Float32 type stability
         graph32 = convert(SparseMatrixCSC{Float32}, graph)
         tgt_params32 = UMAP.TargetParams(UMAP._EuclideanManifold(2), 
-                                       SqEuclidean(), 
+                                       Distances.SqEuclidean(), 
                                        UMAP.UniformInitialization(),
                                        UMAP.MembershipFnParams(0.1f0, 1.0f0))
         
@@ -58,6 +58,6 @@
     end
 
     @testset "initialize_embedding with reference" begin
-        # TODO: Add tests for initializing with a reference embedding
+        # TODO
     end
 end

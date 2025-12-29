@@ -36,7 +36,8 @@ end
     initialize_embedding(umap_graph, tgt_params) -> embedding
 
 Initialize the embedding according to tgt_params. Return a list of points
-(e.g. Vectors) representing the initial embedded dataset.
+(e.g. Vectors) representing the initial embedded dataset. This could be 
+made generic to different target manifolds.
 """
 function initialize_embedding end
 
@@ -112,7 +113,7 @@ function spectral_layout(graph::SparseMatrixCSC{T},
     k = embed_dim+1
     num_lanczos_vectors = max(2k+1, round(Int, sqrt(size(L, 1))))
     # get the 2nd - embed_dim+1th smallest eigenvectors
-    eigenvals, eigenvecs = Arpack.eigs(L; nev=k,
+    _, eigenvecs = Arpack.eigs(L; nev=k,
                                    ncv=num_lanczos_vectors,
                                    which=:SM,
                                    tol=1e-4,

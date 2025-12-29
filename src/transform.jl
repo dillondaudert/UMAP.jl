@@ -46,7 +46,7 @@ function transform(result::UMAPResult,
     fs_sets = fuzzy_simplicial_set(result.data, knns_dists, knn_params, src_params)
     query_graph = coalesce_views(fs_sets, gbl_params)
     # 3. initialize target embedding for queries
-    query_embedding = initialize_embedding(query_graph, tgt_params)
+    query_embedding = initialize_embedding(result.embedding, query_graph, tgt_params)
     # 4. optimize query embedding
     optimize_embedding!(query_embedding, result.embedding, query_graph, tgt_params, opt_params)
 
