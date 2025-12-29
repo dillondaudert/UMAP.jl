@@ -128,6 +128,12 @@ function fuzzy_simplicial_set((knns, dists), knn_params, src_params::SourceViewP
     return fuzzy_simplicial_set((knns, dists), n_points, knn_params, src_params, true)
 end
 
+"""
+    fuzzy_simplicial_set(data, knns_dists, knn_params, src_params)
+
+(Transform) Construct a global fuzzy simplicial set for a single data view, the `data`
+    argument gives us the number of points in the original dataset.
+"""
 function fuzzy_simplicial_set(data, knns_dists, knn_params, src_params::SourceViewParams)
     # the length of the last axis tells us how many points there are
     n_points = length(axes(data)[end])
