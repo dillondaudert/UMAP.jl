@@ -348,6 +348,9 @@ Reset the local connectivity requirement -- each data sample should
 have complete confidence in at least one 1-simplex in the simplicial set.
 We can enforce this by locally rescaling confidences, and then remerging the
 different local simplicial sets together.
+
+A FS set may lose this property when combining multiple views of the source
+data; this function restores it.
 """
 function reset_local_connectivity(simplicial_set, reset_local_metric=true)
     # normalize columns 
@@ -363,7 +366,13 @@ function reset_local_connectivity(simplicial_set, reset_local_metric=true)
 
 end
 
-function _norm_sparse(simplicial_set::AbstractSparseMatrix)
+"""
+    _norm_sparse(fsset)
+
+For each column (i.e. each point), normalize the membership values 
+(divide by the maximum). This creates a copy of the matrix.
+"""
+function _norm_sparse(simplicial_set::SparseMatrixCSC)
     # normalize columns of sparse matrix so max is 1 for each column
     maxvals = maximum(simplicial_set, dims=1)
     I, J, V = findnz(simplicial_set)
@@ -375,7 +384,7 @@ function _norm_sparse(simplicial_set::AbstractSparseMatrix)
     return sparse(I, J, newVs, simplicial_set.m, simplicial_set.n)
 end
 
-function reset_local_metrics!(simplicial_set::AbstractSparseMatrix)
+function reset_local_metrics!(simplicial_set::SparseMatrixCSC)
 
     # for each column, reset the fuzzy set cardinality.
     # modify each sparse column in-place here.

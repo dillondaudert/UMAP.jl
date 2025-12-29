@@ -131,12 +131,12 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
         @inferred coalesce_views(view_graphs.view_1, nothing)
     end
 
-        # -------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Local Connectivity and Normalization
     # -------------------------------------------------------------------------
 
     @testset "reset_local_connectivity tests" begin
-        @testset "Full pipeline" begin
+        @testset "Basic Properties" begin
             # Create a test simplicial set
             A = sparse(rand(5, 5) .+ 0.1)  # Add 0.1 to avoid zeros
 
@@ -148,10 +148,8 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
             @test result ≈ result'
             # Should have no explicit zeros
             @test !any(iszero, nonzeros(result))
-        end
-
-        @testset "Without metric reset" begin
-            A = sparse(rand(4, 4) .+ 0.1)
+            @inferred reset_local_connectivity(A, true)
+            @inferred reset_local_connectivity(A, false)
             result = reset_local_connectivity(A, false)
             @test result isa SparseMatrixCSC
             @test result ≈ result'  # Still symmetric
@@ -159,7 +157,7 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
 
         @testset "_norm_sparse tests" begin
             @testset "Column-wise normalization" begin
-                A = rand(4, 4) .+ 1e-8  # add 1e-8 to eliminate any possible
+                A = rand(4, 8) .+ 1e-8  # add 1e-8 to eliminate any possible
                                         # issues with zeros (even though very rare)
                 spA = sparse(A)
                 result = _norm_sparse(spA)
@@ -174,11 +172,11 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
 
             @testset "Handles zero columns" begin
                 # Column with all zeros should be handled by 1e-8 minimum
-                A = [1.0 0.0; 0.5 0.0]
+                A = [0.8 0.0; 0.4 0.0]
                 spA = sparse(A)
                 result = _norm_sparse(spA)
                 @test result isa SparseMatrixCSC
-                # First column normalized to max 1.0
+                # First column normalized to max 0.8
                 @test result[1, 1] ≈ 1.0
                 @test result[2, 1] ≈ 0.5
             end
@@ -191,12 +189,16 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
                 A_f64 = sparse(rand(Float64, 3, 3))
                 result = _norm_sparse(A_f64)
                 @test eltype(result) == Float64
+
+                A = sprand(5, 20, 0.2)
+                A_res = _norm_sparse(A)
+                I, J, _ = findnz(A)
+                I2, J2, __ = findnz(A_res)
+                @test I == I2
+                @test J == J2
             end
 
-            # SUGGESTIONS FOR ADDITIONAL TESTS:
-            # TODO: Test with very large/small values
             # TODO: Test preservation of sparsity structure
-            # TODO: Benchmark performance on large sparse matrices
         end
 
         @testset "reset_local_metrics! tests" begin
