@@ -10,27 +10,39 @@ mutable struct MembershipFnParams{T <: Real}
     spread::T
     a::T
     b::T
+
+    # first inner constructor fits the parameters
+    function MembershipFnParams{T}(min_dist, spread) where {T <: Real}
+        min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
+        spread > 0 || throw(ArgumentError("spread must be greater than 0"))
+        a, b = fit_ab(min_dist, spread)
+        return new(min_dist, spread, a, b)
+    end
+    # inner constructor still checks min_dist, spread, but not a or b
     function MembershipFnParams{T}(min_dist, spread, a, b) where {T <: Real}
         min_dist > 0 || throw(ArgumentError("min_dist must be greater than 0"))
         spread > 0 || throw(ArgumentError("spread must be greater than 0"))
         return new(min_dist, spread, a, b)
     end
 end
+function MembershipFnParams(min_dist::T, spread::T) where {T <: Real}
+    return MembershipFnParams{T}(min_dist, spread)
+end
 function MembershipFnParams(min_dist::T, spread::T, a::T, b::T) where {T <: Real}
     return MembershipFnParams{T}(min_dist, spread, a, b)
 end
 # autopromote
+function MembershipFnParams(min_dist::Real, spread::Real)
+    return MembershipFnParams(promote(min_dist, spread)...)
+end
 function MembershipFnParams(min_dist::Real, spread::Real, a::Real, b::Real)
     return MembershipFnParams(promote(min_dist, spread, a, b)...)
 end
-# calculate a, b with binary search
+# support passing a, b as nothing for convenience
 function MembershipFnParams(min_dist::Real, spread::Real, ::Nothing, ::Nothing)
-    a, b = fit_ab(min_dist, spread)
-    return MembershipFnParams(min_dist, spread, a, b)
+    return MembershipFnParams(min_dist, spread)
 end
-function MembershipFnParams(min_dist::Real, spread::Real)
-    return MembershipFnParams(min_dist, spread, nothing, nothing)
-end
+
 
 """
     fit_ab(min_dist, spread) -> a, b

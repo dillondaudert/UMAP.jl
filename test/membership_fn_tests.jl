@@ -1,5 +1,13 @@
+using UMAP: MembershipFnParams
 
 @testset "membership_fn tests" begin
+
+    @testset "MembershipFnParams tests" begin
+        @test_throws ArgumentError MembershipFnParams(-1, 1)
+        @test_throws ArgumentError MembershipFnParams(1, -.01)
+        @test_throws ArgumentError MembershipFnParams(-1, 1, 1, 1)
+        @test_throws ArgumentError MembershipFnParams(1, -0.1, 1, 1)
+    end
 
     @testset "fit_ab function tests" begin
         
