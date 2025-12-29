@@ -384,6 +384,13 @@ function _norm_sparse(simplicial_set::SparseMatrixCSC)
     return sparse(I, J, newVs, simplicial_set.m, simplicial_set.n)
 end
 
+"""
+Reset the cardinality of the fuzzy sets (usually a column
+in a simplicial set) to be approximately log2(k).
+
+This step is necessary after we've combined the simplicial sets
+for multiple views of the same data.
+"""
 function reset_local_metrics!(simplicial_set::SparseMatrixCSC)
 
     # for each column, reset the fuzzy set cardinality.
@@ -397,11 +404,11 @@ function reset_local_metrics!(simplicial_set::SparseMatrixCSC)
 end
 
 """
-Reset the cardinality of the fuzzy set (usually a column
-in a simplicial set) to be approximately log2(k).
+Like smooth_knn_dists, but now operating on an existing fuzzy set edge probabilities.
 
-This step is necessary after we've combined the simplicial sets
-for multiple views of the same data.
+NOTE: `k` is fixed to 15 here, which is what the Python UMAP implementation does.
+How we would set this otherwise isn't clear (the global UMAP graph `k` value isn't 
+determined.)
 """
 function _reset_fuzzy_set_cardinality(probs, k=15, niter=32)
     target = log2(k)

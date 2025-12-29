@@ -197,8 +197,6 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
                 @test I == I2
                 @test J == J2
             end
-
-            # TODO: Test preservation of sparsity structure
         end
 
         @testset "reset_local_metrics! tests" begin
@@ -242,11 +240,6 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
                     @test isapprox(sum(res), log2(k), atol=SMOOTH_K_TOLERANCE)
                 end
             end
-
-            # SUGGESTIONS FOR ADDITIONAL TESTS:
-            # TODO: Test with columns of varying initial cardinalities
-            # TODO: Test numerical stability with extreme probability values
-            # TODO: Verify that reset preserves relative ordering of probabilities
         end
 
         # SUGGESTIONS FOR ADDITIONAL TESTS:
