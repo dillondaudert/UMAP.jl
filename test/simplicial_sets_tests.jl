@@ -131,6 +131,261 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
         @inferred coalesce_views(view_graphs.view_1, nothing)
     end
 
+
+    @testset "smooth_knn_dists" begin
+        dists = [0., 1., 2., 3., 4., 5.]
+        rho = 1
+        k = 6
+        local_connectivity = 1
+        bandwidth = 1.
+        niter = 64
+        sigma = smooth_knn_dist(dists, rho, k, bandwidth, niter)
+        psum(ds, r, s) = sum(exp.(-max.(ds .- r, 0.) ./ s))
+        @test psum(dists, rho, sigma) - log2(k)*bandwidth < SMOOTH_K_TOLERANCE
+
+        knn_dists = [0. 0. 0.;
+                    1. 2. 3.;
+                    2. 4. 5.;
+                    3. 4. 5.;
+                    4. 6. 6.;
+                    5. 6. 10.]
+        src_params = SourceViewParams(1, local_connectivity, bandwidth)
+        rhos, sigmas = smooth_knn_dists(knn_dists, k, src_params)
+        @test rhos == [1., 2., 3.]
+        diffs = [psum(knn_dists[:,i], rhos[i], sigmas[i]) for i in 1:3] .- log2(6)
+        @test all(diffs .< SMOOTH_K_TOLERANCE)
+
+        knn_dists = [0. 0. 0.;
+                    0. 1. 2.;
+                    0. 2. 3.]
+        rhos, sigmas = smooth_knn_dists(knn_dists, 2, src_params)
+        @test rhos == [0., 1., 2.]
+        src_params = SourceViewParams(1, 1.5, 1)
+        rhos, sigmas = smooth_knn_dists(knn_dists, 2, src_params)
+        @test rhos == [0., 1.5, 2.5]
+    end
+
+    @testset "compute_membership_strengths" begin
+        knns = [1 2 3; 2 1 2]
+        dists = [0. 0. 0.; 2. 2. 3.]
+        rhos = [2., 1., 4.]
+        sigmas = [1., 1., 1.]
+        true_rows = [1, 2, 2, 1, 3, 2]
+        true_cols = [1, 1, 2, 2, 3, 3]
+        true_vals = [0., 1., 0., exp(-1.), 0., 1.]
+        rows, cols, vals = compute_membership_strengths(knns, dists, rhos, sigmas)
+        @test rows == true_rows
+        @test cols == true_cols
+        @test vals == true_vals
+    end
+
+    # -------------------------------------------------------------------------
+    # Local Fuzzy Set Operations (merge_local_simplicial_sets)
+    # -------------------------------------------------------------------------
+
+    @testset "Fuzzy Set Union and Intersection" begin
+        @testset "_fuzzy_set_union" begin
+            # Basic properties of fuzzy union: A ∪ B = A + B - A*B
+            A = [1.0 0.5; 0.5 1.0]
+            union_result = _fuzzy_set_union(A)
+
+            # Union should be symmetric
+            @test union_result ≈ union_result'
+
+            # Diagonal should remain 1.0 (1 + 1 - 1*1 = 1)
+            @test all(diag(union_result) .≈ 1.0)
+
+            # Off-diagonal: 0.5 + 0.5 - 0.5*0.5 = 0.75
+            @test union_result[1, 2] ≈ 0.75
+            @test union_result[2, 1] ≈ 0.75
+
+            # Test with asymmetric matrix
+            B = [1.0 0.3; 0.7 1.0]
+            union_B = _fuzzy_set_union(B)
+            # (1,2): 0.3 + 0.7 - 0.3*0.7 = 0.79
+            @test union_B[1, 2] ≈ 0.79
+            @test union_B[2, 1] ≈ 0.79
+
+            S = sprand(100, 100, 0.1)
+            @inferred _fuzzy_set_union(S)
+        end
+
+        @testset "_fuzzy_set_intersection" begin
+            # Basic properties of fuzzy intersection: A ∩ B = A*B
+            A = [1.0 0.5; 0.5 1.0]
+            inter_result = _fuzzy_set_intersection(A)
+
+            # Intersection should be symmetric
+            @test inter_result ≈ inter_result'
+
+            # Diagonal: 1*1 = 1
+            @test all(diag(inter_result) .≈ 1.0)
+
+            # Off-diagonal: 0.5*0.5 = 0.25
+            @test inter_result[1, 2] ≈ 0.25
+
+            # Test with zeros
+            C = [1.0 0.0; 0.5 1.0]
+            inter_C = _fuzzy_set_intersection(C)
+            @test inter_C[1, 2] ≈ 0.0
+
+            S = sprand(100, 100, 0.1)
+            @inferred _fuzzy_set_intersection(S)
+        end
+
+        @testset "Boundary Cases" begin
+            # All ones
+            ones_mat = ones(3, 3)
+            @test all(_fuzzy_set_union(ones_mat) .≈ 1.0)
+            @test all(_fuzzy_set_intersection(ones_mat) .≈ 1.0)
+
+            # All zeros
+            zeros_mat = zeros(3, 3)
+            @test all(_fuzzy_set_union(zeros_mat) .≈ 0.0)
+            @test all(_fuzzy_set_intersection(zeros_mat) .≈ 0.0)
+
+            # Very small values (numerical stability)
+            small_mat = [1.0 1e-10; 1e-10 1.0]
+            @test _fuzzy_set_union(small_mat)[1, 2] ≈ 2e-10 atol=1e-15
+            @test _fuzzy_set_intersection(small_mat)[1, 2] ≈ 1e-20 atol=1e-25
+        end
+    end
+    @testset "merge_local_simplicial_sets tests" begin
+        A = [1.0 0.1; 0.4 1.0]
+
+        @testset "Pure Union (ratio = 1.0)" begin
+            union_res = [1.0 0.46; 0.46 1.0]
+            res = merge_local_simplicial_sets(A, 1.0)
+            @test isapprox(res, union_res)
+        end
+
+        @testset "Pure Intersection (ratio = 0.0)" begin
+            inter_res = [1.0 0.04; 0.04 1.0]
+            res = merge_local_simplicial_sets(A, 0.0)
+            @test isapprox(res, inter_res)
+        end
+
+        @testset "Interpolated (ratio = 0.5)" begin
+            # 0.5 * union + 0.5 * intersection
+            union_res = [1.0 0.46; 0.46 1.0]
+            inter_res = [1.0 0.04; 0.04 1.0]
+            expected = 0.5 .* union_res .+ 0.5 .* inter_res
+            res = merge_local_simplicial_sets(A, 0.5)
+            @test isapprox(res, expected)
+        end
+
+        @testset "Other ratios" begin
+            # Test various interpolation ratios
+            for ratio in [0.25, 0.75, 0.3, 0.9]
+                res = merge_local_simplicial_sets(A, ratio)
+                @test res isa Matrix
+                @test size(res) == size(A)
+                # Result should be between intersection and union
+            end
+        end
+    end
+
+    # -------------------------------------------------------------------------
+    # General Simplicial Set Operations (Multi-view)
+    # -------------------------------------------------------------------------
+
+    @testset "general_simplicial_set_union tests" begin
+        @testset "Basic Union" begin
+            left_view = sparse([1e-9 0.5; 0.5 1e-9])
+            right_view = sparse([1e-9 0.5; 1e-9 0.5])
+            res = general_simplicial_set_union(left_view, right_view)
+
+            # Expected: use fuzzy union formula with minimum value protection
+            # (1,1): both are 1e-9, so use 1e-8 minimum: 1e-8 + 1e-8 - (1e-8)^2 = 2e-8 - 1e-16
+            @test res[1, 1] ≈ 2e-8 - (1e-8)^2 atol=1e-16
+
+            # (1,2): 0.5 + 0.5 - 0.5*0.5 = 0.75
+            @test res[1, 2] ≈ 0.75
+
+            # (2,1): 0.5 + max(1e-8, 1e-9) - product
+            @test res[2, 1] ≈ 0.5 + 1e-8 - 0.5*1e-8 atol=1e-9
+        end
+
+        @testset "Symmetric Union" begin
+            # Union should be commutative
+            A = sparse(rand(5, 5))
+            B = sparse(rand(5, 5))
+            @test general_simplicial_set_union(A, B) == general_simplicial_set_union(B, A)
+        end
+
+        @testset "Edge Cases" begin
+
+            # Single nonzero value
+            single_A = sparse([1, 2], [1, 2], [0.5, 0.3], 3, 3)
+            single_B = sparse([1, 3], [1, 3], [0.4, 0.6], 3, 3)
+            res = general_simplicial_set_union(single_A, single_B)
+            @test res isa SparseMatrixCSC
+        end
+    end
+
+    @testset "general_simplicial_set_intersection tests" begin
+        @testset "Basic Intersection" begin
+            left_view = sparse([1e-9 0.5; 0.5 1e-9])
+            right_view = sparse([1e-9 0.5; 1e-9 0.5])
+
+            # Test with mix_ratio = 0.5 (balanced)
+            res = general_simplicial_set_intersection(left_view, right_view, SourceGlobalParams(0.5))
+            # (1, 1) should add the two values (both less than 1e-8)
+            @test res[1, 1] == 2e-9
+            # (1, 2): _mix_values(0.5, 0.5, 0.5)
+            @test res[1, 2] ≈ 0.25
+            # (2, 2): one value replaced with min 1e-8
+            @test res[2, 2] ≈ 1e-8 * 0.5 atol=1e-10
+        end
+
+        @testset "Weighted Intersection - Left (ratio = 0)" begin
+            left_view = sparse([1e-9 0.5; 0.5 1e-9])
+            right_view = sparse([1e-9 0.5; 1e-9 0.5])
+            # ratio=0 should weight towards left (x * y^0 = x)
+            left_res = general_simplicial_set_intersection(left_view, right_view, SourceGlobalParams(0.))
+            @test left_res[1, 1] == 2e-9
+            @test left_res[1, 2] == 0.5  # weighted towards left
+            @test left_res[2, 1] == 0.5
+            @test left_res[2, 2] ≈ 1e-8 atol=1e-10
+        end
+
+        @testset "Weighted Intersection - Right (ratio = 1)" begin
+            left_view = sparse([1e-9 0.5; 0.5 1e-9])
+            right_view = sparse([1e-9 0.5; 1e-9 0.5])
+            # ratio=1 should weight towards right (x^0 * y = y)
+            right_res = general_simplicial_set_intersection(left_view, right_view, SourceGlobalParams(1.))
+            @test right_res[1, 1] == 2e-9
+            @test right_res[1, 2] == 0.5  # weighted towards right
+            @test right_res[2, 1] ≈ 1e-8 atol=1e-10
+            @test right_res[2, 2] == 0.5
+        end
+
+        @testset "Different mix ratios" begin
+            left_view = sparse([0.0 0.8; 0.6 0.0])
+            right_view = sparse([0.0 0.4; 0.2 0.0])
+
+            for ratio in [0.0, 0.25, 0.5, 0.75, 1.0]
+                res = general_simplicial_set_intersection(left_view, right_view, SourceGlobalParams(ratio))
+                @test res isa SparseMatrixCSC
+                @test size(res) == size(left_view)
+            end
+        end
+        @testset "Sparsity Pattern" begin
+            S = sprand(100, 100, 0.1)
+            T = sprand(100, 100, 0.1)
+            S_inds = findall(!iszero, S)
+            T_inds = findall(!iszero, T)
+            res_union = general_simplicial_set_union(S, T)
+            res_inter = general_simplicial_set_intersection(S, T, SourceGlobalParams(0.5))
+            union_inds = findall(!iszero, res_union)
+            inter_inds = findall(!iszero, res_inter)
+            # test that the union of the indices equals the indices of the operations
+            S_T_inds = union(Set(S_inds), Set(T_inds))
+            @test S_T_inds == Set(union_inds)
+            @test S_T_inds == Set(inter_inds)
+        end
+    end
+
     # -------------------------------------------------------------------------
     # Local Connectivity and Normalization
     # -------------------------------------------------------------------------
@@ -242,11 +497,6 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
             end
         end
 
-        # SUGGESTIONS FOR ADDITIONAL TESTS:
-        # TODO: Verify that local connectivity constraint is satisfied
-        # TODO: Test with matrices of different sparsity patterns
-        # TODO: Compare results with/without metric reset
-
         @testset "_reset_fuzzy_set_cardinality tests" begin
             @testset "Achieves target cardinality" begin
                 # this function resets the probabilities of a given
@@ -304,13 +554,7 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
                 res_few = _reset_fuzzy_set_cardinality(probs, 15, 5)
                 @test sum(res_few) > 0  # Should still be reasonable
             end
-
-            # SUGGESTIONS FOR ADDITIONAL TESTS:
-            # TODO: Test that function is monotonic (larger k -> larger result sum)
-            # TODO: Verify convergence rate of binary search
-            # TODO: Test edge case where target cannot be achieved
         end
-
 
         @testset "_mix_values tests" begin
             @testset "Equal weighting (ratio = 0.5)" begin
@@ -343,50 +587,4 @@ using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_d
         end
     end
 
-    @testset "smooth_knn_dists" begin
-        dists = [0., 1., 2., 3., 4., 5.]
-        rho = 1
-        k = 6
-        local_connectivity = 1
-        bandwidth = 1.
-        niter = 64
-        sigma = smooth_knn_dist(dists, rho, k, bandwidth, niter)
-        psum(ds, r, s) = sum(exp.(-max.(ds .- r, 0.) ./ s))
-        @test psum(dists, rho, sigma) - log2(k)*bandwidth < SMOOTH_K_TOLERANCE
-
-        knn_dists = [0. 0. 0.;
-                    1. 2. 3.;
-                    2. 4. 5.;
-                    3. 4. 5.;
-                    4. 6. 6.;
-                    5. 6. 10.]
-        src_params = SourceViewParams(1, local_connectivity, bandwidth)
-        rhos, sigmas = smooth_knn_dists(knn_dists, k, src_params)
-        @test rhos == [1., 2., 3.]
-        diffs = [psum(knn_dists[:,i], rhos[i], sigmas[i]) for i in 1:3] .- log2(6)
-        @test all(diffs .< SMOOTH_K_TOLERANCE)
-
-        knn_dists = [0. 0. 0.;
-                    0. 1. 2.;
-                    0. 2. 3.]
-        rhos, sigmas = smooth_knn_dists(knn_dists, 2, src_params)
-        @test rhos == [0., 1., 2.]
-        src_params = SourceViewParams(1, 1.5, 1)
-        rhos, sigmas = smooth_knn_dists(knn_dists, 2, src_params)
-        @test rhos == [0., 1.5, 2.5]
-    end
-
-    @testset "compute_membership_strengths" begin
-        knns = [1 2 3; 2 1 2]
-        dists = [0. 0. 0.; 2. 2. 3.]
-        rhos = [2., 1., 4.]
-        sigmas = [1., 1., 1.]
-        true_rows = [1, 2, 2, 1, 3, 2]
-        true_cols = [1, 1, 2, 2, 3, 3]
-        true_vals = [0., 1., 0., exp(-1.), 0., 1.]
-        rows, cols, vals = compute_membership_strengths(knns, dists, rhos, sigmas)
-        @test rows == true_rows
-        @test cols == true_cols
-        @test vals == true_vals
-    end
 end

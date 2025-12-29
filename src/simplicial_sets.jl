@@ -282,6 +282,10 @@ function general_simplicial_set_union(left_view::M, right_view::M) where {M <: A
     
     result = left_view + right_view
 
+    # for each view, find the minimum nonzero value / 2
+    # this is used when combining to that we never lose 
+    # a nonzero value in either view. This puts a minimum
+    # contribution threshold to each non-zero in both views
     left_min = max(minimum(nonzeros(left_view)) / 2, 1e-8)
     right_min = max(minimum(nonzeros(right_view)) / 2, 1e-8)
 
