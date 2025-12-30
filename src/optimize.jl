@@ -30,6 +30,7 @@ function set_lr(params::OptimizationParams, lr)
     return Accessors.@set params.lr = lr
 end
 
+# FIT
 function optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)
     _opt_params = opt_params
     for e in 1:opt_params.n_epochs
@@ -46,6 +47,7 @@ function optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)
     return embedding
 end
 
+# TRANSFORM
 function optimize_embedding!(embedding, ref_embedding, umap_graph, tgt_params, opt_params)
     _opt_params = opt_params
     for e in 1:opt_params.n_epochs
@@ -62,13 +64,28 @@ function optimize_embedding!(embedding, ref_embedding, umap_graph, tgt_params, o
     return embedding
 end
 
-function _optimize_embedding!(embedding, 
-                              ref_embedding, 
-                              umap_graph, 
-                              tgt_params::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean, I, MembershipFnParams{T}},
-                              opt_params;
-                              move_ref::Bool=true) where {N, I, T}
-    
+"""
+    _optimize_embedding!(embedding, ref_embedding, umap_graph, tgt_params, opt_params; move_ref)
+
+Optimize the embedding for one epoch, calculating the distances between neighbors and 
+updating the embedding via gradient descent. If `embedding` and `ref_embedding` are the 
+same object, then this is fitting a new embedding. Otherwise, `ref_embedding` is the 
+result of a previous call to fit, and we are transforming new data. 
+
+In both cases, the dimensions of `umap_graph` have to match `embedding` and 
+`ref_embedding`: umap_graph in R^{n, m}, embedding length m, ref_embedding length n.
+
+This optimizes the default case, where the embeddings are in vector of vectors format,
+the target manifold is a Euclidean manifold of some dimension N, and the target metric 
+is squared euclidean.
+"""
+function _optimize_embedding!(embedding::AbstractVector{E}, 
+                              ref_embedding::AbstractVector{E}, 
+                              umap_graph::SparseMatrixCSC, 
+                              tgt_params::TargetParams{_EuclideanManifold, Distances.SqEuclidean},
+                              opt_params::OptimizationParams;
+                              move_ref::Bool=true) where {E<:AbstractVector}
+
     self_reference = embedding === ref_embedding
     a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
     lr = opt_params.lr
@@ -164,7 +181,7 @@ end
 Calculate the distance between `x` and `y` on the manifold `tgt_params.manifold` according to 
 `tgt_params.metric` as well as the gradient of that distance with respect to x and y.
 """
-function target_metric(tgt_params, x, y) end
+function target_metric end
 
 function target_metric(::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean}, x, y) where N
     dist = Distances.sqeuclidean(x, y)

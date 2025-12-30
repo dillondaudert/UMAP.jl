@@ -10,11 +10,11 @@
         @test new_params.lr == 0.5
         @test params.lr == 1.
     end
-    @testset "optimize_embedding!" begin
+    @testset "_optimize_embedding!" begin
         # TODO
     end
 
-    @testset "optimize_embedding! with reference" begin
+    @testset "_optimize_embedding! with reference" begin
         # TODO
     end
 end
