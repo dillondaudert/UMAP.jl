@@ -8,7 +8,7 @@ import Arpack
 import Distances
 import LsqFit
 import NearestNeighborDescent as NND
-import Setfield
+import Accessors
 
 include("utils.jl")
 include("membership_fn.jl")

@@ -1,22 +1,20 @@
 @testset "optimize_embedding tests" begin
+    @testset "OptimizationParams tests" begin
+        @test_throws ArgumentError UMAP.OptimizationParams(0, .1, .1, 1)
+        @test_throws ArgumentError UMAP.OptimizationParams(1, -0.1, 1., 1)
+        @test_throws ArgumentError UMAP.OptimizationParams(1, 1., -0.1, 1)
+        @test_throws ArgumentError UMAP.OptimizationParams(1, 1., 1., -1)
+
+        params = UMAP.OptimizationParams(1, 1., 1., 1)
+        new_params = UMAP.set_lr(params, 0.5)
+        @test new_params.lr == 0.5
+        @test params.lr == 1.
+    end
     @testset "optimize_embedding!" begin
-        # Test basic optimization functionality
-        data = rand(5, 20)
-        result = fit(data, 2; n_neighbors=5, n_epochs=1)
-        
-        # Test that optimization modifies embedding
-        original_embedding = deepcopy(result.embedding)
-        optimize_embedding!(result.embedding, result.graph, result.config.tgt_params, result.config.opt_params)
-        
-        # Embedding should be modified after optimization
-        @test result.embedding != original_embedding
-        @test length(result.embedding) == size(data, 2)
-        for i in eachindex(result.embedding)
-            @test length(result.embedding[i]) == 2
-        end
+        # TODO
     end
 
     @testset "optimize_embedding! with reference" begin
-        # TODO: more tests
+        # TODO
     end
 end

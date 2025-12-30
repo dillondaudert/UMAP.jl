@@ -21,10 +21,14 @@ struct OptimizationParams
         n_epochs > 0 || throw(ArgumentError("n_epochs must be greater than 0, got $n_epochs"))
         lr ≥ 0 || throw(ArgumentError("learning_rate must be non-negative, got $lr"))
         neg_sample_rate ≥ 0 || throw(ArgumentError("neg_sample_rate must be non-negative, got $neg_sample_rate"))
+        repulsion_strength >= 0 || throw(ArgumentError("repulsion_strength must be non-negative, got $repulsion_strength"))
         return new(n_epochs, lr, repulsion_strength, neg_sample_rate)
     end
 end
 
+function set_lr(params::OptimizationParams, lr)
+    return Accessors.@set params.lr = lr
+end
 
 function optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)
     _opt_params = opt_params
@@ -36,7 +40,7 @@ function optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)
                              _opt_params;
                              move_ref=true)
         alpha = (1 - e / opt_params.n_epochs) * opt_params.lr
-        _opt_params = Setfield.@set _opt_params.lr = alpha
+        _opt_params = set_lr(_opt_params, alpha)
     end
 
     return embedding
@@ -52,7 +56,7 @@ function optimize_embedding!(embedding, ref_embedding, umap_graph, tgt_params, o
                              _opt_params;
                              move_ref=false)
         alpha = (1 - e / opt_params.n_epochs) * opt_params.lr
-        _opt_params = Setfield.@set _opt_params.lr = alpha
+        _opt_params = set_lr(_opt_params, alpha)
     end
 
     return embedding
@@ -109,6 +113,10 @@ function _optimize_embedding!(embedding,
     end
     return embedding
 end
+
+#
+# Below, refactoring in progress
+#
 
 function _update_embedding_pos!(embedding, 
                                 i,

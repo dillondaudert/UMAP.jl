@@ -1,25 +1,25 @@
 name = "UMAP"
 uuid = "c4f8c510-2410-5be4-91d7-4fbaeb39457e"
-authors = ["Dillon Daudert <dillongdaudert@gmail.com>"]
 version = "0.2.0"
+authors = ["Dillon Daudert <dillongdaudert@gmail.com>"]
+
+[workspace]
+projects = ["UMAP", "test", "docs"]
 
 [deps]
+Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
 Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LsqFit = "2fda8390-95c7-5789-9bda-21331edee243"
 NearestNeighborDescent = "dd2c4c9e-a32f-5b2f-b342-08c2f244fce8"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
+Accessors = "0.1.43"
 Arpack = "0.4, 0.5"
 Distances = "0.8, 0.9, 0.10"
 LsqFit = "0.6, 0.7, 0.8, 0.9, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15"
 NearestNeighborDescent = "0.3"
-Setfield = "0.8"
 julia = "1.10, 1.11, 1.12"
-
-[workspace]
-projects = ["UMAP", "test", "docs"]
