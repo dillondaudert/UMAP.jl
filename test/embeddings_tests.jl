@@ -58,6 +58,24 @@
     end
 
     @testset "initialize_embedding with reference" begin
-        # TODO
+        ref_mat = [1. 2 3;
+                   1. 1 1]
+        ref_vecs = collect(ref_mat[:, i] for i in axes(ref_mat, 2))
+        graph = sparse([1. 0. 0.;
+                        0.0 .5 1.
+                        0.0 0.0 1.])
+        tparams = UMAP.TargetParams(UMAP._EuclideanManifold(2),
+                                    Distances.Euclidean(),
+                                    UMAP.UniformInitialization(),
+                                    UMAP.MembershipFnParams(0.1, 0.1))
+        res1 = UMAP.initialize_embedding(ref_mat, graph, tparams)
+        res2 = UMAP.initialize_embedding(ref_vecs, graph, tparams)
+
+        true_res = collect(eachcol([1. 2. 2.5;
+                                    1. 1. 1.]))
+        @test res1 ≈ true_res
+        @test res2 ≈ true_res
+        @inferred UMAP.initialize_embedding(ref_mat, graph, tparams)
+        @inferred UMAP.initialize_embedding(ref_vecs, graph, tparams)
     end
 end
