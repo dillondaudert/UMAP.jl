@@ -1,4 +1,4 @@
-# parameter structs for configuring UMAP
+# struct and utilities for the UMAP algorithm configuration.
 
 
 """

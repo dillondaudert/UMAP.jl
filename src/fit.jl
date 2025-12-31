@@ -59,7 +59,7 @@ function fit(data,
 
 end
 
-
+# the generic fit algorithm - works for single and  named tuples of configs
 function fit(data, knn_params, src_params, gbl_params, tgt_params, opt_params)
 
     # 1. find (approx) nearest neighbors
