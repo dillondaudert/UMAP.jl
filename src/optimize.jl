@@ -82,9 +82,9 @@ is squared euclidean.
 function _optimize_embedding!(embedding::AbstractVector{E}, 
                               ref_embedding::AbstractVector{E}, 
                               umap_graph::SparseMatrixCSC, 
-                              tgt_params::TargetParams{_EuclideanManifold, Distances.SqEuclidean},
+                              tgt_params::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean},
                               opt_params::OptimizationParams;
-                              move_ref::Bool=true) where {E<:AbstractVector}
+                              move_ref::Bool=true) where {E<:AbstractVector, N}
 
     self_reference = embedding === ref_embedding
 

@@ -6,36 +6,6 @@ using Distances: euclidean, cityblock, sqeuclidean
 
 @testset "utils tests" begin
 
-    # =============================================================================
-    # TEST PLAN FOR utils.jl
-    # =============================================================================
-    #
-    # This test suite validates the utility functions for fuzzy set operations,
-    # local connectivity management, and embedding evaluation.
-    #
-    # COVERAGE GOALS:
-    # 1. Fuzzy set operations (union, intersection, merging)
-    # 2. Multi-view set operations (general_simplicial_set_*)
-    # 3. Local connectivity management and normalization
-    # 4. Embedding evaluation metrics (trustworthiness)
-    # 5. Edge cases and numerical stability
-    #
-    # TESTING STRATEGY:
-    # - Test mathematical properties (e.g., union/intersection commutative)
-    # - Test boundary conditions (empty sets, single values, extreme values)
-    # - Test numerical stability (very small/large values, zeros)
-    # - Validate against known expected values
-    # - Test type stability where applicable
-    #
-    # FUNCTIONS TO TEST:
-    # - merge_local_simplicial_sets, _fuzzy_set_union, _fuzzy_set_intersection
-    # - general_simplicial_set_union, general_simplicial_set_intersection
-    # - _mix_values
-    # - reset_local_connectivity, _norm_sparse, reset_local_metrics!
-    # - _reset_fuzzy_set_cardinality
-    # - trustworthiness, _pairwise_nn
-    # =============================================================================
-
 
     # -------------------------------------------------------------------------
     # Embedding Evaluation Metrics

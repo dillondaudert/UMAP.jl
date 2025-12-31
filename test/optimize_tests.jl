@@ -1,5 +1,3 @@
-import DifferentiationInterface as DI
-import Zygote
 
 @testset "optimize_embedding tests" begin
     backend = DI.AutoZygote()
