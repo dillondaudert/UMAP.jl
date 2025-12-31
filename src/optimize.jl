@@ -87,43 +87,21 @@ function _optimize_embedding!(embedding::AbstractVector{E},
                               move_ref::Bool=true) where {E<:AbstractVector}
 
     self_reference = embedding === ref_embedding
-    a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
-    lr = opt_params.lr
 
     for i in 1:size(umap_graph, 2)
         for ind in nzrange(umap_graph, i)
             j = rowvals(umap_graph)[ind]
             p = nonzeros(umap_graph)[ind]
             if rand() <= p
-                dist = Distances.sqeuclidean(embedding[i], ref_embedding[j])
-                if dist > 0
-                    grad_coef = -(a * b) / (dist * (a + dist^(-b)))
-                else
-                    grad_coef = zero(dist)
-                end
-                # update embedding according to clipped gradient
-                @simd for d in eachindex(embedding[i])
-                    grad = clamp(grad_coef * 2 * (embedding[i][d] - ref_embedding[j][d]), -4, 4)
-                    embedding[i][d] += lr * grad
-                    ref_embedding[j][d] -= move_ref * lr * grad
-                end
+                update_embedding_pos!(embedding[i], ref_embedding[j], tgt_params, opt_params, move_ref)
                 # negative samples
                 for _ in 1:opt_params.neg_sample_rate
                     k = rand(eachindex(ref_embedding))
                     if i == k && self_reference
+                        # don't calculate negative force with itself
                         continue
                     end
-                    dist = Distances.sqeuclidean(embedding[i], ref_embedding[k])
-                    if dist > 0
-                        grad_coef = opt_params.repulsion_strength * b / (a * dist^(b + 1) + dist)
-                    else
-                        grad_coef = 4 * one(dist)
-                    end
-                    # update embedding according to clipped gradient
-                    @simd for d in eachindex(embedding[i])
-                        grad = clamp(grad_coef * 2 * (embedding[i][d] - ref_embedding[k][d]), -4, 4)
-                        embedding[i][d] += lr * grad
-                    end
+                    update_embedding_neg!(embedding[i], ref_embedding[k], tgt_params, opt_params)
                 end
             end
         end
@@ -131,32 +109,63 @@ function _optimize_embedding!(embedding::AbstractVector{E},
     return embedding
 end
 
-#
-# Below, refactoring in progress
-#
-
-function _update_embedding_pos!(embedding, 
-                                i,
-                                j, 
-                                move_ref, 
-                                tgt_params::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean},
-                                opt_params) where N
-    # specialized for sq euclidean metric
+"""
+Calculate the gradients of the positive 1-simplices in the simplicial set,
+and update the embeddings. This assumes embedded in R^d with the 
+squared euclidean metric.
+"""
+function update_embedding_pos!(emb_v::AbstractVector{T}, 
+                               emb_w::AbstractVector{T}, 
+                               tgt_params::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean},
+                               opt_params::OptimizationParams,
+                               move_ref::Bool) where {T <: Real, N}
     a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
     lr = opt_params.lr
-    dist = Distances.sqeuclidean(embedding[i], embedding[j])
+    dist = Distances.sqeuclidean(emb_v, emb_w)
     if dist > 0
         grad_coef = -(a * b) / (dist * (a + dist^(-b)))
     else
         grad_coef = zero(dist)
     end
-    @simd for d in eachindex(embedding[i])
-        grad = clamp(grad_coef * 2 * (embedding[i][d] - embedding[j][d]), -4, 4)
-        embedding[i][d] += lr * grad
-        embedding[j][d] -= move_ref * lr * grad
+    # update embedding according to clipped gradient
+    @simd for d in eachindex(emb_v)
+        grad = clamp(grad_coef * 2 * (emb_v[d] - emb_w[d]), -4, 4)
+        emb_v[d] += lr * grad
+        emb_w[d] -= move_ref * lr * grad
     end
     return
 end
+
+"""
+Calculate the gradients of the negative 1-simplices in the simplicial set,
+and update the embeddings. This assumes embedded in R^d with the 
+squared euclidean metric.
+"""
+function update_embedding_neg!(emb_v::AbstractVector{T}, 
+                               emb_w::AbstractVector{T}, 
+                               tgt_params::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean},
+                               opt_params::OptimizationParams) where {T <: Real, N}
+    a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
+    lr = opt_params.lr
+    dist = Distances.sqeuclidean(emb_v, emb_w)
+    if dist > 0
+        grad_coef = opt_params.repulsion_strength * b / (a * dist^(b + 1) + dist)
+    else
+        grad_coef = 4 * one(dist)
+    end
+    # update embedding according to clipped gradient
+    @simd for d in eachindex(emb_v)
+        grad = clamp(grad_coef * 2 * (emb_v[d] - emb_w[d]), -4, 4)
+        emb_v[d] += lr * grad
+    end
+    return
+end
+
+
+#
+# Below, incomplete generic gradient update code for other target 
+# metrics, and eventually manifolds.
+#
 
 function _update_embedding_pos!(embedding, i, j, move_ref, tgt_params, opt_params)
     a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
@@ -194,6 +203,10 @@ function target_metric(::TargetParams{_EuclideanManifold{N}, Distances.Euclidean
     grad_dist = (x - y) / (1e-8 + dist)
     return dist, grad_dist, -grad_dist
 end
+
+#
+# Utils
+#
 
 """
 A smooth approximation for the membership strength of the 1-simplex between two points x, y.
