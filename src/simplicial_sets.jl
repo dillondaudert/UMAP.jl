@@ -73,12 +73,9 @@ function coalesce_views(view_fuzzy_sets::NamedTuple{T},
     return foldl((l, r) -> reset_local_connectivity(general_simplicial_set_intersection(l, r, gbl_params)), view_fuzzy_sets)
 end
 
-# if no global params are passed, there must be exactly one view in the named
-# tuple - dispatch here.
-function coalesce_views(view_fuzzy_sets,
-                         _)
-    return view_fuzzy_sets
-end
+# the default - when view_fuzzy_sets is not a named tuple -
+# is just to return the first argument
+coalesce_views(view_fuzzy_sets, _) = view_fuzzy_sets
 
 """
 Construct the UMAP graph, i.e. the global fuzzy simplicial set. This is
