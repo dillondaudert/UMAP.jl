@@ -1,5 +1,8 @@
 # struct and utilities for the UMAP algorithm configuration.
 
+# NOTE/TODO: improve these to cover common use cases, including 
+# more flexible modification fit/transform.
+
 
 ViewConfigNT = NamedTuple{(
     :data_or_dists, 
@@ -34,15 +37,15 @@ function create_config(
 ) where {NT <: ViewConfigNT}
 
     view_configs = map(params -> create_view_config(;pairs(params)...), view_params)
-    if length(view_configs) == 1
+    if length(view_params) == 1
         data_param = view_params[1].data_or_dists
         knn_params, src_params = view_configs[1]
     else
         # create named tuple of view params by view
-        view_keys = ["view_$i" for i in eachindex(view_params)]
-        data_param = ([Symbol(view_keys[i])=>view_params[i].data_or_dists for i in eachindex(view_params)]...,)
-        knn_params = ([Symbol(view_keys[i])=>view_configs[i][1] for i in eachindex(view_configs)]...,)
-        src_params = ([Symbol(view_keys[i])=>view_configs[i][2] for i in eachindex(view_configs)]...,)
+        view_keys = tuple((Symbol("view_$i") for i in eachindex(view_params))...)
+        data_param = NamedTuple{view_keys}((vp.data_or_dists for vp in view_params))
+        knn_params = NamedTuple{view_keys}((vc[1] for vc in view_configs))
+        src_params = NamedTuple{view_keys}((vc[2] for vc in view_configs))
     end
 
     gbl_params = SourceGlobalParams(global_mix_ratio)

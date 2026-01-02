@@ -2,7 +2,7 @@ import Accessors: @set
 
 @testset "Configuration Tests" begin
 
-    @testset "Create config tests" begin
+    @testset "Create view config tests" begin
         X = rand(10, 20)
         nn = 4
         metric = Euclidean()
@@ -79,6 +79,73 @@ import Accessors: @set
 
         end
 
+    end
+
+    @testset "create_config tests" begin
+        X = rand(5, 20)
+        Y = rand(3, 20)
+        view_1_args = (
+            data_or_dists = X,
+            n_neighbors = 10,
+            metric = Distances.Euclidean(),
+            knn_kwargs = NamedTuple(),
+            set_operation_ratio = 0.8,
+            local_connectivity = 1,
+            bandwidth = 1.
+        )
+        view_1_params = (
+            UMAP.DescentNeighbors(10, Distances.Euclidean()),
+            UMAP.SourceViewParams(0.8, 1, 1.)
+        )
+        view_2_args = (
+            data_or_dists = Y,
+            n_neighbors = 8,
+            metric = :precomputed,
+            knn_kwargs = NamedTuple(),
+            set_operation_ratio = 0.7,
+            local_connectivity = 2,
+            bandwidth = 1.2
+        )
+        view_2_params = (
+            UMAP.PrecomputedNeighbors(8, Y),
+            UMAP.SourceViewParams(0.7, 2, 1.2)
+        )
+        config_args = (
+            global_mix_ratio = 0.5,
+            min_dist = 0.1,
+            spread = 1.,
+            n_components = 5,
+            target_metric = Distances.SqEuclidean(),
+            init = UMAP.UniformInitialization(),
+            n_epochs = 10,
+            learning_rate = 1.,
+            repulsion_strength = 0.1,
+            neg_sample_rate = 5,
+        )
+        gbl_params = UMAP.SourceGlobalParams(0.5)
+        memb_params = UMAP.MembershipFnParams(0.1, 1.)
+        tgt_params = UMAP.TargetParams(UMAP._EuclideanManifold(5), Distances.SqEuclidean(), UMAP.UniformInitialization(), memb_params)
+        opt_params = UMAP.OptimizationParams(10, 1., 0.1, 5)
+
+        # test single view, doesn't create named tuple of view params
+        single_view_res = UMAP.create_config([view_1_args,]; pairs(config_args)...)
+        @test single_view_res[1] == X
+        @test single_view_res[2:3] == view_1_params
+        @test single_view_res[4] == gbl_params
+        @test typeof(single_view_res[5]) == typeof(tgt_params)
+        @test single_view_res[5].manifold == tgt_params.manifold
+        @test single_view_res[6] == opt_params
+
+        # test multiple views
+        multi_view_res = UMAP.create_config([view_1_args, view_2_args]; pairs(config_args)...)
+        NT = NamedTuple{(:view_1, :view_2)}
+        @test multi_view_res[1] isa NT
+        @test multi_view_res[2] isa NT
+        @test multi_view_res[3] isa NT
+        @test multi_view_res[1] == (view_1=X, view_2=Y)
+        @test multi_view_res[2] == (view_1=view_1_params[1], view_2=view_2_params[1])
+        @test multi_view_res[3] == (view_1=view_1_params[2], view_2=view_2_params[2])
+        
     end
 
     # -------------------------------------------------------------------------
