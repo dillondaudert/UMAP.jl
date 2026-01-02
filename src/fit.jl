@@ -17,8 +17,6 @@ Embed `data` into a `n_components`-dimensional space. Returns a `UMAPResult`.
 - `local_connectivity::Integer = 1`: the number of nearest neighbors that should be assumed to be locally connected. The higher this value, the more connected the manifold becomes. This should not be set higher than the intrinsic dimension of the manifold.
 - `repulsion_strength::Real = 1`: the weighting of negative samples during the optimization process.
 - `neg_sample_rate::Integer = 5`: the number of negative samples to select for each positive sample. Higher values will increase computational cost but result in slightly more accuracy.
-- `a = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
-- `b = nothing`: this controls the embedding. By default, this is determined automatically by `min_dist` and `spread`.
 """
 function fit(data,
              n_components = 2;
@@ -33,29 +31,34 @@ function fit(data,
              local_connectivity = 1.,
              bandwidth = 1.,
              repulsion_strength = 1.,
-             neg_sample_rate = 5,
-             a = nothing,
-             b = nothing)
-    # create config from kw args
-    # KNN PARAMS
-    if metric == :precomputed
-        knn_params = PrecomputedNeighbors(n_neighbors, data)
-    else
-        knn_params = DescentNeighbors(n_neighbors, metric)
-    end
+             neg_sample_rate = 5
+)
+    # create config from kw args using helper
+    config = create_config(
+        # view-specific parameters (knn_search, source view params)
+        (
+            data_or_dists=data,
+            n_neighbors=n_neighbors,
+            metric=metric,
+            knn_kwargs=NamedTuple(),
+            set_operation_ratio=set_operation_ratio,
+            local_connectivity=local_connectivity,
+            bandwidth=bandwidth
+        );
+        # global, target, optimization parameters
+        global_mix_ratio=0.5, # not used for single view in this case
+        min_dist=min_dist,
+        spread=spread,
+        n_components=n_components,
+        target_metric=Distances.SqEuclidean(),
+        init=init,
+        n_epochs=n_epochs,
+        learning_rate=learning_rate,
+        repulsion_strength=repulsion_strength,
+        neg_sample_rate=neg_sample_rate
+    )
 
-    # SOURCE PARAMS
-    src_params = SourceViewParams(set_operation_ratio, local_connectivity, bandwidth)
-    gbl_params = SourceGlobalParams(0.5)
-
-    # TARGET PARAMS
-    memb_params = MembershipFnParams(min_dist, spread, a, b)
-    tgt_params = TargetParams(_EuclideanManifold(n_components), Distances.SqEuclidean(), init, memb_params)
-
-    # OPTIMIZATION PARAMS
-    opt_params = OptimizationParams(n_epochs, learning_rate, repulsion_strength, neg_sample_rate)
-
-    return fit(data, knn_params, src_params, gbl_params, tgt_params, opt_params)
+    return fit(config...)
 
 end
 

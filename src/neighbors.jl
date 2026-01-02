@@ -24,7 +24,7 @@ struct DescentNeighbors{M, K} <: NeighborParams
     kwargs::K
     function DescentNeighbors{M, K}(n_neighbors, metric, kwargs) where {M, K}
         # enforce invariants
-        n_neighbors <= 0 ? error("n_neighbors must be greater than 0") : new(n_neighbors, metric, kwargs)
+        n_neighbors <= 0 ? throw(ArgumentError("n_neighbors must be greater than 0")) : new(n_neighbors, metric, kwargs)
     end
 end
 DescentNeighbors(n_neighbors::Int, metric::M, kwargs::K) where {M, K} = DescentNeighbors{M, K}(n_neighbors, metric, kwargs)
@@ -41,7 +41,7 @@ struct PrecomputedNeighbors{M} <: NeighborParams
     n_neighbors::Int
     dists_or_graph::M
     function PrecomputedNeighbors{M}(n_neighbors, dists_or_graph) where {M}
-        n_neighbors <= 0 ? error("n_neighbors must be greater than 0") : new(n_neighbors, dists_or_graph)
+        n_neighbors <= 0 ? throw(ArgumentError("n_neighbors must be greater than 0")) : new(n_neighbors, dists_or_graph)
     end
 end
 PrecomputedNeighbors(n_neighbors::Int, dists::M) where {M <: AbstractMatrix} = PrecomputedNeighbors{M}(n_neighbors, dists)

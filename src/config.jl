@@ -19,6 +19,21 @@ Utility for creating the configuration structs for UMAP.
 """
 function create_config end
 
+# for a single view, re-use multi view code and reduce named tuples
+function create_config(
+    view_params::NT;
+    kwargs...
+) where {NT <: ViewConfigNT}
+
+    data_params, knn_params, src_params, gbl_params, tgt_params, opt_params = create_config(
+        [view_params,];
+        kwargs...
+    )
+
+    return (data_params.view_1, knn_params.view_1, src_params.view_1, gbl_params, tgt_params, opt_params)    
+
+end
+
 function create_config(
     view_params::Vector{NT};
     # global simplicial set params
@@ -37,16 +52,12 @@ function create_config(
 ) where {NT <: ViewConfigNT}
 
     view_configs = map(params -> create_view_config(;pairs(params)...), view_params)
-    if length(view_params) == 1
-        data_param = view_params[1].data_or_dists
-        knn_params, src_params = view_configs[1]
-    else
-        # create named tuple of view params by view
-        view_keys = tuple((Symbol("view_$i") for i in eachindex(view_params))...)
-        data_param = NamedTuple{view_keys}((vp.data_or_dists for vp in view_params))
-        knn_params = NamedTuple{view_keys}((vc[1] for vc in view_configs))
-        src_params = NamedTuple{view_keys}((vc[2] for vc in view_configs))
-    end
+
+    # create named tuple of view params by view
+    view_keys = tuple((Symbol("view_$i") for i in eachindex(view_params))...)
+    data_param = NamedTuple{view_keys}((vp.data_or_dists for vp in view_params))
+    knn_params = NamedTuple{view_keys}((vc[1] for vc in view_configs))
+    src_params = NamedTuple{view_keys}((vc[2] for vc in view_configs))
 
     gbl_params = SourceGlobalParams(global_mix_ratio)
 

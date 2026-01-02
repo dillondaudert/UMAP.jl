@@ -128,7 +128,7 @@ import Accessors: @set
         opt_params = UMAP.OptimizationParams(10, 1., 0.1, 5)
 
         # test single view, doesn't create named tuple of view params
-        single_view_res = UMAP.create_config([view_1_args,]; pairs(config_args)...)
+        single_view_res = UMAP.create_config(view_1_args; pairs(config_args)...)
         @test single_view_res[1] == X
         @test single_view_res[2:3] == view_1_params
         @test single_view_res[4] == gbl_params

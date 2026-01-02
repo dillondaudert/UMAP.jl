@@ -11,7 +11,11 @@ struct UniformInitialization <: AbstractInitialization end
 A simple, singleton type representing Euclidean space with dimension N. Points
 in this manifold are N-dimensional vectors.
 """
-struct _EuclideanManifold{N} end
+struct _EuclideanManifold{N} 
+    function _EuclideanManifold{N}() where N
+        N <= 0 ? throw(ArgumentError("Dimension N must be greater than 0")) : new()
+    end
+end
 _EuclideanManifold(N::Integer) = _EuclideanManifold{N}()
 
 

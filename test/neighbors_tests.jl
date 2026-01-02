@@ -25,7 +25,7 @@
             @test UMAP.DescentNeighbors(10, Distances.Cityblock()).metric == Distances.Cityblock()
             @test UMAP.DescentNeighbors(10, Distances.Chebyshev()).metric == Distances.Chebyshev()
 
-            @test_throws ErrorException UMAP.DescentNeighbors(0, Distances.Euclidean())
+            @test_throws ArgumentError UMAP.DescentNeighbors(0, Distances.Euclidean())
         end
 
     end
@@ -39,7 +39,7 @@
             @test params.n_neighbors == 15
             @test params.dists_or_graph === dists
 
-            @test_throws ErrorException UMAP.PrecomputedNeighbors(0, dists)
+            @test_throws ArgumentError UMAP.PrecomputedNeighbors(0, dists)
 
             # tests with NND / KNNGraph below
         end
