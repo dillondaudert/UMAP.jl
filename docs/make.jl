@@ -22,13 +22,14 @@ build_notebooks(
 )
 
 makedocs(
-    #modules=[UMAP],
+    modules=[UMAP],
     sitename="UMAP.jl Documentation",
     authors="Dillon Daudert",
     pages=[
         "Home" => "index.md",
         "Tutorials" => [
             "MNIST" => "examples/mnist.md",
+            "Fashion MNIST" => "examples/fashion_mnist.jl"
         ],
         "Usage" => [
             #"Basic Usage" => "examples/basic_usage.md",
