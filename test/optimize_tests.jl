@@ -1,5 +1,40 @@
 
 @testset "optimize_embedding tests" begin
+
+    @testset "TargetParams" begin
+        @testset "Valid Construction" begin
+            # Standard Euclidean manifold with spectral init
+            memb_params = UMAP.MembershipFnParams(0.1, 1.0)
+            params = UMAP.TargetParams(
+                UMAP._EuclideanManifold(2),
+                SqEuclidean(),
+                UMAP.SpectralInitialization(),
+                memb_params
+            )
+            @test params.manifold == UMAP._EuclideanManifold(2)
+            @test params.metric == SqEuclidean()
+            @test params.init isa UMAP.SpectralInitialization
+            @test params.memb_params === memb_params
+
+            # With UniformInitialization
+            params_uniform = UMAP.TargetParams(
+                UMAP._EuclideanManifold(3),
+                Euclidean(),
+                UMAP.UniformInitialization(),
+                memb_params
+            )
+            @test params_uniform.init isa UMAP.UniformInitialization
+
+            # Different dimensions
+            @test UMAP.TargetParams(
+                UMAP._EuclideanManifold(10),
+                SqEuclidean(),
+                UMAP.SpectralInitialization(),
+                memb_params
+            ).manifold == UMAP._EuclideanManifold(10)
+        end
+    end
+
     backend = DI.AutoZygote()
     @testset "OptimizationParams tests" begin
         @test_throws ArgumentError UMAP.OptimizationParams(0, .1, .1, 1)

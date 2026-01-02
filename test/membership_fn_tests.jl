@@ -7,6 +7,73 @@ using UMAP: MembershipFnParams
         @test_throws ArgumentError MembershipFnParams(1, -.01)
         @test_throws ArgumentError MembershipFnParams(-1, 1, 1, 1)
         @test_throws ArgumentError MembershipFnParams(1, -0.1, 1, 1)
+
+        @testset "Valid Construction - Explicit a, b" begin
+            # Direct construction with all parameters
+            params = UMAP.MembershipFnParams(0.1, 1.0, 1.5, 0.8)
+            @test params.min_dist == 0.1
+            @test params.spread == 1.0
+            @test params.a == 1.5
+            @test params.b == 0.8
+            @test params isa UMAP.MembershipFnParams{Float64}
+
+            # Type promotion
+            params_mixed = UMAP.MembershipFnParams(0.1, 1, 1.5, 1)
+            @test all(isa.([params_mixed.min_dist, params_mixed.spread,
+                           params_mixed.a, params_mixed.b], Float64))
+        end
+
+        @testset "Valid Construction - Auto-fit a, b" begin
+            # Fit a, b from min_dist and spread
+            params = UMAP.MembershipFnParams(0.1, 1.0)
+            @test params.min_dist == 0.1
+            @test params.spread == 1.0
+            @test params.a > 0  # Should be fitted to reasonable values
+            @test params.b > 0
+
+            # Test that different min_dist/spread give different a, b
+            params1 = UMAP.MembershipFnParams(0.1, 1.0)
+            params2 = UMAP.MembershipFnParams(0.5, 2.0)
+            @test params1.a != params2.a || params1.b != params2.b
+
+            # Test with nothing arguments (should trigger fit)
+            params_nothing = UMAP.MembershipFnParams(0.1, 1.0, nothing, nothing)
+            @test params_nothing.a > 0
+            @test params_nothing.b > 0
+        end
+
+        @testset "Mutability" begin
+            # MembershipFnParams is mutable - test that we can modify it
+            params = UMAP.MembershipFnParams(0.1, 1.0, 1.0, 1.0)
+            params.a = 2.0
+            @test params.a == 2.0
+
+            # Note: This is important for potential adaptive algorithms
+        end
+
+        @testset "Invalid Construction - Should Error" begin
+            # min_dist must be > 0
+            @test_throws ArgumentError UMAP.MembershipFnParams(0.0, 1.0, 1.0, 1.0)
+            @test_throws ArgumentError UMAP.MembershipFnParams(-0.1, 1.0, 1.0, 1.0)
+
+            # spread must be > 0
+            @test_throws ArgumentError UMAP.MembershipFnParams(0.1, 0.0, 1.0, 1.0)
+            @test_throws ArgumentError UMAP.MembershipFnParams(0.1, -1.0, 1.0, 1.0)
+
+            # Auto-fit should also enforce constraints
+            @test_throws ArgumentError UMAP.MembershipFnParams(0.0, 1.0)
+            @test_throws ArgumentError UMAP.MembershipFnParams(0.1, 0.0)
+        end
+
+        @testset "Boundary Values" begin
+            # Very small but valid values
+            params_small = UMAP.MembershipFnParams(1e-6, 1e-6, 1.0, 1.0)
+            @test params_small isa UMAP.MembershipFnParams
+
+            # Large values
+            params_large = UMAP.MembershipFnParams(10.0, 100.0, 5.0, 5.0)
+            @test params_large isa UMAP.MembershipFnParams
+        end
     end
 
     @testset "fit_ab function tests" begin
