@@ -128,6 +128,12 @@ function knn_search(_, knn_params::PrecomputedNeighbors{M}) where {M <: NND.Appr
     return NND.knn_matrices(knn_graph)
 end
 
+# transform precomputed from KNN graph
+function knn_search(_, __, knn_params::PrecomputedNeighbors{M}, ___) where {M <: NND.ApproximateKNNGraph}
+    knn_graph = knn_params.dists_or_graph
+    return NND.knn_matrices(knn_graph)
+end
+
 
 """
     knn_search(_, knn_params::PrecomputedNeighbors)
