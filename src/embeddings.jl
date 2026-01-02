@@ -60,18 +60,19 @@ end
 function initialize_embedding(umap_graph::AbstractMatrix{T},
                               manifold::_EuclideanManifold{N},
                               ::SpectralInitialization) where {T, N}
-    local embed
+    local embed_vecs
     try
         embed = spectral_layout(umap_graph, N)
         # expand
         expansion = 10 / maximum(embed)
         embed .= (embed .* expansion) .+ (1//10000) .* randn.(T)
-        embed = collect(eachcol(embed))
+        # slice operation copies the columns, which is what we want
+        embed_vecs = [embed[:, i] for i in axes(embed, 2)]
     catch e
         @debug "$e\nError encountered in spectral_layout; defaulting to random initialization"
-        embed = initialize_embedding(umap_graph, manifold, UniformInitialization())
+        embed_vecs = initialize_embedding(umap_graph, manifold, UniformInitialization())
     end
-    return embed
+    return embed_vecs
 end
 
 # initialize according to a reference embedding
