@@ -1,5 +1,6 @@
 using UMAP: fuzzy_simplicial_set, coalesce_views, smooth_knn_dists, smooth_knn_dist, compute_membership_strengths,
             DescentNeighbors, SourceViewParams, SourceGlobalParams
+using Distances: Euclidean, SqEuclidean
 
 @testset "simplicial sets tests" begin
 

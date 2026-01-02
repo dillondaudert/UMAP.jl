@@ -1,6 +1,85 @@
-using Distances: Euclidean, SqEuclidean, Cityblock, Chebyshev
+import Accessors: @set
 
 @testset "Configuration Tests" begin
+
+    @testset "Create config tests" begin
+        X = rand(10, 20)
+        nn = 4
+        metric = Euclidean()
+        set_op_ratio = 0.5
+        local_conn = 1
+        bandwidth = 1.
+        knn_kwargs = NamedTuple()
+        desc_params = UMAP.DescentNeighbors(nn, metric, knn_kwargs)
+        prec_params = UMAP.PrecomputedNeighbors(nn, X)
+        src_params = UMAP.SourceViewParams(set_op_ratio, local_conn, bandwidth)
+
+        @testset "create_view_config FIT tests" begin
+            view_params = UMAP.create_view_config(;
+                data_or_dists=X,
+                n_neighbors=nn,
+                metric=metric,
+                set_operation_ratio=set_op_ratio,
+                local_connectivity=local_conn,
+                bandwidth=bandwidth,
+                knn_kwargs=knn_kwargs
+            )
+            @test view_params == (desc_params, src_params)
+            @inferred UMAP.create_view_config(;
+                data_or_dists=X,
+                n_neighbors=nn,
+                metric=metric,
+                set_operation_ratio=set_op_ratio,
+                local_connectivity=local_conn,
+                bandwidth=bandwidth,
+                knn_kwargs=knn_kwargs
+            )
+            view_pre_params = UMAP.create_view_config(;
+                data_or_dists=X,
+                n_neighbors=nn,
+                metric=:precomputed,
+                set_operation_ratio=set_op_ratio,
+                local_connectivity=local_conn,
+                bandwidth=bandwidth,
+                knn_kwargs=knn_kwargs
+            )
+            @test view_pre_params == (prec_params, src_params)
+        end
+        @testset "create_view_config TRANSFORM tests" begin
+            view_params = UMAP.create_view_config(prec_params, src_params; data_or_dists=X)
+            @test view_params == (prec_params, src_params)
+
+            # test overwrite precomputed params n_neighbors
+            view_params = UMAP.create_view_config(prec_params, src_params; data_or_dists=X, n_neighbors=12)
+            @test view_params == ((@set prec_params.n_neighbors = 12), src_params)
+            # create parameters from existing structs
+            @inferred UMAP.create_view_config(desc_params, src_params; data_or_dists=X)
+            view_params = UMAP.create_view_config(desc_params, src_params; data_or_dists=X)
+            @test view_params == (desc_params, src_params)
+
+            # overwrite by kw arg various fields 
+            view_params = UMAP.create_view_config(desc_params, src_params; data_or_dists=X, n_neighbors=10)
+            @test view_params == ((@set desc_params.n_neighbors = 10), src_params)
+
+            # overwrite metric 
+            view_params = UMAP.create_view_config(desc_params, src_params; data_or_dists=X, metric=SqEuclidean())
+            @test view_params == ((@set desc_params.metric = SqEuclidean()), src_params)
+
+            # ovewrite kwargs
+            view_params = UMAP.create_view_config(desc_params, src_params; data_or_dists=X, knn_kwargs=(knn=20,))
+            @test view_params == ((@set desc_params.kwargs = (knn=20,)), src_params)
+
+            #overwrite src params
+            new_src_params = UMAP.SourceViewParams(0.8, 2, 2.)
+            view_params = UMAP.create_view_config(desc_params, src_params; data_or_dists=X,
+                                                  set_operation_ratio=0.8,
+                                                  local_connectivity=2,
+                                                  bandwidth=2.)
+            @test view_params == (desc_params, new_src_params)
+
+        end
+
+    end
 
     # -------------------------------------------------------------------------
     # UMAPConfig - Integration Tests
