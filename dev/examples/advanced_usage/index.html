@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Advanced Usage · UMAP.jl Documentation</title><meta name="title" content="Advanced Usage · UMAP.jl Documentation"/><meta property="og:title" content="Advanced Usage · UMAP.jl Documentation"/><meta property="twitter:title" content="Advanced Usage · UMAP.jl Documentation"/><meta name="description" content="Documentation for UMAP.jl Documentation."/><meta property="og:description" content="Documentation for UMAP.jl Documentation."/><meta property="twitter:description" content="Documentation for UMAP.jl Documentation."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">UMAP.jl Documentation</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../mnist/">MNIST</a></li><li><a class="tocitem" href="../fashion_mnist/">Fashion MNIST</a></li></ul></li><li><span class="tocitem">Usage</span><ul><li class="is-active"><a class="tocitem" href>Advanced Usage</a></li></ul></li><li><span class="tocitem">Reference</span><ul><li><a class="tocitem" href="../../ref/public/">Public API</a></li><li><a class="tocitem" href="../../ref/internal/">Internal</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Usage</a></li><li class="is-active"><a href>Advanced Usage</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Advanced Usage</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/dillondaudert/UMAP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/dillondaudert/UMAP.jl/blob/v0.2-dev/docs/src/examples/advanced_usage.jl" title="View source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><style>
+    #documenter-page table {
+        display: table !important;
+        margin: 2rem auto !important;
+        border-top: 2pt solid rgba(0,0,0,0.2);
+        border-bottom: 2pt solid rgba(0,0,0,0.2);
+    }
+
+    #documenter-page pre, #documenter-page div {
+        margin-top: 1.4rem !important;
+        margin-bottom: 1.4rem !important;
+    }
+
+    .code-output {
+        padding: 0.7rem 0.5rem !important;
+    }
+
+    .admonition-body {
+        padding: 0em 1.25em !important;
+    }
+</style>
+
+<!-- PlutoStaticHTML.Begin -->
+<!--
+    # This information is used for caching.
+    [PlutoStaticHTML.State]
+    input_sha = "ad5c7b3542c39c9e87bc7aa36c21b2ffcf687034739a09ff24f4c39b8a28780d"
+    julia_version = "1.12.3"
+-->
+
+
+
+
+<pre class='language-julia'><code class='language-julia'>using UMAP</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>using Distances</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>using StringDistances</code></pre>
+
+<div class="markdown"><h1 id="Advanced-Usage">Advanced Usage</h1></div>
+
+
+<div class="markdown"><h2 id="Algorithm">Algorithm</h2><p>At a high level, the UMAP algorithm proceeds in the following steps:</p><pre><code class="language-julia">knns_dists = knn_search(data, knn_params)
+umap_graphs = fuzzy_simplicial_set(knns_dists, knn_params, src_view_params)
+umap_graph = coalesce_views(umap_graphs, src_global_params)
+embedding = initialize_embedding(umap_graph, tgt_params)
+optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre></div>
+
+
+<div class="markdown"><h2 id="KNN-Search">KNN Search</h2><p>In a typical workflow, the first step of the UMAP algorithm is to find a (approximate) k-nearest neighbor graph. </p></div>
+
+
+<div class="markdown"><h3 id="Approximate-neighbors-for-vector-data">Approximate neighbors for vector data</h3><p>A very simple example of this is to find 4 approximate nearest neighbors for vectors in <span class="tex">\(R^n\)</span> using the Euclidean metric:</p></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>xs = [rand(10) for _ in 1:10];</code></pre>
+
+<div class="markdown"><pre><code class="language-julia">DescentNeighbors{M, K}(n_neighbors, metric::M, kwargs::K)</code></pre><p>Parameters for finding approximate nearest neighbors using NearestNeighborDescent.</p></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>knn_params = UMAP.DescentNeighbors(4, Euclidean());</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-hash109134">([2 1 … 3 2; 6 10 … 5 1; 10 3 … 10 9; 3 9 … 6 5], [0.9166203155761409 0.9166203155761409 … 1.1255205760913554 0.9512888098146864; 0.92913052471898 0.9512888098146864 … 1.139764767379986 1.0424781795719353; 1.0424781795719353 1.1346827504245585 … 1.1578950740266074 1.1578950740266074; 1.048873417399599 1.3393102117623412 … 1.2092829214878207 1.194042683012151])</pre>
+<pre class='language-julia'><code class='language-julia'>UMAP.knn_search(xs, knn_params)</code></pre>
+
+<div class="markdown"><p>The return result in this case is a tuple of 4x10 (<code>n_neighbors</code> x <code>n_points</code>) matrices, one for the indices of the nearest neighbors and the second for the distances.</p><p>e.g. <code>knn_search(xs, knn_params) -&gt; indices, distances</code></p></div>
+
+
+<div class="markdown"><p>The knn parameter struct <code>DescentNeighbors</code> uses <code>NearestNeighborDescent.jl</code> to find the approximate knns of the data. It also allows passing keyword arguments to <code>nndescent</code>:</p></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>knn_params_kw = UMAP.DescentNeighbors(4, Euclidean(), (max_iters=15,));</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-hash477790">([2 1 … 3 2; 6 10 … 5 1; 10 3 … 10 9; 3 9 … 6 5], [0.9166203155761409 0.9166203155761409 … 1.1255205760913554 0.9512888098146864; 0.92913052471898 0.9512888098146864 … 1.139764767379986 1.0424781795719353; 1.0424781795719353 1.1346827504245585 … 1.1578950740266074 1.1578950740266074; 1.048873417399599 1.3393102117623412 … 1.2092829214878207 1.194042683012151])</pre>
+<pre class='language-julia'><code class='language-julia'>UMAP.knn_search(xs, knn_params_kw)</code></pre>
+
+<div class="markdown"><h3 id="Precomputed-distances">Precomputed distances</h3><p>Alternatively, a precomputed distance matrix can be passed in if the pairwise distances are already known. This is done by using the <code>PrecomputedNeighbors</code> knn parameter struct (note that <code>n_neighbors</code> is still required in order to later construct the fuzzy simplicial set, and for transforming new data):</p></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>distances = [0. 2 1;
+             2 0 3;
+             1 3 0];</code></pre>
+
+<div class="markdown"><pre><code class="language-julia">PrecomputedNeighbors{M}(n_neighbors, dists_or_graphs::M)</code></pre><p>Parameters for finding nearest neighbors from precomputed distances.      <code>dists_or_graphs</code> can either be a matrix (pairwise distances) or     a NearestNeighborDescent.ApproximateKNNGraph.</p></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>knn_params_pre = UMAP.PrecomputedNeighbors(2, distances);</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-hash108329">([3 1 1; 2 3 2], [1.0 2.0 1.0; 2.0 3.0 3.0])</pre>
+<pre class='language-julia'><code class='language-julia'>UMAP.knn_search(nothing, knn_params_pre)</code></pre>
+
+<div class="markdown"><h3 id="Multiple-views">Multiple views</h3><p>One key feature of UMAP is combining multiple, heterogeneous views of the same dataset. For the knn search step, this is set up by passing a <code>NamedTuple</code> of data views and a corresponding named tuple of knn parameter structs. The <code>knn_search</code> function then broadcasts for each (data, knn_param) pair and returns a named tuple of (indices, distances) that similarly corresponds to the input.</p><p>For example, in addition to the vector data <code>xs</code> we might also have string data:</p></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>xs_str = [join(rand('A':'Z', 10), "") for _ in 1:10];</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>knn_params_str = UMAP.DescentNeighbors(3, RatcliffObershelp());</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>data_views = (view_1=xs, 
+              view_2=xs_str);</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>knn_params_views = (view_1=knn_params, 
+                    view_2=knn_params_str);</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-hash157805">(view_1 = ([2 1 … 3 2; 6 10 … 5 1; 10 3 … 10 9; 3 9 … 6 5], [0.9166203155761409 0.9166203155761409 … 1.1255205760913554 0.9512888098146864; 0.92913052471898 0.9512888098146864 … 1.139764767379986 1.0424781795719353; 1.0424781795719353 1.1346827504245585 … 1.1578950740266074 1.1578950740266074; 1.048873417399599 1.3393102117623412 … 1.2092829214878207 1.194042683012151]), view_2 = ([9 10 … 1 8; 3 8 … 5 4; 7 5 … 3 2], [0.7 0.8 … 0.7 0.8; 0.7 0.8 … 0.7 0.8; 0.8 0.8 … 0.8 0.8]))</pre>
+<pre class='language-julia'><code class='language-julia'>UMAP.knn_search(data_views, knn_params_views)</code></pre>
+
+<div class="markdown"><p>This is relatively flexible, with one major restriction that the size of the data in each view must be the same. You can even combine <code>DescentNeighbors</code> with <code>PrecomputedNeighbors</code>.</p></div>
+
+
+<div class="markdown"><h2 id="Fuzzy-Simplicial-Sets">Fuzzy Simplicial Sets</h2><p>Once we have one or more set of knns for our data (one for each view), we can construct a global fuzzy simplicial set. This is done via the function</p><p><code>fuzzy_simplicial_set(...) -&gt; umap_graph::SparseMatrixCSC</code></p><p>A global fuzzy simplicial set is constructed <strong>for each view</strong> of the data with construction paramaterized by the <code>SourceViewParams</code> struct. If there is more than one view, their results are combined to return a single fuzzy simplicial set (represented as a weighted, undirected graph).</p></div>
+
+
+<div class="markdown"><h3 id="Fuzzy-simplicial-set---one-view">Fuzzy simplicial set - one view</h3><p>To create a fuzzy simplicial set for our original dataset of vectors:</p></div>
+
+
+<div class="markdown"><pre><code class="language-julia">SourceViewParams{T}(set_operation_ratio, local_connectivity, bandwidth)</code></pre><p>Struct for parameterizing the representation of the data in the source (original) manifold; i.e. constructing fuzzy simplicial sets of each view of the dataset.</p></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>src_view_params = UMAP.SourceViewParams(1, 1, 1);</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>knns_dists = UMAP.knn_search(xs, knn_params);</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-hash110181">10×10 SparseArrays.SparseMatrixCSC{Float64, Int64} with 50 stored entries:
+  ⋅        1.0        1.0       0.27568   …   ⋅            ⋅         0.594154
+ 1.0        ⋅         0.308875   ⋅            ⋅           0.0403983  1.0
+ 1.0       0.308875    ⋅         ⋅           1.0          1.0         ⋅ 
+ 0.27568    ⋅          ⋅         ⋅           0.188368      ⋅          ⋅ 
+  ⋅         ⋅          ⋅        1.0          0.924225     0.641275   0.199849
+ 1.0        ⋅          ⋅        0.618219  …  0.360579     0.0566367   ⋅ 
+ 0.591041   ⋅          ⋅         ⋅            ⋅           0.379976   1.0
+  ⋅         ⋅         1.0       0.188368      ⋅            ⋅         2.55334e-62
+  ⋅        0.0403983  1.0        ⋅            ⋅            ⋅         0.499926
+ 0.594154  1.0         ⋅         ⋅           2.55334e-62  0.499926    ⋅ </pre>
+<pre class='language-julia'><code class='language-julia'>UMAP.fuzzy_simplicial_set(knns_dists, knn_params, src_view_params)</code></pre>
+
+<div class="markdown"><h3 id="Fuzzy-simplicial-set---multiple-views">Fuzzy simplicial set - multiple views</h3><p>As before, multiple views can be passed to <code>fuzzy_simplicial_set</code> - each parameterized by its own <code>SourceViewParams</code> - and combined into a single, global fuzzy simplicial set.</p><p>Using our combination of vector and string data:</p></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>knns_dists_views = UMAP.knn_search(data_views, knn_params_views);</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>src_view_params_views = (view_1=src_view_params, 
+                         view_2=src_view_params);</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-fsset_views">(view_1 = sparse([2, 3, 4, 6, 7, 10, 1, 3, 9, 10  …  5, 6, 7, 10, 1, 2, 5, 7, 8, 9], [1, 1, 1, 1, 1, 1, 2, 2, 2, 2  …  9, 9, 9, 9, 10, 10, 10, 10, 10, 10], [1.0, 1.0, 0.27568022618003307, 1.0, 0.5910409293606396, 0.5941541349136251, 1.0, 0.308874551201263, 0.04039833531854754, 1.0  …  0.6412745847164116, 0.05663672269122481, 0.3799759921985481, 0.4999260982534485, 0.5941541349136251, 1.0, 0.19984886865768678, 1.0, 2.553339126423458e-62, 0.4999260982534485], 10, 10), view_2 = sparse([3, 9, 4, 5, 8, 10, 1, 5, 9, 2  …  2, 4, 6, 1, 3, 5, 10, 2, 4, 9], [1, 1, 2, 2, 2, 2, 3, 3, 3, 4  …  8, 8, 8, 9, 9, 9, 9, 10, 10, 10], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.41361254066484254, 0.29248618760076334, 1.0  …  1.0, 1.0, 1.0, 1.0, 0.29248618760076334, 1.0, 1.0, 1.0, 0.41361254066484254, 1.0], 10, 10))</pre>
+<pre class='language-julia'><code class='language-julia'>fsset_views = UMAP.fuzzy_simplicial_set(knns_dists_views, knn_params_views, src_view_params_views)</code></pre>
+
+<div class="markdown"><h3 id="Combining-views&#39;-fuzzy-simplicial-sets">Combining views' fuzzy simplicial sets</h3><p>We need a single umap graph (i.e. global fuzzy simplicial set) in order to perform optimization, so if there are multiple dataset views we must combine their sets.</p><p>The views' fuzzy sets are combined via fuzzy set intersection left-to-right (<code>foldl</code>), where <code>mix_ratio</code> is a weight for the intersection operation, analogous to a weighted mean.</p></div>
+
+
+<div class="markdown"><pre><code class="language-julia">SourceGlobalParams{T}(mix_ratio)</code></pre><p>Parameters for merging the fuzzy simplicial sets for each dataset view into one fuzzy simplicial set, otherwise known as the UMAP graph.</p></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>src_gbl_params = UMAP.SourceGlobalParams(0.5);</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-graph">10×10 SparseArrays.SparseMatrixCSC{Float64, Int64} with 66 stored entries:
+  ⋅         0.946345  1.0       0.866783  …   ⋅          0.0231826  0.858782
+ 0.946345    ⋅        0.958066  0.32699      0.339007    0.752677   1.0
+ 1.0        0.958066   ⋅         ⋅           0.989361    0.985761    ⋅ 
+ 0.866783   0.32699    ⋅         ⋅           0.992109     ⋅         0.170546
+  ⋅         0.239774  0.305599  0.965469     0.975347    1.0        0.809199
+ 0.88183     ⋅         ⋅        1.0       …  1.0         0.527457    ⋅ 
+ 0.972887    ⋅         ⋅        0.257864      ⋅          0.94708    1.0
+  ⋅         0.339007  0.989361  0.992109      ⋅           ⋅         3.81921e-7
+ 0.0231826  0.752677  0.985761   ⋅            ⋅           ⋅         0.993323
+ 0.858782   1.0        ⋅        0.170546     3.81921e-7  0.993323    ⋅ </pre>
+<pre class='language-julia'><code class='language-julia'>graph = UMAP.coalesce_views(fsset_views, src_gbl_params)</code></pre>
+
+<div class="markdown"><h2 id="Initialize-and-optimize-target-embedding">Initialize and optimize target embedding</h2><p>Again, the goal of UMAP is to embed points on one manifold onto a new manifold. By default, this is a Euclidean manifold of specified dimension <code>d</code>. </p><p>The target embedding is parameterized by a target metric (default <code>SqEuclidean</code>, but in principle could be anything) as well as a membership function that computes the fuzzy set membership on the new manifold (the analog to the probabilities contained in the UMAP graph).</p></div>
+
+
+<div class="markdown"><pre><code class="language-julia">MembershipFnParams{T}(min_dist, spread)</code></pre><p>A smooth approximation for the membership strength of a 1-simplex between two points x, y, can be given by the following, with dissimilarity function <code>dist</code>, and constants <code>a</code>, <code>b</code>: <code>ϕ(x, y, dist, a, b) = (1 + a*(dist(x, y))^b)^(-1)</code></p><p>The approximation parameters <code>a</code>, <code>b</code> are chosen by non-linear least squares fitting of the following function ψ:</p><p>ψ(x, y, dist, min<em>dist, spread) = dist(x, y) ≤ min</em>dist ? 1 : exp(-(dist(x, y) - min_dist)/spread)</p></div>
+
+
+<div class="markdown"><pre><code class="language-julia">TargetParams{M, D, I, P}(manifold::M, metric::D, init::I, memb_params::P)</code></pre><p>Parameters for controlling the target embedding, e.g. the manifold, distance metric, initialization  method.</p></div>
+
+
+<div class="markdown"><h2 id="Initialize-target-embedding">Initialize target embedding</h2><p>The default target space is d-dimensional Euclidean space, with the squared Euclidean distance metric. Two initialization methods are provided: random and spectral layout.</p></div>
+
+
+<div class="markdown"><h3 id="Uniform-random-vectors-in-R^2">Uniform random vectors in R^2</h3></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>tgt_params = UMAP.TargetParams(UMAP._EuclideanManifold{2}(), SqEuclidean(), UMAP.UniformInitialization(), UMAP.MembershipFnParams(1., 1.));</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>umap_graph = UMAP.fuzzy_simplicial_set(knns_dists, knn_params, src_view_params);</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-xs_embed">10-element Vector{Vector{Float64}}:
+ [0.9379217949264369, -0.1804526396809969]
+ [-3.6585453266927885, 5.950288266952214]
+ [-4.166273596515522, -5.811049695542996]
+ [-3.468484641808982, -6.8466695085204154]
+ [4.6074311107168455, 0.5117616720365685]
+ [8.15926199813524, 5.157040734774128]
+ [-1.9110178886493863, 6.15837173155068]
+ [-8.15435995517262, -2.035151970762734]
+ [3.445005695646284, 6.000697342256384]
+ [-7.885523778835646, -3.1576610210642713]</pre>
+<pre class='language-julia'><code class='language-julia'>xs_embed = UMAP.initialize_embedding(umap_graph, tgt_params)</code></pre>
+
+<div class="markdown"><h2 id="Optimize-target-embedding">Optimize target embedding</h2><p>The embedding is optimized by minimizing the fuzzy set cross entropy loss between the two fuzzy set representations of the data. This is optimization process is parameterized by <code>OptimizationParams</code></p></div>
+
+
+<div class="markdown"><pre><code class="language-julia">OptimizationParams(n_epochs, learning_rate, repulsion_strength, neg_sample_rate)</code></pre><p>Parameters for controlling the optimization process.</p></div>
+
+
+<div class="markdown"><h3 id="Optimize-one-epoch">Optimize one epoch</h3></div>
+
+
+
+<pre class='language-julia'><code class='language-julia'>opt_params = UMAP.OptimizationParams(1, 1., 1., 5);</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>xs_embed_opt = copy(xs_embed);</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-hash391777">10-element Vector{Vector{Float64}}:
+ [-0.33961545353114664, 1.3736230962641378]
+ [-3.518408821991273, 3.854098085733994]
+ [-4.5501440282038725, -3.305068878507982]
+ [-2.7398373373084857, -6.171142608051898]
+ [4.408913997053833, 1.82831752200318]
+ [6.008558195772428, 3.456336765586228]
+ [-0.8191640675284362, 4.227402643309229]
+ [-2.9572825889864527, -4.203159761193899]
+ [2.9434328456525463, 4.886440245995436]
+ [-6.546154752345178, -1.0525182608238595]</pre>
+<pre class='language-julia'><code class='language-julia'>UMAP.optimize_embedding!(xs_embed_opt, umap_graph, tgt_params, opt_params)</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-hash843749">309.043360093671</pre>
+<pre class='language-julia'><code class='language-julia'>UMAP.cross_entropy(umap_graph, xs_embed, tgt_params)</code></pre>
+
+<pre class="code-output documenter-example-output" id="var-hash153548">309.043360093671</pre>
+<pre class='language-julia'><code class='language-julia'>UMAP.cross_entropy(umap_graph, xs_embed_opt, tgt_params)</code></pre>
+
+<!-- PlutoStaticHTML.End --></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../fashion_mnist/">« Fashion MNIST</a><a class="docs-footer-nextpage" href="../../ref/public/">Public API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Saturday 3 January 2026 17:35">Saturday 3 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
