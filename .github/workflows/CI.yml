@@ -30,9 +30,19 @@ jobs:
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
-      - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v5
+      - name: Run tests with coverage
+        uses: julia-actions/julia-runtest@v1
         with:
-          files: lcov.info
-          tokens: ${{ secrets.CODECOV_TOKEN }}
+          coverage: true
+      # Option 1: Use Coverage.jl with official uploaders
+      - name: Process and upload coverage with Coverage.jl
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
+        run: |
+          julia -e '
+            using Pkg; Pkg.add("Coverage")
+            using Coverage
+            process_and_upload(service=:both, folder="src")
+          '
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
