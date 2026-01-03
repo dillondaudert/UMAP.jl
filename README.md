@@ -61,8 +61,8 @@ The docs have more examples, e.g.
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://dillondaudert.github.io/UMAP.jl/dev
 
-[codecov-img]: https://codecov.io/gh/dillondaudert/UMAP.jl/branch/v0.2-dev/graph/badge.svg
+[codecov-img]: https://codecov.io/gh/dillondaudert/UMAP.jl/branch/master/graph/badge.svg?token=OSn7Og8mcF
 [codecov-url]: https://codecov.io/gh/dillondaudert/UMAP.jl
 
-[coveralls-img]: https://coveralls.io/repos/github/dillondaudert/UMAP.jl/badge.svg?branch=v0.2-dev
-[coveralls-url]: https://coveralls.io/github/dillondaudert/UMAP.jl?branch=v0.2-dev
+[coveralls-img]: https://coveralls.io/repos/github/dillondaudert/UMAP.jl/badge.svg?branch=master
+[coveralls-url]: https://coveralls.io/github/dillondaudert/UMAP.jl?branch=master
