@@ -11,7 +11,7 @@ find the nearest neighbors in the data.
 abstract type NeighborParams end
 
 """
-    DescentNeighbors(n_neighbors, metric, kwargs)
+    DescentNeighbors{M, K}(n_neighbors, metric::M, kwargs::K)
 
 Parameters for finding approximate nearest neighbors using NearestNeighborDescent.
 """
@@ -31,7 +31,7 @@ DescentNeighbors(n_neighbors::Int, metric::M, kwargs::K) where {M, K} = DescentN
 DescentNeighbors(n_neighbors, metric) = DescentNeighbors(n_neighbors, metric, NamedTuple())
 
 """
-    PrecomputedNeighbors(n_neighbors, dists_or_graphs)
+    PrecomputedNeighbors{M}(n_neighbors, dists_or_graphs::M)
 
 Parameters for finding nearest neighbors from precomputed distances. 
     `dists_or_graphs` can either be a matrix (pairwise distances) or

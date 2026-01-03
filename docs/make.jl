@@ -27,12 +27,11 @@ makedocs(
     authors="Dillon Daudert",
     pages=[
         "Home" => "index.md",
-        "Tutorials" => [
+        "Examples" => [
             "MNIST" => "examples/mnist.md",
             "Fashion MNIST" => "examples/fashion_mnist.md"
         ],
         "Usage" => [
-            #"Basic Usage" => "examples/basic_usage.md",
             #"Advanced Usage" => "examples/advanced_usage.md",
             #"Composite Views" => "examples/composite.md",
         ],

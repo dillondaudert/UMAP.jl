@@ -10,7 +10,7 @@ const SMOOTH_K_TOLERANCE = 1.0e-5
 
 # SOURCE PARAMS
 """
-    SourceViewParams(set_operation_ratio, local_connectivity, bandwidth)
+    SourceViewParams{T}(set_operation_ratio, local_connectivity, bandwidth)
 
 Struct for parameterizing the representation of the data in the source (original)
 manifold; i.e. constructing fuzzy simplicial sets of each view of the dataset.
