@@ -1,11 +1,19 @@
 using Test
-using Distances: Euclidean, CosineDist
 using Random
 using SparseArrays
 using LinearAlgebra
-using UMAP
-using UMAP: initialize_embedding, fuzzy_simplicial_set, compute_membership_strengths, smooth_knn_dists, smooth_knn_dist, spectral_layout, optimize_embedding, knn_search, combine_fuzzy_sets, fit_ab, SMOOTH_K_TOLERANCE
-
+import UMAP
+import Distances
+import NearestNeighborDescent
+import DifferentiationInterface as DI
+import Zygote
 
 include("utils_tests.jl")
-include("umap_tests.jl")
+include("neighbors_tests.jl")
+include("simplicial_sets_tests.jl")
+include("membership_fn_tests.jl")
+include("embeddings_tests.jl")
+include("optimize_tests.jl")
+include("config_tests.jl")
+include("fit_tests.jl")
+include("transform_tests.jl")

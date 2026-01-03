@@ -2,137 +2,63 @@
 Utilities used by UMAP.jl
 =#
 
-
-@inline fit_ab(_, __, a, b) = a, b
-
-"""
-    fit_ab(min_dist, spread, _a, _b) -> a, b
-
-Find a smooth approximation to the membership function of points embedded in ℜᵈ.
-This fits a smooth curve that approximates an exponential decay offset by `min_dist`,
-returning the parameters `(a, b)`.
-"""
-function fit_ab(min_dist, spread, ::Nothing, ::Nothing)
-    ψ(d) = d >= min_dist ? exp(-(d - min_dist)/spread) : 1.
-    xs = LinRange(0., spread*3, 300)
-    ys = map(ψ, xs)
-    @. curve(x, p) = (1. + p[1]*x^(2*p[2]))^(-1)
-    result = curve_fit(curve, xs, ys, [1., 1.], lower=[0., -Inf])
-    a, b = result.param
-    return a, b
-end
-
-
-knn_search(X::AbstractMatrix, k, metric::Symbol) = knn_search(X, k, Val(metric))
-
-# treat given matrix `X` as distance matrix
-knn_search(X::AbstractMatrix, k, ::Val{:precomputed}) = _knn_from_dists(X, k)
+# utilities to evaluate embeddings 
 
 """
-    knn_search(X, k, metric) -> knns, dists
+    trustworthiness(X, X_embed, n_neighbors, metric) -> [0, 1]
 
-Find the `k` nearest neighbors of each point.
+Compute the trustworthiness of an embedding `X_embed` compared to `X`. 
 
-`metric` may be of type:
-- ::Symbol - `knn_search` is dispatched to one of the following based on the evaluation of `metric`:
-- ::Val(:precomputed) - computes neighbors from `X` treated as a precomputed distance matrix.
-- ::SemiMetric - computes neighbors from `X` treated as samples, using the given metric.
-
-# Returns
-- `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
-- `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
+https://scikit-learn.org/stable/modules/generated/sklearn.manifold.trustworthiness.html
 """
-function knn_search(X::AbstractMatrix,
-                    k,
-                    metric::SemiMetric)
-    if size(X, 2) < 4096
-        return knn_search(X, k, metric, Val(:pairwise))
-    else
-        return knn_search(X, k, metric, Val(:approximate))
+function trustworthiness(X, X_embed, n_neighbors, metric)
+    # FIXME: check this implementation, currently can't be used.
+
+    n_points = length(axes(X)[end])
+    if n_points != length(axes(X_embed)[end])
+        error("X and X_embed must have the same dimensions; got $(size(X)), $(size(X_embed))")
     end
-end
 
-# compute all pairwise distances
-# return the nearest k to each point v, other than v itself
-function knn_search(X::AbstractMatrix{S},
-                    k,
-                    metric,
-                    ::Val{:pairwise}) where {S <: Real}
-    num_points = size(X, 2)
-    dist_mat = Array{S}(undef, num_points, num_points)
-    pairwise!(dist_mat, metric, X, dims=2)
-    # all_dists is symmetric distance matrix
-    return _knn_from_dists(dist_mat, k)
-end
+    # compute the exact nearest neighbors for X and X_embed
 
-# find the approximate k nearest neighbors using NNDescent
-function knn_search(X::AbstractMatrix{S},
-                    k,
-                    metric,
-                    ::Val{:approximate}) where {S <: Real}
-    knngraph = nndescent(X, k, metric)
-    return knn_matrices(knngraph)
-end
+    X_nn = _pairwise_nn(X, metric)
+    X_embed_nn = _pairwise_nn(X_embed, metric)
 
-"""
-    knn_search(X, Q, k, metric, knns, dists) -> knns, dists
-
-Given a matrix `X` and a matrix `Q`, use the given metric to compute the `k` nearest neighbors out of the
-columns of `X` from the queries (columns in `Q`). 
-If the matrices are large, reconstruct the approximate nearest neighbors graph of `X` using the given `knns` and `dists`,
-representing indices and distances of pairwise neighbors of `X`, and use this to search for approximate nearest 
-neighbors of `Q`.
-If the matrices are small, search for exact nearest neighbors of `Q` by computing all pairwise distances with `X`.
-
-`metric` may be of type:
-- ::Symbol - `knn_search` is dispatched to one of the following based on the evaluation of `metric`:
-- ::Val(:precomputed) - computes neighbors from `X` treated as a precomputed distance matrix.
-- ::SemiMetric - computes neighbors from `X` treated as samples, using the given metric.
-
-# Returns
-- `knns`: `knns[j, i]` is the index of node i's jth nearest neighbor.
-- `dists`: `dists[j, i]` is the distance of node i's jth nearest neighbor.
-"""
-function knn_search(X::AbstractMatrix, 
-                    Q::AbstractMatrix,
-                    k::Integer,
-                    metric::SemiMetric,
-                    knns::AbstractMatrix{<:Integer},
-                    dists::AbstractMatrix{<:Real})
-    if size(X, 2) < 4096
-        return _knn_from_dists(pairwise(metric, X, Q, dims=2), k, ignore_diagonal=false)
-    else
-        knngraph = HeapKNNGraph(collect(eachcol(X)), metric, knns, dists)
-        return search(knngraph, collect(eachcol(Q)), k; max_candidates=8*k)
+    penalty = 0.
+    for i in 1:n_points
+        # for each point's nearest neighors in the EMBEDDED space 
+        for (j, _) in sort(collect(enumerate(X_embed_nn[i])), by=x -> x[2])[2:(n_neighbors+1)]
+            # j is the point index
+            # find this points' neighbor rank to i in the INPUT space 
+            rank_i_j = findfirst(x -> x == j, X_nn[i])
+            if isnothing(rank_i_j)
+                error("findfirst returned nothing: ", j, X_nn[i])
+            end
+            # subtract 1 from rank_i_j as self distance is always rank 1
+            penalty += max(0., (rank_i_j - 1) - n_neighbors)
+        end
     end
+
+    return 1 - (2/(n_points*n_neighbors*(2*n_points - 3*n_neighbors - 1))) * penalty
+
 end
 
+function _pairwise_nn(X, metric)
+    # calculate the pairwise distances and return a vector of vectors 
+    # nn_rank where nn_rank[i][j] returns the neighbor rank of point j to point i
+    n_points = length(axes(X)[end])
+    dists = zeros(n_points, n_points)
 
-function _knn_from_dists(dist_mat::AbstractMatrix{S}, k::Integer; ignore_diagonal=true) where {S <: Real}
-    # Ignore diagonal 0 elements (which will be smallest) when distance matrix represents pairwise distances of the same set
-    # If dist_mat represents distances between two different sets, diagonal elements be nontrivial
-    range = (1:k) .+ ignore_diagonal
-    knns  = Array{Int,2}(undef,k,size(dist_mat,2))
-    dists = Array{S,2}(undef,k,size(dist_mat,2))
-    for i ∈ 1:size(dist_mat, 2)
-        knns[:,i]  = partialsortperm(dist_mat[ :, i], range)
-        dists[:,i] = dist_mat[knns[:,i],i]
+    for i in 1:n_points
+        for j in 1:n_points
+            dists[j, i] = metric(X[i], X[j]) 
+        end
     end
-    return knns, dists
-end
 
+    nn_ranks = [Int[] for _ in 1:n_points]
+    for i in 1:n_points
+        nn_ranks[i] = invperm(getindex.(sort(collect(enumerate(dists[:, i])), by=x -> x[2]), 1))
+    end
 
-# combine local fuzzy simplicial sets
-@inline function combine_fuzzy_sets(fs_set::AbstractMatrix{T},
-                                    set_op_ratio) where {T}
-    return set_op_ratio .* fuzzy_set_union(fs_set) .+
-           (one(T) - set_op_ratio) .* fuzzy_set_intersection(fs_set)
-end
-
-@inline function fuzzy_set_union(fs_set::AbstractMatrix)
-    return fs_set .+ fs_set' .- (fs_set .* fs_set')
-end
-
-@inline function fuzzy_set_intersection(fs_set::AbstractMatrix)
-    return fs_set .* fs_set'
+    return nn_ranks
 end
