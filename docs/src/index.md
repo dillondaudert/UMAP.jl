@@ -4,5 +4,4 @@
 CurrentModule = UMAP
 ```
 
-```@contents
-```
+Welcome to UMAP.jl

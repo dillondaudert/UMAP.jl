@@ -6,13 +6,14 @@ Reference for the public interface for `UMAP.jl`.
 Pages = ["public.md"]
 ```
 
+## Public Interface
+```@autodocs
+Modules = [UMAP]
+Private = false
+Order = [:function, :type]
+```
+
 ## Index
 ```@index
 Pages = ["public.md"]
-```
-
-## Public Interface
-```@docs
-UMAP.fit
-UMAP.transform
 ```

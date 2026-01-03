@@ -20,6 +20,6 @@ include("config.jl")
 include("fit.jl")
 include("transform.jl")
 
-public fit, transform
+public fit, transform, UMAPConfig, UMAPResult, UMAPTransformResult
 
 end # module
