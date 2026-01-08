@@ -35,6 +35,7 @@ makedocs(
             "Advanced Usage" => "examples/advanced_usage.md",
             "Composite Views" => "examples/composite.md",
         ],
+        "Loss Function" => "loss.md",
         "Reference" => [
             "Public API" => "ref/public.md",
             "Internal" => "ref/internal.md",

@@ -22,13 +22,12 @@ md"""
 
 ### Won't cover:
 - Julia
-- "Why should I use UMAP"
 """
 
 # ╔═╡ f6acc229-3717-4057-87d8-dce4ac78051f
 md"""
 ## What is UMAP?
-Uniform Manifold Approximation and Projection (UMAP) is an algorithm for transforming data on one manifold (assumed, approximated) and projecting it onto another manifold.
+**Uniform Manifold Approximation and Projection (UMAP)** is an algorithm for transforming data on one (approximated) manifold and projecting it onto another.
 - Data visualization, dimensionality reduction, preprocessing, clustering
 - Nonlinear dimensionality reduction, similar to t-SNE
 - Theoretically motivated, computationally efficient
