@@ -65,7 +65,7 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 
 <pre class='language-julia'><code class='language-julia'>knn_params = UMAP.DescentNeighbors(4, Euclidean());</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash109134">([3 6 … 3 3; 10 3 … 10 5; 8 8 … 5 4; 9 9 … 7 9], [1.0014845489648234 0.702766365563624 … 0.7160228855994694 0.6794926046859924; 1.0234171342699578 0.9514454770902598 … 0.9458828960848241 0.7829468657600644; 1.295800762315536 1.1270645441107545 … 1.0428136177742713 0.9289564075390582; 1.3552198085146634 1.128990167318667 … 1.0473886365041223 0.9458828960848241])</pre>
+<pre class="code-output documenter-example-output" id="var-hash109134">([8 5 … 3 3; 7 4 … 7 4; 3 6 … 8 7; 9 10 … 6 5], [1.0203293669206883 1.00530163180544 … 0.9133858182728887 1.0534621750185666; 1.0563381887642462 1.1591327346924873 … 1.0946124646645856 1.1695537701517662; 1.159549316939638 1.3888597089127799 … 1.1694477449257878 1.194629960772723; 1.204363629646493 1.4310382474827081 … 1.1870696805339298 1.2449487971491773])</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.knn_search(xs, knn_params)</code></pre>
 
 <div class="markdown"><p>The return result in this case is a tuple of 4x10 (<code>n_neighbors</code> x <code>n_points</code>) matrices, one for the indices of the nearest neighbors and the second for the distances.</p><p>e.g. <code>knn_search(xs, knn_params) -&gt; indices, distances</code></p></div>
@@ -77,7 +77,7 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 
 <pre class='language-julia'><code class='language-julia'>knn_params_kw = UMAP.DescentNeighbors(4, Euclidean(), (max_iters=15,));</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash477790">([3 6 … 3 3; 10 3 … 10 5; 8 8 … 5 4; 9 9 … 7 9], [1.0014845489648234 0.702766365563624 … 0.7160228855994694 0.6794926046859924; 1.0234171342699578 0.9514454770902598 … 0.9458828960848241 0.7829468657600644; 1.295800762315536 1.1270645441107545 … 1.0428136177742713 0.9289564075390582; 1.3552198085146634 1.128990167318667 … 1.0473886365041223 0.9458828960848241])</pre>
+<pre class="code-output documenter-example-output" id="var-hash477790">([8 5 … 3 3; 7 4 … 7 4; 3 6 … 8 7; 9 10 … 6 5], [1.0203293669206883 1.00530163180544 … 0.9133858182728887 1.0534621750185666; 1.0563381887642462 1.1591327346924873 … 1.0946124646645856 1.1695537701517662; 1.159549316939638 1.3888597089127799 … 1.1694477449257878 1.194629960772723; 1.204363629646493 1.4310382474827081 … 1.1870696805339298 1.2449487971491773])</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.knn_search(xs, knn_params_kw)</code></pre>
 
 <div class="markdown"><h3 id="Precomputed-distances">Precomputed distances</h3><p>Alternatively, a precomputed distance matrix can be passed in if the pairwise distances are already known. This is done by using the <code>PrecomputedNeighbors</code> knn parameter struct (note that <code>n_neighbors</code> is still required in order to later construct the fuzzy simplicial set, and for transforming new data):</p></div>
@@ -114,7 +114,7 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 <pre class='language-julia'><code class='language-julia'>knn_params_views = (view_1=knn_params, 
                     view_2=knn_params_str);</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash157805">(view_1 = ([3 6 … 3 3; 10 3 … 10 5; 8 8 … 5 4; 9 9 … 7 9], [1.0014845489648234 0.702766365563624 … 0.7160228855994694 0.6794926046859924; 1.0234171342699578 0.9514454770902598 … 0.9458828960848241 0.7829468657600644; 1.295800762315536 1.1270645441107545 … 1.0428136177742713 0.9289564075390582; 1.3552198085146634 1.128990167318667 … 1.0473886365041223 0.9458828960848241]), view_2 = ([6 6 … 6 8; 10 3 … 8 4; 8 1 … 7 1], [0.7 0.7 … 0.7 0.8; 0.8 0.7 … 0.7 0.8; 0.8 0.8 … 0.8 0.8]))</pre>
+<pre class="code-output documenter-example-output" id="var-hash157805">(view_1 = ([8 5 … 3 3; 7 4 … 7 4; 3 6 … 8 7; 9 10 … 6 5], [1.0203293669206883 1.00530163180544 … 0.9133858182728887 1.0534621750185666; 1.0563381887642462 1.1591327346924873 … 1.0946124646645856 1.1695537701517662; 1.159549316939638 1.3888597089127799 … 1.1694477449257878 1.194629960772723; 1.204363629646493 1.4310382474827081 … 1.1870696805339298 1.2449487971491773]), view_2 = ([4 6 … 10 3; 5 5 … 2 7; 2 8 … 5 1], [0.7 0.7 … 0.8 0.6; 0.7 0.7 … 0.8 0.8; 0.7 0.7 … 0.9 0.8]))</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.knn_search(data_views, knn_params_views)</code></pre>
 
 <div class="markdown"><p>This is relatively flexible, with one major restriction that the size of the data in each view must be the same. You can even combine <code>DescentNeighbors</code> with <code>PrecomputedNeighbors</code>.</p></div>
@@ -136,16 +136,16 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 <pre class='language-julia'><code class='language-julia'>knns_dists = UMAP.knn_search(xs, knn_params);</code></pre>
 
 <pre class="code-output documenter-example-output" id="var-hash110181">10×10 SparseArrays.SparseMatrixCSC{Float64, Int64} with 52 stored entries:
-  ⋅          ⋅        1.0        ⋅        …  0.0978438  0.0611975  0.840958
-  ⋅          ⋅        0.463341   ⋅           0.530345   0.267529    ⋅ 
- 1.0        0.463341   ⋅        0.539024     1.0        1.0        1.0
-  ⋅          ⋅        0.539024   ⋅            ⋅          ⋅         1.0
-  ⋅          ⋅        1.0       0.425743      ⋅         0.3411     0.911786
-  ⋅         1.0       0.586963   ⋅        …  0.451886    ⋅          ⋅ 
-  ⋅          ⋅        0.129325  1.0           ⋅         0.848715   0.0828883
- 0.0978438  0.530345  1.0        ⋅            ⋅          ⋅         0.316683
- 0.0611975  0.267529  1.0        ⋅            ⋅          ⋅         0.544829
- 0.840958    ⋅        1.0       1.0          0.316683   0.544829    ⋅ </pre>
+  ⋅         ⋅        0.208113   ⋅        …  0.812958  1.0       0.125564   ⋅ 
+  ⋅         ⋅         ⋅        0.638474      ⋅         ⋅         ⋅        0.202088
+ 0.208113   ⋅         ⋅        0.722631     1.0       0.33103   1.0       1.0
+  ⋅        0.638474  0.722631   ⋅            ⋅         ⋅         ⋅        0.512461
+  ⋅        1.0       1.0       1.0           ⋅         ⋅        0.102358  0.236761
+ 0.39686   0.236778   ⋅         ⋅        …  0.29998    ⋅        1.0       0.303164
+ 0.812958   ⋅        1.0        ⋅            ⋅         ⋅        0.629956  0.479711
+ 1.0        ⋅        0.33103    ⋅            ⋅         ⋅        0.663214  0.149479
+ 0.125564   ⋅        1.0        ⋅           0.629956  0.663214   ⋅         ⋅ 
+  ⋅        0.202088  1.0       0.512461     0.479711  0.149479   ⋅         ⋅ </pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.fuzzy_simplicial_set(knns_dists, knn_params, src_view_params)</code></pre>
 
 <div class="markdown"><h3 id="Fuzzy-simplicial-set---multiple-views">Fuzzy simplicial set - multiple views</h3><p>As before, multiple views can be passed to <code>fuzzy_simplicial_set</code> - each parameterized by its own <code>SourceViewParams</code> - and combined into a single, global fuzzy simplicial set.</p><p>Using our combination of vector and string data:</p></div>
@@ -158,7 +158,7 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 <pre class='language-julia'><code class='language-julia'>src_view_params_views = (view_1=src_view_params, 
                          view_2=src_view_params);</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-fsset_views">(view_1 = sparse([3, 8, 9, 10, 3, 6, 8, 9, 1, 2  …  5, 7, 10, 1, 3, 4, 5, 7, 8, 9], [1, 1, 1, 1, 2, 2, 2, 2, 3, 3  …  9, 9, 9, 10, 10, 10, 10, 10, 10, 10], [1.0, 0.0978438407023119, 0.06119752467782525, 0.8409575460280345, 0.46334136435092466, 1.0, 0.5303450825593262, 0.26752897390357205, 1.0, 0.46334136435092466  …  0.341099721846781, 0.8487152627220795, 0.544829080106583, 0.8409575460280345, 1.0, 0.9999999999999999, 0.9117858597174615, 0.08288834548738934, 0.31668286243683524, 0.544829080106583], 10, 10), view_2 = sparse([5, 6, 7, 8, 10, 3, 6, 2, 5, 7  …  4, 7, 9, 4, 6, 8, 10, 1, 7, 9], [1, 1, 1, 1, 1, 2, 2, 3, 3, 3  …  8, 8, 8, 9, 9, 9, 9, 10, 10, 10], [1.0, 1.0, 1.0, 0.29248618760076334, 1.0, 1.0, 1.0, 1.0, 1.0, 0.29248618760076334  …  1.0, 0.49942420526429776, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 10, 10))</pre>
+<pre class="code-output documenter-example-output" id="var-fsset_views">(view_1 = sparse([3, 6, 7, 8, 9, 4, 5, 6, 10, 1  …  6, 7, 8, 2, 3, 4, 5, 6, 7, 8], [1, 1, 1, 1, 1, 2, 2, 2, 2, 3  …  9, 9, 9, 10, 10, 10, 10, 10, 10, 10], [0.20811329146592408, 0.39686013429346495, 0.8129580307013212, 1.0, 0.12556350045522072, 0.638474157310414, 1.0, 0.23677813971268982, 0.20208782106687595, 0.20811329146592408  …  1.0, 0.6299556278440513, 0.6632139306938196, 0.20208782106687595, 1.0, 0.5124614557918896, 0.23676061045814772, 0.3031644354436463, 0.4797114518786999, 0.14947853336338518], 10, 10), view_2 = sparse([2, 4, 5, 1, 5, 6, 7, 8, 9, 4  …  6, 7, 9, 2, 8, 10, 3, 4, 6, 9], [1, 1, 1, 2, 2, 2, 2, 2, 2, 3  …  8, 8, 8, 9, 9, 9, 10, 10, 10, 10], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.29248618760076334, 1.0, 1.0, 0.29248618760076334  …  1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.29248618760076334, 0.2924861876007635, 1.0], 10, 10))</pre>
 <pre class='language-julia'><code class='language-julia'>fsset_views = UMAP.fuzzy_simplicial_set(knns_dists_views, knn_params_views, src_view_params_views)</code></pre>
 
 <div class="markdown"><h3 id="Combining-views&#39;-fuzzy-simplicial-sets">Combining views' fuzzy simplicial sets</h3><p>We need a single umap graph (i.e. global fuzzy simplicial set) in order to perform optimization, so if there are multiple dataset views we must combine their sets.</p><p>The views' fuzzy sets are combined via fuzzy set intersection left-to-right (<code>foldl</code>), where <code>mix_ratio</code> is a weight for the intersection operation, analogous to a weighted mean.</p></div>
@@ -170,17 +170,17 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 
 <pre class='language-julia'><code class='language-julia'>src_gbl_params = UMAP.SourceGlobalParams(0.5);</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-graph">10×10 SparseArrays.SparseMatrixCSC{Float64, Int64} with 70 stored entries:
-  ⋅         ⋅        0.794463   ⋅        …  0.70527   0.639398  0.47279   1.0
-  ⋅         ⋅        0.996394   ⋅            ⋅        0.987212  0.969518   ⋅ 
- 0.794463  0.996394   ⋅        0.707305     0.58846   1.0       0.735533  0.671289
-  ⋅         ⋅        0.707305   ⋅           1.0       0.521448  0.491708  1.0
- 0.747364   ⋅        1.0       0.794657      ⋅         ⋅        0.730111  0.830188
- 0.708501  1.0       0.691052  0.598808  …   ⋅        0.805024  0.614856   ⋅ 
- 0.70527    ⋅        0.58846   1.0           ⋅        0.455346  0.962319  0.839638
- 0.639398  0.987212  1.0       0.521448     0.455346   ⋅        0.540591  0.614001
- 0.47279   0.969518  0.735533  0.491708     0.962319  0.540591   ⋅        1.0
- 1.0        ⋅        0.671289  1.0          0.839638  0.614001  1.0        ⋅ </pre>
+<pre class="code-output documenter-example-output" id="var-graph">10×10 SparseArrays.SparseMatrixCSC{Float64, Int64} with 72 stored entries:
+  ⋅        0.638338  0.417045  0.713444  …  0.968066  1.0       0.385657   ⋅ 
+ 0.638338   ⋅         ⋅        0.836541     0.338049  0.643119  0.629636  0.562084
+ 0.417045   ⋅         ⋅        1.0          1.0       0.917481  0.75604   1.0
+ 0.713444  0.836541  1.0        ⋅            ⋅         ⋅         ⋅        0.935995
+ 0.7382    1.0       0.823385  0.951671      ⋅         ⋅        0.5801    0.693793
+ 0.667459  1.0       0.539062   ⋅        …  0.802813  0.625699  0.88382   0.752591
+ 0.968066  0.338049  1.0        ⋅            ⋅        0.607424  0.801964  0.703958
+ 1.0       0.643119  0.917481   ⋅           0.607424   ⋅        1.0       0.521847
+ 0.385657  0.629636  0.75604    ⋅           0.801964  1.0        ⋅        0.635299
+  ⋅        0.562084  1.0       0.935995     0.703958  0.521847  0.635299   ⋅ </pre>
 <pre class='language-julia'><code class='language-julia'>graph = UMAP.coalesce_views(fsset_views, src_gbl_params)</code></pre>
 
 <div class="markdown"><h2 id="Initialize-and-optimize-target-embedding">Initialize and optimize target embedding</h2><p>Again, the goal of UMAP is to embed points on one manifold onto a new manifold. By default, this is a Euclidean manifold of specified dimension <code>d</code>. </p><p>The target embedding is parameterized by a target metric (default <code>SqEuclidean</code>, but in principle could be anything) as well as a membership function that computes the fuzzy set membership on the new manifold (the analog to the probabilities contained in the UMAP graph).</p></div>
@@ -205,16 +205,16 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 <pre class='language-julia'><code class='language-julia'>umap_graph = UMAP.fuzzy_simplicial_set(knns_dists, knn_params, src_view_params);</code></pre>
 
 <pre class="code-output documenter-example-output" id="var-xs_embed">10-element Vector{Vector{Float64}}:
- [4.609879903992413, 4.778715632859523]
- [-6.601272478949165, -5.8495118750795765]
- [-3.4439505334360954, 8.858575890092808]
- [5.041144617528968, 6.692198080318921]
- [-2.4550485588783584, -8.771679447700807]
- [8.99243331262118, -5.019013357326168]
- [0.09621824087877329, -0.1498165999520591]
- [-9.127960384600938, 7.1792158553706145]
- [8.194454291019497, -7.996998458308687]
- [1.9247770436657792, -9.08769950962965]</pre>
+ [-2.9602371414822066, -6.247807667760967]
+ [8.490481253544154, -5.026777505324381]
+ [-4.625606825252002, 1.4791446713505714]
+ [-0.7346029673885361, -7.96018526500466]
+ [6.677960249443892, 1.500813310171747]
+ [-5.841510718924834, -1.1934702653151419]
+ [-3.5530436939648506, -8.387195315434791]
+ [-5.677025564978702, 5.348587593406549]
+ [2.0181628964524165, -3.642187247412605]
+ [4.730566193086677, -9.415244106550752]</pre>
 <pre class='language-julia'><code class='language-julia'>xs_embed = UMAP.initialize_embedding(umap_graph, tgt_params)</code></pre>
 
 <div class="markdown"><h2 id="Optimize-target-embedding">Optimize target embedding</h2><p>The embedding is optimized by minimizing the fuzzy set cross entropy loss between the two fuzzy set representations of the data. This is optimization process is parameterized by <code>OptimizationParams</code></p></div>
@@ -233,22 +233,22 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 <pre class='language-julia'><code class='language-julia'>xs_embed_opt = copy(xs_embed);</code></pre>
 
 <pre class="code-output documenter-example-output" id="var-hash391777">10-element Vector{Vector{Float64}}:
- [3.423643834524211, 3.3789422763291865]
- [-6.162946774410816, -4.979192838334277]
- [-2.956862142525807, 6.51976968797722]
- [4.1977764800475015, 6.025298820926847]
- [-0.18851861930029368, -7.92177693131547]
- [8.33632517309306, -4.864085397593189]
- [1.0824650961307207, 0.07218388163830947]
- [-7.815331065009968, 6.701374797085374]
- [5.134904224580293, -7.247542698879993]
- [1.3565713015853937, -7.608935505719722]</pre>
+ [-3.578649338406613, -6.747460379006234]
+ [7.4926071628182855, -4.497654831751027]
+ [-1.2691966311191833, -1.1273346034131622]
+ [0.8957479835144192, -6.764061599840722]
+ [5.705573245108885, -0.2514967881169979]
+ [-4.9678392906503746, -1.4886986997150318]
+ [0.7585230242968694, -2.8519332590408886]
+ [-4.74644845367506, 3.6768696238268395]
+ [2.830256854380228, -4.580643793780738]
+ [3.9971137298694868, -8.129119428366641]</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.optimize_embedding!(xs_embed_opt, umap_graph, tgt_params, opt_params)</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash843749">369.6888912237215</pre>
+<pre class="code-output documenter-example-output" id="var-hash843749">314.50876153429266</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.cross_entropy(umap_graph, xs_embed, tgt_params)</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash153548">369.6888912237215</pre>
+<pre class="code-output documenter-example-output" id="var-hash153548">314.50876153429266</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.cross_entropy(umap_graph, xs_embed_opt, tgt_params)</code></pre>
 
-<!-- PlutoStaticHTML.End --></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../fashion_mnist/">« Fashion MNIST</a><a class="docs-footer-nextpage" href="../composite/">Composite Views »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 8 January 2026 20:51">Thursday 8 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<!-- PlutoStaticHTML.End --></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../fashion_mnist/">« Fashion MNIST</a><a class="docs-footer-nextpage" href="../composite/">Composite Views »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 8 January 2026 21:20">Thursday 8 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
