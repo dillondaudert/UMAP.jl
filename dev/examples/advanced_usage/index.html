@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Advanced Usage · UMAP.jl Documentation</title><meta name="title" content="Advanced Usage · UMAP.jl Documentation"/><meta property="og:title" content="Advanced Usage · UMAP.jl Documentation"/><meta property="twitter:title" content="Advanced Usage · UMAP.jl Documentation"/><meta name="description" content="Documentation for UMAP.jl Documentation."/><meta property="og:description" content="Documentation for UMAP.jl Documentation."/><meta property="twitter:description" content="Documentation for UMAP.jl Documentation."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">UMAP.jl Documentation</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../mnist/">MNIST</a></li><li><a class="tocitem" href="../fashion_mnist/">Fashion MNIST</a></li></ul></li><li><span class="tocitem">Usage</span><ul><li class="is-active"><a class="tocitem" href>Advanced Usage</a></li><li><a class="tocitem" href="../composite/">Composite Views</a></li></ul></li><li><span class="tocitem">Reference</span><ul><li><a class="tocitem" href="../../ref/public/">Public API</a></li><li><a class="tocitem" href="../../ref/internal/">Internal</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Usage</a></li><li class="is-active"><a href>Advanced Usage</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Advanced Usage</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/dillondaudert/UMAP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/dillondaudert/UMAP.jl/blob/master/docs/src/examples/advanced_usage.jl" title="View source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><style>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Advanced Usage · UMAP.jl Documentation</title><meta name="title" content="Advanced Usage · UMAP.jl Documentation"/><meta property="og:title" content="Advanced Usage · UMAP.jl Documentation"/><meta property="twitter:title" content="Advanced Usage · UMAP.jl Documentation"/><meta name="description" content="Documentation for UMAP.jl Documentation."/><meta property="og:description" content="Documentation for UMAP.jl Documentation."/><meta property="twitter:description" content="Documentation for UMAP.jl Documentation."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">UMAP.jl Documentation</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../mnist/">MNIST</a></li><li><a class="tocitem" href="../fashion_mnist/">Fashion MNIST</a></li></ul></li><li><span class="tocitem">Usage</span><ul><li class="is-active"><a class="tocitem" href>Advanced Usage</a></li><li><a class="tocitem" href="../composite/">Composite Views</a></li></ul></li><li><a class="tocitem" href="../../loss/">Loss Function</a></li><li><span class="tocitem">Reference</span><ul><li><a class="tocitem" href="../../ref/public/">Public API</a></li><li><a class="tocitem" href="../../ref/internal/">Internal</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Usage</a></li><li class="is-active"><a href>Advanced Usage</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Advanced Usage</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/dillondaudert/UMAP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/dillondaudert/UMAP.jl/blob/master/docs/src/examples/advanced_usage.jl" title="View source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><style>
     #documenter-page table {
         display: table !important;
         margin: 2rem auto !important;
@@ -65,7 +65,7 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 
 <pre class='language-julia'><code class='language-julia'>knn_params = UMAP.DescentNeighbors(4, Euclidean());</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash109134">([6 9 … 2 5; 3 7 … 7 4; 9 1 … 1 9; 7 3 … 3 8], [0.9961831283201931 0.9760281276112263 … 0.9760281276112263 0.9806438342458391; 1.0836897913435064 1.1046096115221449 … 1.030425656124248 1.063082332508412; 1.1085979886494695 1.242544847830584 … 1.1085979886494695 1.1518381878181925; 1.115239275927759 1.2464549188304734 … 1.129977967594903 1.2629544118887184])</pre>
+<pre class="code-output documenter-example-output" id="var-hash109134">([3 6 … 3 3; 10 3 … 10 5; 8 8 … 5 4; 9 9 … 7 9], [1.0014845489648234 0.702766365563624 … 0.7160228855994694 0.6794926046859924; 1.0234171342699578 0.9514454770902598 … 0.9458828960848241 0.7829468657600644; 1.295800762315536 1.1270645441107545 … 1.0428136177742713 0.9289564075390582; 1.3552198085146634 1.128990167318667 … 1.0473886365041223 0.9458828960848241])</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.knn_search(xs, knn_params)</code></pre>
 
 <div class="markdown"><p>The return result in this case is a tuple of 4x10 (<code>n_neighbors</code> x <code>n_points</code>) matrices, one for the indices of the nearest neighbors and the second for the distances.</p><p>e.g. <code>knn_search(xs, knn_params) -&gt; indices, distances</code></p></div>
@@ -77,7 +77,7 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 
 <pre class='language-julia'><code class='language-julia'>knn_params_kw = UMAP.DescentNeighbors(4, Euclidean(), (max_iters=15,));</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash477790">([6 9 … 2 5; 3 7 … 7 4; 9 1 … 1 9; 7 3 … 3 8], [0.9961831283201931 0.9760281276112263 … 0.9760281276112263 0.9806438342458391; 1.0836897913435064 1.1046096115221449 … 1.030425656124248 1.063082332508412; 1.1085979886494695 1.242544847830584 … 1.1085979886494695 1.1518381878181925; 1.115239275927759 1.2464549188304734 … 1.129977967594903 1.2629544118887184])</pre>
+<pre class="code-output documenter-example-output" id="var-hash477790">([3 6 … 3 3; 10 3 … 10 5; 8 8 … 5 4; 9 9 … 7 9], [1.0014845489648234 0.702766365563624 … 0.7160228855994694 0.6794926046859924; 1.0234171342699578 0.9514454770902598 … 0.9458828960848241 0.7829468657600644; 1.295800762315536 1.1270645441107545 … 1.0428136177742713 0.9289564075390582; 1.3552198085146634 1.128990167318667 … 1.0473886365041223 0.9458828960848241])</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.knn_search(xs, knn_params_kw)</code></pre>
 
 <div class="markdown"><h3 id="Precomputed-distances">Precomputed distances</h3><p>Alternatively, a precomputed distance matrix can be passed in if the pairwise distances are already known. This is done by using the <code>PrecomputedNeighbors</code> knn parameter struct (note that <code>n_neighbors</code> is still required in order to later construct the fuzzy simplicial set, and for transforming new data):</p></div>
@@ -114,7 +114,7 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 <pre class='language-julia'><code class='language-julia'>knn_params_views = (view_1=knn_params, 
                     view_2=knn_params_str);</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash157805">(view_1 = ([6 9 … 2 5; 3 7 … 7 4; 9 1 … 1 9; 7 3 … 3 8], [0.9961831283201931 0.9760281276112263 … 0.9760281276112263 0.9806438342458391; 1.0836897913435064 1.1046096115221449 … 1.030425656124248 1.063082332508412; 1.1085979886494695 1.242544847830584 … 1.1085979886494695 1.1518381878181925; 1.115239275927759 1.2464549188304734 … 1.129977967594903 1.2629544118887184]), view_2 = ([3 7 … 8 4; 7 6 … 10 5; 8 4 … 3 9], [0.7 0.7 … 0.8 0.6; 0.8 0.7 … 0.8 0.6; 0.8 0.8 … 0.8 0.8]))</pre>
+<pre class="code-output documenter-example-output" id="var-hash157805">(view_1 = ([3 6 … 3 3; 10 3 … 10 5; 8 8 … 5 4; 9 9 … 7 9], [1.0014845489648234 0.702766365563624 … 0.7160228855994694 0.6794926046859924; 1.0234171342699578 0.9514454770902598 … 0.9458828960848241 0.7829468657600644; 1.295800762315536 1.1270645441107545 … 1.0428136177742713 0.9289564075390582; 1.3552198085146634 1.128990167318667 … 1.0473886365041223 0.9458828960848241]), view_2 = ([6 6 … 6 8; 10 3 … 8 4; 8 1 … 7 1], [0.7 0.7 … 0.7 0.8; 0.8 0.7 … 0.7 0.8; 0.8 0.8 … 0.8 0.8]))</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.knn_search(data_views, knn_params_views)</code></pre>
 
 <div class="markdown"><p>This is relatively flexible, with one major restriction that the size of the data in each view must be the same. You can even combine <code>DescentNeighbors</code> with <code>PrecomputedNeighbors</code>.</p></div>
@@ -135,17 +135,17 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 
 <pre class='language-julia'><code class='language-julia'>knns_dists = UMAP.knn_search(xs, knn_params);</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash110181">10×10 SparseArrays.SparseMatrixCSC{Float64, Int64} with 46 stored entries:
-  ⋅        0.247564  1.0        ⋅        …  0.562603   ⋅        0.478337   ⋅ 
- 0.247564   ⋅        0.242545   ⋅           0.722517   ⋅        1.0        ⋅ 
- 1.0       0.242545   ⋅         ⋅           0.354465  0.239935  0.582598   ⋅ 
-  ⋅         ⋅         ⋅         ⋅            ⋅        1.0        ⋅        0.758064
-  ⋅         ⋅         ⋅        1.0           ⋅         ⋅        0.1852    1.0
- 1.0        ⋅        0.549352  0.380713  …   ⋅         ⋅         ⋅         ⋅ 
- 0.562603  0.722517  0.354465   ⋅            ⋅         ⋅        1.0        ⋅ 
-  ⋅         ⋅        0.239935  1.0           ⋅         ⋅        0.4282    0.424127
- 0.478337  1.0       0.582598   ⋅           1.0       0.4282     ⋅        0.301001
-  ⋅         ⋅         ⋅        0.758064      ⋅        0.424127  0.301001   ⋅ </pre>
+<pre class="code-output documenter-example-output" id="var-hash110181">10×10 SparseArrays.SparseMatrixCSC{Float64, Int64} with 52 stored entries:
+  ⋅          ⋅        1.0        ⋅        …  0.0978438  0.0611975  0.840958
+  ⋅          ⋅        0.463341   ⋅           0.530345   0.267529    ⋅ 
+ 1.0        0.463341   ⋅        0.539024     1.0        1.0        1.0
+  ⋅          ⋅        0.539024   ⋅            ⋅          ⋅         1.0
+  ⋅          ⋅        1.0       0.425743      ⋅         0.3411     0.911786
+  ⋅         1.0       0.586963   ⋅        …  0.451886    ⋅          ⋅ 
+  ⋅          ⋅        0.129325  1.0           ⋅         0.848715   0.0828883
+ 0.0978438  0.530345  1.0        ⋅            ⋅          ⋅         0.316683
+ 0.0611975  0.267529  1.0        ⋅            ⋅          ⋅         0.544829
+ 0.840958    ⋅        1.0       1.0          0.316683   0.544829    ⋅ </pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.fuzzy_simplicial_set(knns_dists, knn_params, src_view_params)</code></pre>
 
 <div class="markdown"><h3 id="Fuzzy-simplicial-set---multiple-views">Fuzzy simplicial set - multiple views</h3><p>As before, multiple views can be passed to <code>fuzzy_simplicial_set</code> - each parameterized by its own <code>SourceViewParams</code> - and combined into a single, global fuzzy simplicial set.</p><p>Using our combination of vector and string data:</p></div>
@@ -158,7 +158,7 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 <pre class='language-julia'><code class='language-julia'>src_view_params_views = (view_1=src_view_params, 
                          view_2=src_view_params);</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-fsset_views">(view_1 = sparse([2, 3, 6, 7, 9, 1, 3, 7, 9, 1  …  2, 3, 5, 7, 8, 10, 4, 5, 8, 9], [1, 1, 1, 1, 1, 2, 2, 2, 2, 3  …  9, 9, 9, 9, 9, 9, 10, 10, 10, 10], [0.24756388083991698, 1.0, 1.0, 0.5626031637948443, 0.4783367194558748, 0.24756388083991698, 0.24254485060705586, 0.7225165424728355, 1.0, 1.0  …  1.0, 0.5825978007983469, 0.18520014208241214, 1.0, 0.42819986744641697, 0.30100110098283367, 0.7580635949459573, 0.9999999999999999, 0.42412660864284646, 0.30100110098283367], 10, 10), view_2 = sparse([2, 3, 8, 1, 4, 6, 7, 1, 4, 5  …  6, 9, 3, 7, 8, 10, 3, 5, 7, 9], [1, 1, 1, 2, 2, 2, 2, 3, 3, 3  …  8, 8, 9, 9, 9, 9, 10, 10, 10, 10], [0.29248618760076334, 1.0, 1.0, 0.29248618760076334, 0.29248618760076334, 1.0, 1.0, 1.0, 0.29248618760076334, 0.9999999999999999  …  1.0, 1.0, 1.0, 0.29248618760076334, 1.0, 0.29248618760076334, 0.2924861876007635, 1.0, 0.2924861876007635, 0.29248618760076334], 10, 10))</pre>
+<pre class="code-output documenter-example-output" id="var-fsset_views">(view_1 = sparse([3, 8, 9, 10, 3, 6, 8, 9, 1, 2  …  5, 7, 10, 1, 3, 4, 5, 7, 8, 9], [1, 1, 1, 1, 2, 2, 2, 2, 3, 3  …  9, 9, 9, 10, 10, 10, 10, 10, 10, 10], [1.0, 0.0978438407023119, 0.06119752467782525, 0.8409575460280345, 0.46334136435092466, 1.0, 0.5303450825593262, 0.26752897390357205, 1.0, 0.46334136435092466  …  0.341099721846781, 0.8487152627220795, 0.544829080106583, 0.8409575460280345, 1.0, 0.9999999999999999, 0.9117858597174615, 0.08288834548738934, 0.31668286243683524, 0.544829080106583], 10, 10), view_2 = sparse([5, 6, 7, 8, 10, 3, 6, 2, 5, 7  …  4, 7, 9, 4, 6, 8, 10, 1, 7, 9], [1, 1, 1, 1, 1, 2, 2, 3, 3, 3  …  8, 8, 8, 9, 9, 9, 9, 10, 10, 10], [1.0, 1.0, 1.0, 0.29248618760076334, 1.0, 1.0, 1.0, 1.0, 1.0, 0.29248618760076334  …  1.0, 0.49942420526429776, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 10, 10))</pre>
 <pre class='language-julia'><code class='language-julia'>fsset_views = UMAP.fuzzy_simplicial_set(knns_dists_views, knn_params_views, src_view_params_views)</code></pre>
 
 <div class="markdown"><h3 id="Combining-views&#39;-fuzzy-simplicial-sets">Combining views' fuzzy simplicial sets</h3><p>We need a single umap graph (i.e. global fuzzy simplicial set) in order to perform optimization, so if there are multiple dataset views we must combine their sets.</p><p>The views' fuzzy sets are combined via fuzzy set intersection left-to-right (<code>foldl</code>), where <code>mix_ratio</code> is a weight for the intersection operation, analogous to a weighted mean.</p></div>
@@ -170,17 +170,17 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 
 <pre class='language-julia'><code class='language-julia'>src_gbl_params = UMAP.SourceGlobalParams(0.5);</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-graph">10×10 SparseArrays.SparseMatrixCSC{Float64, Int64} with 64 stored entries:
-  ⋅        0.81948   1.0        ⋅        …  0.817248  0.838079  0.695352   ⋅ 
- 0.81948    ⋅        0.639788  0.736934     1.0        ⋅        0.842635   ⋅ 
- 1.0       0.639788   ⋅        0.618709     0.664051  0.594162  1.0       0.627457
-  ⋅        0.736934  0.618709   ⋅            ⋅        0.908744   ⋅        0.882731
-  ⋅         ⋅        0.804725  1.0           ⋅         ⋅        0.642255  1.0
- 1.0       0.833364  0.658644  0.692657  …  0.816838  0.824442   ⋅         ⋅ 
- 0.817248  1.0       0.664051   ⋅            ⋅         ⋅        0.936893  0.721466
- 0.838079   ⋅        0.594162  0.908744      ⋅         ⋅        1.0       0.811353
- 0.695352  0.842635  1.0        ⋅           0.936893  1.0        ⋅        0.768036
-  ⋅         ⋅        0.627457  0.882731     0.721466  0.811353  0.768036   ⋅ </pre>
+<pre class="code-output documenter-example-output" id="var-graph">10×10 SparseArrays.SparseMatrixCSC{Float64, Int64} with 70 stored entries:
+  ⋅         ⋅        0.794463   ⋅        …  0.70527   0.639398  0.47279   1.0
+  ⋅         ⋅        0.996394   ⋅            ⋅        0.987212  0.969518   ⋅ 
+ 0.794463  0.996394   ⋅        0.707305     0.58846   1.0       0.735533  0.671289
+  ⋅         ⋅        0.707305   ⋅           1.0       0.521448  0.491708  1.0
+ 0.747364   ⋅        1.0       0.794657      ⋅         ⋅        0.730111  0.830188
+ 0.708501  1.0       0.691052  0.598808  …   ⋅        0.805024  0.614856   ⋅ 
+ 0.70527    ⋅        0.58846   1.0           ⋅        0.455346  0.962319  0.839638
+ 0.639398  0.987212  1.0       0.521448     0.455346   ⋅        0.540591  0.614001
+ 0.47279   0.969518  0.735533  0.491708     0.962319  0.540591   ⋅        1.0
+ 1.0        ⋅        0.671289  1.0          0.839638  0.614001  1.0        ⋅ </pre>
 <pre class='language-julia'><code class='language-julia'>graph = UMAP.coalesce_views(fsset_views, src_gbl_params)</code></pre>
 
 <div class="markdown"><h2 id="Initialize-and-optimize-target-embedding">Initialize and optimize target embedding</h2><p>Again, the goal of UMAP is to embed points on one manifold onto a new manifold. By default, this is a Euclidean manifold of specified dimension <code>d</code>. </p><p>The target embedding is parameterized by a target metric (default <code>SqEuclidean</code>, but in principle could be anything) as well as a membership function that computes the fuzzy set membership on the new manifold (the analog to the probabilities contained in the UMAP graph).</p></div>
@@ -205,16 +205,16 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 <pre class='language-julia'><code class='language-julia'>umap_graph = UMAP.fuzzy_simplicial_set(knns_dists, knn_params, src_view_params);</code></pre>
 
 <pre class="code-output documenter-example-output" id="var-xs_embed">10-element Vector{Vector{Float64}}:
- [-4.831888632194124, 6.529366588050138]
- [-6.016513879784853, 0.45749284054896044]
- [7.228112852463756, -8.678746205063996]
- [-2.4718323755263754, -2.21360973791632]
- [-3.8659712437073956, 9.90225018213231]
- [-5.5443945358299, 4.019527223387485]
- [9.489423967576808, 0.031648610787538445]
- [-3.905935030309804, 1.544972825441901]
- [5.838757677525887, -2.560498600990093]
- [7.160548618984709, -1.5711455870805384]</pre>
+ [4.609879903992413, 4.778715632859523]
+ [-6.601272478949165, -5.8495118750795765]
+ [-3.4439505334360954, 8.858575890092808]
+ [5.041144617528968, 6.692198080318921]
+ [-2.4550485588783584, -8.771679447700807]
+ [8.99243331262118, -5.019013357326168]
+ [0.09621824087877329, -0.1498165999520591]
+ [-9.127960384600938, 7.1792158553706145]
+ [8.194454291019497, -7.996998458308687]
+ [1.9247770436657792, -9.08769950962965]</pre>
 <pre class='language-julia'><code class='language-julia'>xs_embed = UMAP.initialize_embedding(umap_graph, tgt_params)</code></pre>
 
 <div class="markdown"><h2 id="Optimize-target-embedding">Optimize target embedding</h2><p>The embedding is optimized by minimizing the fuzzy set cross entropy loss between the two fuzzy set representations of the data. This is optimization process is parameterized by <code>OptimizationParams</code></p></div>
@@ -233,22 +233,22 @@ optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)</code></pre><
 <pre class='language-julia'><code class='language-julia'>xs_embed_opt = copy(xs_embed);</code></pre>
 
 <pre class="code-output documenter-example-output" id="var-hash391777">10-element Vector{Vector{Float64}}:
- [-0.9900799157794566, 1.07638177541583]
- [-4.464458701150093, 0.29541720828376794]
- [6.003208962378383, -6.352870980810691]
- [-2.230111015081561, -1.4032706444099834]
- [-3.414730931339629, 8.912097745932648]
- [-4.262483286308431, 3.9609108814650815]
- [8.59434232758849, -0.7233277962091575]
- [-2.3009375152209346, -1.661734384862833]
- [3.7426949991353395, -3.742066331036016]
- [5.943477936262355, -1.3498559056493833]</pre>
+ [3.423643834524211, 3.3789422763291865]
+ [-6.162946774410816, -4.979192838334277]
+ [-2.956862142525807, 6.51976968797722]
+ [4.1977764800475015, 6.025298820926847]
+ [-0.18851861930029368, -7.92177693131547]
+ [8.33632517309306, -4.864085397593189]
+ [1.0824650961307207, 0.07218388163830947]
+ [-7.815331065009968, 6.701374797085374]
+ [5.134904224580293, -7.247542698879993]
+ [1.3565713015853937, -7.608935505719722]</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.optimize_embedding!(xs_embed_opt, umap_graph, tgt_params, opt_params)</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash843749">317.231712372969</pre>
+<pre class="code-output documenter-example-output" id="var-hash843749">369.6888912237215</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.cross_entropy(umap_graph, xs_embed, tgt_params)</code></pre>
 
-<pre class="code-output documenter-example-output" id="var-hash153548">317.231712372969</pre>
+<pre class="code-output documenter-example-output" id="var-hash153548">369.6888912237215</pre>
 <pre class='language-julia'><code class='language-julia'>UMAP.cross_entropy(umap_graph, xs_embed_opt, tgt_params)</code></pre>
 
-<!-- PlutoStaticHTML.End --></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../fashion_mnist/">« Fashion MNIST</a><a class="docs-footer-nextpage" href="../composite/">Composite Views »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 8 January 2026 02:21">Thursday 8 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<!-- PlutoStaticHTML.End --></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../fashion_mnist/">« Fashion MNIST</a><a class="docs-footer-nextpage" href="../composite/">Composite Views »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 8 January 2026 20:51">Thursday 8 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
