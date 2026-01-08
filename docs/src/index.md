@@ -343,10 +343,6 @@ result = UMAP.fit(distances, n_components; metric=:precomputed)
 - **`general_simplicial_set_intersection(left, right, params)`**: Weighted intersection with mix ratio
 - **`reset_local_connectivity(simplicial_set)`**: Rescales confidences to maintain local connectivity after merging
 
-### Evaluation Metrics
-
-- **`trustworthiness(X, X_embed, n_neighbors, metric)`**: Measures how well neighborhood structure is preserved
-
 ## Multi-View Data
 
 UMAP.jl supports data with multiple "views" - different representations of the same entities. A feature vector and its label, for example, or a retail product with both text description and image.

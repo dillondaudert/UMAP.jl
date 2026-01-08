@@ -1,7 +1,7 @@
 # UMAP.jl
 | **Documentation** | **Build Status** | **Test Coverage** |
 |:-----------------:|:----------------:|:----------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![CI](https://github.com/dillondaudert/UMAP.jl/actions/workflows/CI.yml/badge.svg?branch=v0.2-dev)](https://github.com/dillondaudert/UMAP.jl/actions/workflows/CI.yml) | [![][codecov-img]][codecov-url] [![][coveralls-img]][coveralls-url] |
+| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![CI](https://github.com/dillondaudert/UMAP.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/dillondaudert/UMAP.jl/actions/workflows/CI.yml) | [![][codecov-img]][codecov-url] [![][coveralls-img]][coveralls-url] |
 
 A pure Julia implementation of the [Uniform Manifold Approximation and Projection](https://arxiv.org/abs/1802.03426) dimension reduction
 algorithm
