@@ -2,16 +2,18 @@
 
 using BenchmarkTools
 using UMAP
+import NearestNeighborDescent as NND
 using Random
 
 include("utils.jl")
+include("simplicial_sets_bench.jl")
 
 suite = BenchmarkGroup()
 
 suite["fit"] = BenchmarkGroup(["integration"])
 
 const N_POINTS = [1000, 10_000]
-const IN_DIMS = [5, 10, 50]
+const IN_DIMS = [10, 50]
 const OUT_DIMS = [2, 10]
 
 for (n_points, in_dims, out_dims) in Iterators.product(N_POINTS, IN_DIMS, OUT_DIMS)
@@ -31,6 +33,8 @@ for (n_points, in_dims, out_dims) in Iterators.product(N_POINTS, IN_DIMS, OUT_DI
         samples=10
     )
 end
+
+suite["simplicial"] = SimplicialBench.simplicial_suite
 
 tune!(suite)
 
