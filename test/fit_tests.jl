@@ -20,14 +20,17 @@
         @test size(result.embedding) == (100,)
         @test size(result.embedding[1]) == (2,)
         @test result.data === data
-        # TODO: Assess type stability of fit, eventually
+        # test that the graph is Float32
+        @test eltype(result.graph) == Float32
         # @inferred fit(data; init=UMAP.UniformInitialization())
 
         data = rand(Float32, 5, 100)
         result = fit(data; init=UMAP.UniformInitialization())
         @test result isa UMAP.UMAPResult
-        # TODO: fix data type stability
-        @test_broken eltype(result.embedding) == Vector{Float32}
+        # test that graph is still Float32 
+        @test eltype(result.graph) == Float32
+        # type stability
+        @test eltype(result.embedding) == Vector{Float32}
         # @inferred fit(data; init=UMAP.UniformInitialization())
     end
 end

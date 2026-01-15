@@ -6,41 +6,35 @@
 
 Tolerance for the smooth k-distance calculation.
 """
-const SMOOTH_K_TOLERANCE = 1.0e-5
+const SMOOTH_K_TOLERANCE = 1.0f-5
 
 # SOURCE PARAMS
 """
-    SourceViewParams{T}(set_operation_ratio, local_connectivity, bandwidth)
+    SourceViewParams(set_operation_ratio::Float32, local_connectivity::Float32, bandwidth::Float32)
 
 Struct for parameterizing the representation of the data in the source (original)
 manifold; i.e. constructing fuzzy simplicial sets of each view of the dataset.
 """
-struct SourceViewParams{T <: Real}
+struct SourceViewParams
     """
     The ratio of set union to set intersection used to combine local fuzzy simplicial sets, 
     from 0 (100% intersection) to 1 (100% union)
     """
-    set_operation_ratio::T
+    set_operation_ratio::Float32
     """
     The number of nearest neighbors that should be assumed to be locally connected. 
     The higher this value, the more connected the manifold becomes. 
     This should not be set higher than the intrinsic dimension of the manifold.
     """
-    local_connectivity::T
+    local_connectivity::Float32
     "bandwidth"
-    bandwidth::T
-    function SourceViewParams{T}(set_op_ratio, local_conn, bandwidth) where {T <: Real}
+    bandwidth::Float32
+    function SourceViewParams(set_op_ratio, local_conn, bandwidth)
         0 ≤ set_op_ratio ≤ 1 || throw(ArgumentError("set_op_ratio must be between 0 and 1"))
         local_conn > 0 || throw(ArgumentError("local_connectivity must be greater than 0"))
         bandwidth > 0 || throw(ArgumentError("bandwidth must be greater than 0"))
         return new(set_op_ratio, local_conn, bandwidth)
     end
-end
-function SourceViewParams(set_op_ratio::T, local_conn::T, bandwidth::T) where {T <: Real}
-    return SourceViewParams{T}(set_op_ratio, local_conn, bandwidth)
-end
-function SourceViewParams(set_op_ratio::Real, local_conn::Real, bandwidth::Real)
-    return SourceViewParams(promote(set_op_ratio, local_conn, bandwidth)...)
 end
 
 """
@@ -49,15 +43,13 @@ end
 Parameters for merging the fuzzy simplicial sets for each dataset view into one
 fuzzy simplicial set, otherwise known as the UMAP graph.
 """
-struct SourceGlobalParams{T <: Real}
-    mix_ratio::T
-    function SourceGlobalParams{T}(mix_ratio) where {T <: Real}
+struct SourceGlobalParams
+    mix_ratio::Float32
+    function SourceGlobalParams(mix_ratio)
         0 ≤ mix_ratio ≤ 1 || throw(ArgumentError("mix_ratio must be between 0 and 1"))
         return new(mix_ratio)
     end
 end
-SourceGlobalParams(mix_ratio::T) where {T <: Real} = SourceGlobalParams{T}(mix_ratio)
-
 
 """
     coalesce_views(view_fuzzy_sets, params)
@@ -179,15 +171,23 @@ end
 Compute the distances to the nearest neighbors for a continuous value `k`. Returns
 the approximated distances to the kth nearest neighbor (`knn_dists`)
 and the nearest neighbor (nn_dists) from each point.
+
+This assumes that `dists` is sorted by distance (closest first).
 """
 function smooth_knn_dists(knn_dists::AbstractMatrix{S},
                           k,
                           src_params::SourceViewParams) where {S <: Real}
     local_connectivity = src_params.local_connectivity
     nonzero_dists(dists) = @view dists[dists .> 0.]
-    ρs = zeros(S, size(knn_dists, 2))
-    σs = Array{S}(undef, size(knn_dists, 2))
+
+    # rho is the distance to each point's local_connectivity 
+    ρs = zeros(Float32, size(knn_dists, 2))
+    # sigma is 
+    σs = Array{Float32}(undef, size(knn_dists, 2))
+
+    # for each point 
     for i in axes(knn_dists, 2)
+        # find the non-zero neighbor distances
         nz_dists = nonzero_dists(knn_dists[:, i])
         if length(nz_dists) >= local_connectivity
             index = floor(Int, local_connectivity)
@@ -201,32 +201,33 @@ function smooth_knn_dists(knn_dists::AbstractMatrix{S},
                 ρs[i] = interpolation * nz_dists[1]
             end
         elseif length(nz_dists) > 0
+            # number neighbors is below local connectivity, so choose furthest point
             ρs[i] = maximum(nz_dists)
         end
-        @inbounds σs[i] = smooth_knn_dist(knn_dists[:, i], ρs[i], k, src_params.bandwidth)
+        @inbounds σs[i] = smooth_knn_dist(view(knn_dists, :, i), ρs[i], k, src_params.bandwidth)
     end
 
     return ρs, σs
 end
 
 # calculate sigma for an individual point
-function smooth_knn_dist(dists::AbstractVector, ρ, k, bandwidth, niter=64)
-    target = log2(k)*bandwidth
-    lo, mid, hi = 0., 1., Inf
+function smooth_knn_dist(dists::AbstractVector, ρ, k, bandwidth, niter=64)::Float32
+    target = log2(Float32(k))*bandwidth
+    lo, mid, hi = 0f0, 1f0, Inf32
     for _ in 1:niter
-        psum = sum(exp.(-max.(dists .- ρ, 0.)./mid))
+        psum = Float32(sum(exp.(-max.(dists .- ρ, 0f0)./mid)))
         if abs(psum - target) < SMOOTH_K_TOLERANCE
             break
         end
         if psum > target
             hi = mid
-            mid = (lo + hi)/2.
+            mid = (lo + hi)/2f0
         else
             lo = mid
-            if hi == Inf
-                mid *= 2.
+            if isinf(hi)
+                mid *= 2f0
             else
-                mid = (lo + hi) / 2.
+                mid = (lo + hi) / 2f0
             end
         end
     end
@@ -240,18 +241,18 @@ end
 Compute the membership strengths for the 1-skeleton of each fuzzy simplicial set.
 """
 function compute_membership_strengths(knns::AbstractMatrix{S},
-                                      dists::AbstractMatrix{T},
+                                      dists::AbstractMatrix{R},
                                       ρs::Vector{T},
-                                      σs::Vector{T}) where {S <: Integer, T}
+                                      σs::Vector{T}) where {S <: Integer, R, T}
     # set dists[i, j]
     rows = sizehint!(S[], length(knns))
     cols = sizehint!(S[], length(knns))
     vals = sizehint!(T[], length(knns))
     for i in axes(knns, 2), j in axes(knns, 1)
         @inbounds if i == knns[j, i] # dist to self
-            d = 0.
+            d = zero(T)
         else
-            @inbounds d = exp(-max(dists[j, i] - ρs[i], 0.)/σs[i])
+            @inbounds d = convert(T, exp(-max(dists[j, i] - ρs[i], zero(T))/σs[i]))
         end
         append!(cols, i)
         append!(rows, knns[j, i])
@@ -281,7 +282,7 @@ end
 
 Take the union of two _global_ fuzzy simplicial sets.
 """
-function general_simplicial_set_union(left_view::M, right_view::M) where {M <: AbstractSparseMatrix}
+function general_simplicial_set_union(left_view::M, right_view::M) where {T, M <: AbstractSparseMatrix{T}}
     
     result = left_view + right_view
 
@@ -289,8 +290,9 @@ function general_simplicial_set_union(left_view::M, right_view::M) where {M <: A
     # this is used when combining to that we never lose 
     # a nonzero value in either view. This puts a minimum
     # contribution threshold to each non-zero in both views
-    left_min = max(minimum(nonzeros(left_view)) / 2, 1e-8)
-    right_min = max(minimum(nonzeros(right_view)) / 2, 1e-8)
+    thresh = convert(T, 1e-8)
+    left_min = max(minimum(nonzeros(left_view)) / 2, thresh)
+    right_min = max(minimum(nonzeros(right_view)) / 2, thresh)
 
     for ind in findall(!iszero, result)
         # for each index that is nonzero in at least one of left/right
@@ -310,14 +312,15 @@ Since we don't want to completely lose edges that are only present in one of the
 multiply by at least `1e-8`. Furthermore, if the same edge in both sets has a strength below
 1e-8, these are added together instead of multiplying.
 """
-function general_simplicial_set_intersection(left_view::M, right_view::M, params::SourceGlobalParams) where {M <: AbstractSparseMatrix}
+function general_simplicial_set_intersection(left_view::M, right_view::M, params::SourceGlobalParams) where {T, M <: AbstractSparseMatrix{T}}
     # start with adding - this gets us a sparse matrix whose nonzero entries
     # are the union of left and right entries
     result = left_view + right_view
     # these added values are replaced by the weighted intersection except when both left_view[ind] and
     # right_view[ind] are less than left_min/right_min respectively.
-    left_min = max(minimum(nonzeros(left_view)) / 2, 1e-8)
-    right_min = max(minimum(nonzeros(right_view)) / 2, 1e-8)
+    thresh = convert(T, 1e-8)
+    left_min = max(minimum(nonzeros(left_view)) / 2, thresh)
+    right_min = max(minimum(nonzeros(right_view)) / 2, thresh)
     #
     for ind in findall(!iszero, result)
         # take the weighted intersection of the two sets, making sure not to
@@ -379,14 +382,14 @@ end
 For each column (i.e. each point), normalize the membership values 
 (divide by the maximum). This creates a copy of the matrix.
 """
-function _norm_sparse(simplicial_set::SparseMatrixCSC)
+function _norm_sparse(simplicial_set::SparseMatrixCSC{T}) where T
     # normalize columns of sparse matrix so max is 1 for each column
     maxvals = maximum(simplicial_set, dims=1)
     I, J, V = findnz(simplicial_set)
     newVs = copy(V)
 
     for (ind, col) in enumerate(J)
-        newVs[ind] /= max(maxvals[col], 1e-8) # to avoid division by zero
+        newVs[ind] /= max(maxvals[col], 2 * eps(T)) # to avoid division by zero
     end
     return sparse(I, J, newVs, simplicial_set.m, simplicial_set.n)
 end
@@ -418,14 +421,14 @@ How we would set this otherwise isn't clear (the global UMAP graph `k` value isn
 determined.)
 """
 function _reset_fuzzy_set_cardinality(probs, k=15, niter=32)
-    target = log2(k)
+    target = log2(Float32(k))
 
-    lo = 0.
-    hi = Inf
-    mid = 1.
+    lo = 0f0
+    hi = Inf32
+    mid = 1f0
 
     for _ in 1:niter
-        psum = sum(probs .^ mid)
+        psum = Float32(sum(probs .^ mid))
         if abs(psum - target) < SMOOTH_K_TOLERANCE
             break
         end

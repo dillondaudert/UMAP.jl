@@ -13,14 +13,14 @@ using UMAP: MembershipFnParams
             params = UMAP.MembershipFnParams(0.1, 1.0, 1.5, 0.8)
             @test params.min_dist == 0.1
             @test params.spread == 1.0
-            @test params.a == 1.5
-            @test params.b == 0.8
+            @test params.a == 1.5f0
+            @test params.b == 0.8f0
             @test params isa UMAP.MembershipFnParams{Float64}
 
             # Type promotion
             params_mixed = UMAP.MembershipFnParams(0.1, 1, 1.5, 1)
-            @test all(isa.([params_mixed.min_dist, params_mixed.spread,
-                           params_mixed.a, params_mixed.b], Float64))
+            @test all(isa.([params_mixed.min_dist, params_mixed.spread], Float64))
+            @test all(isa.([params_mixed.a, params_mixed.b], Float32))
         end
 
         @testset "Valid Construction - Auto-fit a, b" begin

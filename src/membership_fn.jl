@@ -18,8 +18,8 @@ mutable struct MembershipFnParams{T <: Real}
     min_dist::T
     "The effective scale of embedded points. Determines how clustered embedded points are in combination with `min_dist`."
     spread::T
-    a::T
-    b::T
+    a::Float32
+    b::Float32
 
     # first inner constructor fits the parameters
     function MembershipFnParams{T}(min_dist, spread) where {T <: Real}
@@ -38,7 +38,7 @@ end
 function MembershipFnParams(min_dist::T, spread::T) where {T <: Real}
     return MembershipFnParams{T}(min_dist, spread)
 end
-function MembershipFnParams(min_dist::T, spread::T, a::T, b::T) where {T <: Real}
+function MembershipFnParams(min_dist::T, spread::T, a::Float32, b::Float32) where {T <: Real}
     return MembershipFnParams{T}(min_dist, spread, a, b)
 end
 # autopromote
@@ -46,7 +46,7 @@ function MembershipFnParams(min_dist::Real, spread::Real)
     return MembershipFnParams(promote(min_dist, spread)...)
 end
 function MembershipFnParams(min_dist::Real, spread::Real, a::Real, b::Real)
-    return MembershipFnParams(promote(min_dist, spread, a, b)...)
+    return MembershipFnParams(promote(min_dist, spread)..., convert.(Float32, (a, b))...)
 end
 # support passing a, b as nothing for convenience
 function MembershipFnParams(min_dist::Real, spread::Real, ::Nothing, ::Nothing)

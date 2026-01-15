@@ -15,19 +15,9 @@ using Distances: Euclidean, SqEuclidean
             @test params.set_operation_ratio == 1.0
             @test params.local_connectivity == 1.0
             @test params.bandwidth == 1.0
-            @test params isa UMAP.SourceViewParams{Float64}
-
-            # Explicit type parameter
-            params_f32 = UMAP.SourceViewParams{Float32}(0.5, 2.0, 1.5)
-            @test params_f32 isa UMAP.SourceViewParams{Float32}
-            @test params_f32.set_operation_ratio isa Float32
-
-            # Type promotion
-            params_mixed = UMAP.SourceViewParams(1, 1.0, 1.5)
-            @test params_mixed isa UMAP.SourceViewParams{Float64}
-            @test all(isa.([params_mixed.set_operation_ratio,
-                           params_mixed.local_connectivity,
-                           params_mixed.bandwidth], Float64))
+            @test all(isa.([params.set_operation_ratio,
+                           params.local_connectivity,
+                           params.bandwidth], Float32))
         end
 
         @testset "Boundary Values" begin
@@ -66,11 +56,7 @@ using Distances: Euclidean, SqEuclidean
             # Basic construction
             params = UMAP.SourceGlobalParams(0.5)
             @test params.mix_ratio == 0.5
-            @test params isa UMAP.SourceGlobalParams{Float64}
-
-            # With explicit type
-            params_f32 = UMAP.SourceGlobalParams{Float32}(0.3)
-            @test params_f32.mix_ratio isa Float32
+            @test params.mix_ratio isa Float32
         end
 
         @testset "Boundary Values" begin
