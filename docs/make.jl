@@ -49,5 +49,6 @@ makedocs(
 
 deploydocs(
     repo="github.com/dillondaudert/UMAP.jl.git",
-    devbranch="master"
+    devbranch="master",
+    versions=["stable" => "v^", "dev" => "dev"]
 )

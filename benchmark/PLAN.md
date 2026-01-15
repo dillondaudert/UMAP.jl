@@ -46,9 +46,14 @@ Stochastic gradient descent to optimize the embedding.
 |----------|-------------|-------------------|
 | `optimize_embedding!` | Full optimization loop | n_points, n_epochs, neg_sample_rate, graph_density |
 
-### 4. Integration Benchmarks (`benchmarks.jl` - existing)
+### 4. Integration Benchmarks (`benchmarks.jl`)
 
-End-to-end `UMAP.fit()` to measure overall performance.
+End-to-end benchmarks for the main UMAP API functions:
+
+| Function | Description | Parameters to vary |
+|----------|-------------|-------------------|
+| `UMAP.fit` | Full fit pipeline | n_points, in_dims, out_dims |
+| `UMAP.transform` | Embed new points into existing embedding | n_base_points, n_query_points, in_dims, out_dims |
 
 ## Benchmark Configuration
 
@@ -58,6 +63,13 @@ End-to-end `UMAP.fit()` to measure overall performance.
 |------|----------|---------|
 | Small | 1,000 | Fast iteration, CI-friendly |
 | Medium | 10,000 | Realistic workload |
+
+### Query Sizes (for transform)
+
+| Size | n_queries | Purpose |
+|------|-----------|---------|
+| Small | 100 | Few new points |
+| Medium | 1,000 | Batch transform |
 
 ### Dimensions
 
@@ -95,7 +107,7 @@ benchmark/
 - `"simplicial"` - Fuzzy simplicial set construction
 - `"embeddings"` - Embedding initialization
 - `"optimization"` - Embedding optimization
-- `"integration"` - End-to-end fit
+- `"integration"` - End-to-end fit and transform
 
 ## Implementation Notes
 

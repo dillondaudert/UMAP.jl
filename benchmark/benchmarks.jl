@@ -4,7 +4,7 @@
 # - Fuzzy simplicial set construction (simplicial_sets_bench.jl)
 # - Embedding initialization (embeddings_bench.jl)
 # - Embedding optimization (optimize_bench.jl)
-# - Integration (fit) benchmarks
+# - Integration benchmarks (fit, transform)
 #
 # See PLAN.md for details on the benchmarking strategy.
 
@@ -43,6 +43,37 @@ for (n_points, in_dims, out_dims) in Iterators.product(N_POINTS, IN_DIMS, OUT_DI
         evals=1,
         samples=10
     )
+end
+
+# Integration benchmarks for UMAP.transform
+SUITE["transform"] = BenchmarkGroup(["integration"])
+
+# For transform, we fit on a base dataset first, then transform new queries
+const N_QUERY_POINTS = [100, 1000]
+
+for (n_points, in_dims, out_dims) in Iterators.product(N_POINTS, IN_DIMS, OUT_DIMS)
+    # Pre-fit the UMAP model on base data
+    base_data = matrix_data(n_points, in_dims; seed=111222333)
+    result = UMAP.fit(base_data, out_dims; n_neighbors=15, n_epochs=100)
+
+    for n_queries in N_QUERY_POINTS
+        query_data = matrix_data(n_queries, in_dims; seed=444555666)
+        SUITE["transform"]["matrix"]["$(n_points)_base_$(n_queries)_query_$(in_dims)x$(out_dims)"] = @benchmarkable(
+            UMAP.transform($result, $query_data),
+            setup=(GC.gc()),
+            evals=1,
+            samples=10
+        )
+
+        query_vec_data = vecvec_data(n_queries, in_dims; seed=444555666)
+        vec_result = UMAP.fit(vecvec_data(n_points, in_dims; seed=111222333), out_dims; n_neighbors=15, n_epochs=100)
+        SUITE["transform"]["vectors"]["$(n_points)_base_$(n_queries)_query_$(in_dims)x$(out_dims)"] = @benchmarkable(
+            UMAP.transform($vec_result, $query_vec_data),
+            setup=(GC.gc()),
+            evals=1,
+            samples=10
+        )
+    end
 end
 
 # Add component benchmark suites
