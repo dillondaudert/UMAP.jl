@@ -1,0 +1,8 @@
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+NearestNeighborDescent = "dd2c4c9e-a32f-5b2f-b342-08c2f244fce8"
+PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+UMAP = "c4f8c510-2410-5be4-91d7-4fbaeb39457e"
