@@ -73,18 +73,18 @@ same object, then this is fitting a new embedding. Otherwise, `ref_embedding` is
 result of a previous call to fit, and we are transforming new data. 
 
 In both cases, the dimensions of `umap_graph` have to match `embedding` and 
-`ref_embedding`: umap_graph in R^{n, m}, embedding length m, ref_embedding length n.
+`ref_embedding`: umap_graph in R^{n, m}, embedding n_points m, ref_embedding n_points n.
 
-This optimizes the default case, where the embeddings are in vector of vectors format,
+This optimizes the default case, where the embeddings are in matrix format,
 the target manifold is a Euclidean manifold of some dimension N, and the target metric 
 is squared euclidean.
 """
-function _optimize_embedding!(embedding::AbstractVector{E}, 
-                              ref_embedding::AbstractVector{E}, 
-                              umap_graph::SparseMatrixCSC, 
-                              tgt_params::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean},
+function _optimize_embedding!(embedding::T, 
+                              ref_embedding::T, 
+                              umap_graph::SparseMatrixCSC{V}, 
+                              tgt_params::TargetParams{M, Distances.SqEuclidean},
                               opt_params::OptimizationParams;
-                              move_ref::Bool=true) where {E<:AbstractVector, N}
+                              move_ref::Bool=true) where {V, T <: AbstractMatrix{V}, M <: _EuclideanManifold}
 
     self_reference = embedding === ref_embedding
 
@@ -93,15 +93,15 @@ function _optimize_embedding!(embedding::AbstractVector{E},
             j = rowvals(umap_graph)[ind]
             p = nonzeros(umap_graph)[ind]
             if rand() <= p
-                update_embedding_pos!(embedding[i], ref_embedding[j], tgt_params, opt_params, move_ref)
+                update_embedding_pos!(view(embedding, :, i), view(ref_embedding, :, j), tgt_params, opt_params, move_ref)
                 # negative samples
                 for _ in 1:opt_params.neg_sample_rate
-                    k = rand(eachindex(ref_embedding))
+                    k = rand(axes(ref_embedding, 2))
                     if i == k && self_reference
                         # don't calculate negative force with itself
                         continue
                     end
-                    update_embedding_neg!(embedding[i], ref_embedding[k], tgt_params, opt_params)
+                    update_embedding_neg!(view(embedding, :, i), view(ref_embedding, :, k), tgt_params, opt_params)
                 end
             end
         end
@@ -114,11 +114,11 @@ Calculate the gradients of the positive 1-simplices in the simplicial set,
 and update the embeddings. This assumes embedded in R^d with the 
 squared euclidean metric.
 """
-function update_embedding_pos!(emb_v::AbstractVector{T}, 
-                               emb_w::AbstractVector{T}, 
-                               tgt_params::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean},
+function update_embedding_pos!(emb_v::V, 
+                               emb_w::V, 
+                               tgt_params::TargetParams{M, Distances.SqEuclidean},
                                opt_params::OptimizationParams,
-                               move_ref::Bool) where {T <: Real, N}
+                               move_ref::Bool) where {V <: AbstractVector, M <: _EuclideanManifold}
     a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
     lr = opt_params.lr
     dist = Distances.sqeuclidean(emb_v, emb_w)
@@ -141,10 +141,10 @@ Calculate the gradients of the negative 1-simplices in the simplicial set,
 and update the embeddings. This assumes embedded in R^d with the 
 squared euclidean metric.
 """
-function update_embedding_neg!(emb_v::AbstractVector{T}, 
-                               emb_w::AbstractVector{T}, 
-                               tgt_params::TargetParams{_EuclideanManifold{N}, Distances.SqEuclidean},
-                               opt_params::OptimizationParams) where {T <: Real, N}
+function update_embedding_neg!(emb_v::V, 
+                               emb_w::V, 
+                               tgt_params::TargetParams{M, Distances.SqEuclidean},
+                               opt_params::OptimizationParams) where {V <: AbstractVector, M <: _EuclideanManifold}
     a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
     lr = opt_params.lr
     dist = Distances.sqeuclidean(emb_v, emb_w)

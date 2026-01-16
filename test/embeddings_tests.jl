@@ -24,11 +24,8 @@
                                      UMAP.MembershipFnParams(0.1, 1.0))
         
         embedding = UMAP.initialize_embedding(graph, tgt_params)
-        @test embedding isa AbstractVector{<:AbstractVector{Float64}}
-        @test length(embedding) == size(graph, 2)
-        for i in eachindex(embedding)
-            @test length(embedding[i]) == 2
-        end
+        @test embedding isa Matrix{Float64}
+        @test size(embedding) == (2, size(graph, 2))
         
         # Test uniform initialization
         tgt_params_uniform = UMAP.TargetParams(UMAP._EuclideanManifold(2), 
@@ -37,13 +34,11 @@
                                              UMAP.MembershipFnParams(0.1, 1.0))
         
         embedding_uniform = UMAP.initialize_embedding(graph, tgt_params_uniform)
-        @test embedding_uniform isa AbstractVector{<:AbstractVector{Float64}}
-        @test length(embedding_uniform) == size(graph, 2)
-        for i in eachindex(embedding_uniform)
-            @test length(embedding_uniform[i]) == 2
-            # Check that points are in expected range for uniform init [-10, 10]
-            @test all(-10 ≤ x ≤ 10 for x in embedding_uniform[i])
-        end
+        @test embedding_uniform isa Matrix{Float64}
+        @test size(embedding_uniform) == (2, size(graph, 2))
+        # Check that points are in expected range for uniform init [-10, 10]
+        @test all(-10 .≤ embedding_uniform .≤ 10)
+        
         
         # Test Float32 type stability
         graph32 = convert(SparseMatrixCSC{Float32}, graph)
@@ -53,14 +48,13 @@
                                        UMAP.MembershipFnParams(0.1f0, 1.0f0))
         
         embedding32 = UMAP.initialize_embedding(graph32, tgt_params32)
-        @test embedding32 isa AbstractVector{<:AbstractVector{Float32}}
-        @test length(embedding32) == size(graph32, 2)
+        @test embedding32 isa Matrix{Float32}
+        @test size(embedding32) == (2, size(graph32, 2))
     end
 
-    @testset "initialize_embedding with reference" begin
+    @testset "initialize_embedding with matrix reference" begin
         ref_mat = [1. 2 3;
                    1. 1 1]
-        ref_vecs = collect(ref_mat[:, i] for i in axes(ref_mat, 2))
         graph = sparse([1. 0. 0.;
                         0.0 .5 1.
                         0.0 0.0 1.])
@@ -69,13 +63,10 @@
                                     UMAP.UniformInitialization(),
                                     UMAP.MembershipFnParams(0.1, 0.1))
         res1 = UMAP.initialize_embedding(ref_mat, graph, tparams)
-        res2 = UMAP.initialize_embedding(ref_vecs, graph, tparams)
 
-        true_res = collect(eachcol([1. 2. 2.5;
-                                    1. 1. 1.]))
+        true_res = [1. 2. 2.5;
+                    1. 1. 1.]
         @test res1 ≈ true_res
-        @test res2 ≈ true_res
         @inferred UMAP.initialize_embedding(ref_mat, graph, tparams)
-        @inferred UMAP.initialize_embedding(ref_vecs, graph, tparams)
     end
 end
