@@ -8,8 +8,8 @@ points x, y, can be given by the following, with dissimilarity function `dist`,
 and constants `a`, `b`:
 `ϕ(x, y, dist, a, b) = (1 + a*(dist(x, y))^b)^(-1)`
 
-The approximation parameters `a`, `b` are chosen by non-linear least squares
-fitting of the following function ψ:
+The approximation parameters `a`, `b` (stored as Float32) are chosen by non-linear
+least squares fitting of the following function ψ:
 
 ψ(x, y, dist, min_dist, spread) = dist(x, y) ≤ min_dist ? 1 : exp(-(dist(x, y) - min_dist)/spread)
 """

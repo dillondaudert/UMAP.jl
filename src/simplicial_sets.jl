@@ -38,7 +38,7 @@ struct SourceViewParams
 end
 
 """
-    SourceGlobalParams{T}(mix_ratio)
+    SourceGlobalParams(mix_ratio::Float32)
 
 Parameters for merging the fuzzy simplicial sets for each dataset view into one
 fuzzy simplicial set, otherwise known as the UMAP graph.

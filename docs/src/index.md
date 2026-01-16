@@ -100,13 +100,13 @@ end
 
 #### 2. Source (Input Space) Parameters
 
-- **`SourceViewParams{T<:Real}`**: Controls fuzzy simplicial set construction per data view
-  - `set_operation_ratio::T` — blend between union (1.0) and intersection (0.0)
-  - `local_connectivity::T` — number of neighbors assumed locally connected
-  - `bandwidth::T` — bandwidth for smooth k-distance calculation
+- **`SourceViewParams`**: Controls fuzzy simplicial set construction per data view (all fields are `Float32`)
+  - `set_operation_ratio` — blend between union (1.0) and intersection (0.0)
+  - `local_connectivity` — number of neighbors assumed locally connected
+  - `bandwidth` — bandwidth for smooth k-distance calculation
 
-- **`SourceGlobalParams{T<:Real}`**: Controls merging of multiple views
-  - `mix_ratio::T` — ratio for weighted intersection of views
+- **`SourceGlobalParams`**: Controls merging of multiple views (uses `Float32`)
+  - `mix_ratio` — ratio for weighted intersection of views
 
 #### 3. Target (Embedding Space) Parameters
 
@@ -119,7 +119,7 @@ end
 - **`MembershipFnParams{T<:Real}`**: Parameters for the target membership function
   - `min_dist::T` — minimum spacing in embedding
   - `spread::T` — effective scale of embedded points
-  - `a::T`, `b::T` — curve fitting parameters (computed from min_dist/spread if not provided)
+  - `a::Float32`, `b::Float32` — curve fitting parameters (computed from min_dist/spread if not provided)
 
 - **`AbstractInitialization`**: Base type for initialization methods
   - `SpectralInitialization` — uses spectral decomposition of graph Laplacian
@@ -130,12 +130,13 @@ end
 Example:
 ```julia
 # Randomly initialize in Euclidean space of dimension N
+# Returns a Matrix{T} of shape (N, n_points)
 function initialize_embedding(
-    umap_graph,
+    umap_graph::AbstractMatrix{T},
     ::_EuclideanManifold{N},
     ::UniformInitialization
-) where N
-    return [20 .* rand(T, N) .- 10 for _ in 1:size(umap_graph, 2)]
+) where {T, N}
+    return 20 .* rand(T, N, size(umap_graph, 2)) .- 10
 end
 ```
 
@@ -156,11 +157,11 @@ end
 
 - **`UMAPResult{DS, DT, C, K, F, G}`**: Complete result of fitting UMAP
   - `data::DS` — original data
-  - `embedding::DT` — computed embedding
+  - `embedding::DT` — computed embedding (for Euclidean manifolds, a `Matrix{T}` of shape `(n_dims, n_points)`)
   - `config::C` — configuration used
   - `knns_dists::K` — k-nearest neighbors and distances
   - `fs_sets::F` — fuzzy simplicial sets (per view)
-  - `graph::G` — final UMAP graph (coalesced views)
+  - `graph::G` — final UMAP graph (coalesced views, with `Float32` edge weights)
 
 - **`UMAPTransformResult{DS, DT, K, F, G}`**: Result of transforming new data
   - Similar structure but without config (uses existing config from fit)
