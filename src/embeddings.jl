@@ -50,29 +50,33 @@ function initialize_embedding(umap_graph, tgt_params::TargetParams)
 end
 
 # random initialization
+"""
+    initialize_embedding(umap_graph, ::_EuclideanManifold{N}, ::AbstractInitialization)
+
+When embedding into the default _EuclideanManifold, we choose the embedding type to be 
+a matrix (N, n_points).
+"""
 function initialize_embedding(umap_graph::AbstractMatrix{T},
                               ::_EuclideanManifold{N},
                               ::UniformInitialization) where {T, N}
-    return [20 .* rand(T, N) .- 10 for _ in 1:size(umap_graph, 2)]
+    return 20 .* rand(T, N, size(umap_graph, 2)) .- 10
 end
 
 # spectral initialization
 function initialize_embedding(umap_graph::AbstractMatrix{T},
                               manifold::_EuclideanManifold{N},
                               ::SpectralInitialization) where {T, N}
-    local embed_vecs
+    local embed
     try
         embed = spectral_layout(umap_graph, N)
         # expand
         expansion = 10 / maximum(embed)
         embed .= (embed .* expansion) .+ (1//10000) .* randn.(T)
-        # slice operation copies the columns, which is what we want
-        embed_vecs = [embed[:, i] for i in axes(embed, 2)]
     catch e
         @debug "$e\nError encountered in spectral_layout; defaulting to random initialization"
-        embed_vecs = initialize_embedding(umap_graph, manifold, UniformInitialization())
+        embed = initialize_embedding(umap_graph, manifold, UniformInitialization())
     end
-    return embed_vecs
+    return embed
 end
 
 # initialize according to a reference embedding
@@ -83,22 +87,9 @@ Initialize an embedding of points corresponding to the columns of the `umap_grap
 the columns of `ref_embedding`, where weights are values from the columns of `umap_graph`.
 """
 function initialize_embedding(ref_embedding::AbstractMatrix,
-                              umap_graph::AbstractMatrix,
-                              ::TargetParams)
-    embed = (ref_embedding * umap_graph) ./ (sum(umap_graph, dims=1) .+ eps(eltype(ref_embedding)))
-    return collect(eachcol(embed))
-end
-
-function initialize_embedding(ref_embedding::AbstractVector{V},
-                              umap_graph::SparseMatrixCSC{T},
-                              ::TargetParams) where {V, T}
-    embed = V[]
-    for col_ind in axes(umap_graph, 2)
-        col = umap_graph[:, col_ind]
-        embed_point = sum(ref_embedding[col.nzind] .* col.nzval) / (sum(col) + eps(T))
-        push!(embed, embed_point)
-    end
-    return embed
+                              umap_graph::SparseMatrixCSC,
+                              ::TargetParams{M}) where {M <: _EuclideanManifold}
+    return (ref_embedding * umap_graph) ./ (sum(umap_graph, dims=1) .+ eps(eltype(ref_embedding)))
 end
 
 

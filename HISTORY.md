@@ -1,5 +1,38 @@
 # Release History
 
+## v0.3.0 (unreleased)
+
+Performance-focused release with Float32 graph internals and Matrix embedding format.
+
+### Performance Improvements
+
+- **Uniform embedding initialization**: 7-14x faster, 3-10x less memory
+- **Embedding optimization**: 8-10% faster due to better cache locality
+- **Graph construction**: 15-28% less memory for simplicial set operations
+- **Overall fit/transform**: Neutral to 7% faster, 3-20% less memory
+
+### Breaking Changes
+
+- **Embedding format changed**: `result.embedding` is now a `Matrix{T}` of shape `(n_dims, n_points)` instead of `Vector{Vector{T}}`
+  ```julia
+  # Old (v0.2)
+  result.embedding[i]          # Vector for point i
+
+  # New (v0.3)
+  result.embedding[:, i]       # Column for point i
+  ```
+
+- **Graph edge weights are Float32**: `result.graph` now has `eltype` of `Float32`
+
+### Internal Changes
+
+- `SourceViewParams` and `SourceGlobalParams` now use fixed `Float32` fields (no longer type-parameterized)
+- `MembershipFnParams.a` and `MembershipFnParams.b` are now `Float32`
+- `smooth_knn_dists` returns `Float32` arrays for ρs and σs
+- `SMOOTH_K_TOLERANCE` changed to `1.0f-5`
+
+---
+
 ## v0.2.0 (2025-01-08)
 
 Version 0.2 is a major redesign of UMAP.jl focused on generality, extensibility, and better integration with the Julia ecosystem. This release introduces breaking changes to the API and internal structure.

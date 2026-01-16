@@ -14,20 +14,24 @@
 
     @testset "input type stability tests" begin
         data = rand(5, 100)
-        result = fit(data; init=UMAP.UniformInitialization())
+        outdim = 2
+        result = fit(data, outdim; init=UMAP.UniformInitialization())
         @test result isa UMAP.UMAPResult
         @test size(result.graph) == (100, 100)
-        @test size(result.embedding) == (100,)
-        @test size(result.embedding[1]) == (2,)
+        @test size(result.embedding) == (outdim, 100)
         @test result.data === data
-        # TODO: Assess type stability of fit, eventually
+        # test that the graph is Float32
+        @test eltype(result.graph) == Float32
         # @inferred fit(data; init=UMAP.UniformInitialization())
 
         data = rand(Float32, 5, 100)
         result = fit(data; init=UMAP.UniformInitialization())
         @test result isa UMAP.UMAPResult
-        # TODO: fix data type stability
-        @test_broken eltype(result.embedding) == Vector{Float32}
+        # test that graph is still Float32 
+        @test eltype(result.graph) == Float32
+        # type stability
+        @test result.embedding isa Matrix{Float32}
+        @test eltype(result.embedding) == Float32
         # @inferred fit(data; init=UMAP.UniformInitialization())
     end
 end
