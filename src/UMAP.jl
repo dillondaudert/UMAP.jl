@@ -6,6 +6,7 @@ using SparseArrays
 # for other packages, we use import to keep namespaces clear
 import Arpack
 import Distances
+import Dictionaries as Dicts
 import LsqFit
 import NearestNeighborDescent as NND
 import Accessors

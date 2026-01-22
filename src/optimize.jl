@@ -30,6 +30,59 @@ function set_lr(params::OptimizationParams, lr)
     return Accessors.@set params.lr = lr
 end
 
+"""
+    make_edge_per_epoch(umap_graph, num_epochs, self_ref::Bool) -> cycles, offsets
+
+Calculate the epoch cycles for each edge in the UMAP graph, creating the cycle length 
+and offset for each edge. Each edge will be seen at least once, the cycle length 
+equal to min(p^(-1), num_epochs).
+This lets us determine which edges to update for each epoch, proportionate to the 
+edge probabilities.
+
+`self_ref` is true when the umap_graph (at fit time) references the same set of 
+vertices for (j, i). This is `false` (at transform time) when j and i are 
+vertices in different sets (j in original data, i in new transform data).
+"""
+function make_edge_per_epoch(umap_graph::SparseMatrixCSC{S, T}, num_epochs::Int, self_ref::Bool) where {S, T}
+
+    # we use J for row, I for column
+    J, I, V = findnz(umap_graph)
+    indices = Tuple{T, T}[]
+    cycle_vals = T[]
+    offset_vals = T[]
+
+    for (j, i, v) in zip(J, I, V)
+        if self_ref && j >= i
+            # when self_ref, graph is symmetric, so only consider upper triangle
+            # otherwise, we want ALL non-zero values
+            continue
+        end
+        push!(indices, (j, i))
+        # for each edge, calculate its cycle length and a random offset
+        cycle = round(Int, min(1/v, num_epochs))
+        offset = rand(0:(cycle-1))
+        push!(cycle_vals, cycle)
+        push!(offset_vals, offset)
+    end
+    # sort by column indices so that they are in column index order (column is the last index in the pairs)
+    cycles = Dicts.sortkeys(Dicts.Dictionary(indices, cycle_vals); by=x -> x[2])
+    offsets = Dicts.sortkeys(Dicts.Dictionary(indices, offset_vals); by=x -> x[2])
+    return cycles, offsets
+end
+"""
+    get_pos_edges_for_epoch(epoch, cycles, offsets)
+
+Return an array of the indices [(i, j), ...] for the positive edges to includes 
+in `epoch`.  
+"""
+function get_pos_edges_for_epoch(epoch, cycles::Dicts.Dictionary, offsets::Dicts.Dictionary)
+    # An edge will be included if the current (epoch-1) plus that edge's offset is equal to 
+    # 0, mod that edge's cycle.
+    # The Dictionaries interface lets us do this easily.
+    edges = filter(iszero, (epoch .- 1 .+ offsets) .% cycles)
+    return Dicts.keys(edges)
+end
+
 # FIT
 function optimize_embedding!(embedding, umap_graph, tgt_params, opt_params)
     _opt_params = opt_params
