@@ -30,6 +30,7 @@ Performance-focused release with Float32 graph internals and Matrix embedding fo
 
 ### Internal Changes
 
+- **Dependency updates via Dependabot**: replaced the CompatHelper workflow with GitHub-native Dependabot (`.github/dependabot.yml`), which also keeps GitHub Actions versions current ([PSA](https://discourse.julialang.org/t/psa-github-dependabot-now-supports-julia/134997))
 - `SourceViewParams` and `SourceGlobalParams` now use fixed `Float32` fields (no longer type-parameterized)
 - `MembershipFnParams.a` and `MembershipFnParams.b` are now `Float32`
 - `smooth_knn_dists` returns `Float32` arrays for ρs and σs
