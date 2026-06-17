@@ -1,6 +1,6 @@
 # Release History
 
-## v0.3.0 (unreleased)
+## v0.3.0
 
 Performance-focused release with Float32 graph internals and Matrix embedding format.
 
