@@ -9,6 +9,7 @@ import Distances
 import LsqFit
 import NearestNeighborDescent as NND
 import Accessors
+import Compat
 
 include("utils.jl")
 include("membership_fn.jl")
@@ -20,6 +21,7 @@ include("config.jl")
 include("fit.jl")
 include("transform.jl")
 
-public fit, transform, UMAPConfig, UMAPResult, UMAPTransformResult
+# `public` is a Julia 1.11+ keyword; @compat makes it a no-op on 1.10 (see Project.toml compat)
+Compat.@compat public fit, transform, UMAPConfig, UMAPResult, UMAPTransformResult
 
 end # module

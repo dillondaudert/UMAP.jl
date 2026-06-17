@@ -1,0 +1,33 @@
+# Dependabot keeps dependencies current by opening PRs that bump version
+# bounds. It replaces the previous CompatHelper workflow.
+# https://docs.github.com/en/code-security/dependabot
+# Julia support: https://discourse.julialang.org/t/psa-github-dependabot-now-supports-julia/134997
+version: 2
+updates:
+  # Julia package dependencies ([compat] bounds in Project.toml).
+  # The [workspace] in the root Project.toml means a single "/" directory also
+  # covers the test/, docs/, and benchmark/ sub-projects in one resolution.
+  - package-ecosystem: "julia"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      # Batch low-risk updates into one PR; let breaking (major) bumps land in
+      # their own PRs so CI can validate each widened bound individually.
+      julia-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions pinned in .github/workflows (checkout, setup-julia, etc.).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

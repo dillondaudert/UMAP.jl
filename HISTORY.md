@@ -24,8 +24,13 @@ Performance-focused release with Float32 graph internals and Matrix embedding fo
 
 - **Graph edge weights are Float32**: `result.graph` now has `eltype` of `Float32`
 
+### Bug Fixes
+
+- **Julia 1.10 compatibility restored**: the `public` keyword (Julia 1.11+) caused a `ParseError` on Julia 1.10, breaking precompilation despite `1.10` being declared compatible. Now uses `Compat.@compat public ...`, which is a no-op on 1.10. Added `Compat` (≥ 4.10) dependency.
+
 ### Internal Changes
 
+- **Dependency updates via Dependabot**: replaced the CompatHelper workflow with GitHub-native Dependabot (`.github/dependabot.yml`), which also keeps GitHub Actions versions current ([PSA](https://discourse.julialang.org/t/psa-github-dependabot-now-supports-julia/134997))
 - `SourceViewParams` and `SourceGlobalParams` now use fixed `Float32` fields (no longer type-parameterized)
 - `MembershipFnParams.a` and `MembershipFnParams.b` are now `Float32`
 - `smooth_knn_dists` returns `Float32` arrays for ρs and σs
