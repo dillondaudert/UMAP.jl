@@ -12,7 +12,9 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1'
+          - 'min'  # oldest version allowed by Project.toml compat (catches lower-bound breakage)
+          - 'lts'  # current long-term-support release
+          - '1'    # latest stable
         os:
           - ubuntu-latest
           - windows-latest

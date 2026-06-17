@@ -24,6 +24,10 @@ Performance-focused release with Float32 graph internals and Matrix embedding fo
 
 - **Graph edge weights are Float32**: `result.graph` now has `eltype` of `Float32`
 
+### Bug Fixes
+
+- **Julia 1.10 compatibility restored**: the `public` keyword (Julia 1.11+) caused a `ParseError` on Julia 1.10, breaking precompilation despite `1.10` being declared compatible. Now uses `Compat.@compat public ...`, which is a no-op on 1.10. Added `Compat` (≥ 4.10) dependency.
+
 ### Internal Changes
 
 - `SourceViewParams` and `SourceGlobalParams` now use fixed `Float32` fields (no longer type-parameterized)
