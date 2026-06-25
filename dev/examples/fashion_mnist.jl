@@ -43,7 +43,7 @@ result = UMAP.fit(fmnist_x);
 begin
 	f = Figure()
 	axis = f[1, 1] = Axis(f)
-	scatter!(axis, getindex.(result.embedding, 1), getindex.(result.embedding, 2), color=fmnist_y, markersize=4)
+	scatter!(axis, result.embedding[1, :], result.embedding[2, :], color=fmnist_y, markersize=4)
 	f
 end
 
@@ -60,7 +60,7 @@ transform_result = UMAP.transform(result, fmnist_x_2)
 begin
 	f2 = Figure()
 	axis2 = f[1, 1] = Axis(f2)
-	scatter!(axis2, getindex.(transform_result.embedding, 1), getindex.(transform_result.embedding, 2), color=fmnist_y_2, markersize=4)
+	scatter!(axis2, transform_result.embedding[1, :], transform_result.embedding[2, :], color=fmnist_y_2, markersize=4)
 	f2
 end
 
