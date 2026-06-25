@@ -22,7 +22,7 @@ jobs:
           - x64
         include:
           - os: macOS-latest
-            arch: x64
+            arch: aarch64‎
             version: '1'
     steps:
       - uses: actions/checkout@v7
