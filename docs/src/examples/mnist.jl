@@ -50,7 +50,7 @@ begin
 	axis = f[1, 1] = Axis(f, title="UMAP.jl - MNIST")
 	for d in 0:9
 		idx = mnist_y[1:5000] .== d
-		scatter!(axis, getindex.(result.embedding[1:5000][idx], 1), getindex.(result.embedding[1:5000][idx], 2), label=string(d), markersize=5)
+		scatter!(axis, result.embedding[1, 1:5000][idx], result.embedding[2, 1:5000][idx], label=string(d), markersize=5)
 	end
 	f[1, 2] = Legend(f, axis, "Digit", framevisible=false)
 	f

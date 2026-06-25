@@ -62,7 +62,7 @@ fmnist_x_bot = reshape(fmnist_x[15:28, :, :], :, n_points);
 fmnist_y = FashionMNIST.trainlabels(1:n_points);
 
 # ╔═╡ 099d2a9e-49f5-11eb-0ca4-9f6832e1601c
-scatter(getindex.(full_res.embedding, 1), getindex.(full_res.embedding, 2), color=fmnist_y, markersize=4) # hideall
+scatter(full_res.embedding[1, :], full_res.embedding[2, :], color=fmnist_y, markersize=4) # hideall
 
 # ╔═╡ 375bcd04-49f4-11eb-3f1c-97917f70ce5c
 md"""
@@ -73,13 +73,13 @@ Run UMAP on the top and bottom halves separately.
 top_res = @time UMAP.fit(fmnist_x_top, 2);
 
 # ╔═╡ 6ba47f04-49f4-11eb-3bc3-ed701f349d30
-scatter(getindex.(top_res.embedding, 1), getindex.(top_res.embedding, 2), color=fmnist_y, markersize=4) # hideall
+scatter(top_res.embedding[1, :], top_res.embedding[2, :], color=fmnist_y, markersize=4) # hideall
 
 # ╔═╡ ac782134-49f4-11eb-10ea-c7e52db8b095
 bot_res = @time UMAP.fit(fmnist_x_bot, 2);
 
 # ╔═╡ b1e2d27e-49f4-11eb-3ede-5bb7c13d38c3
-scatter(getindex.(bot_res.embedding, 1), getindex.(bot_res.embedding, 2), color=fmnist_y, markersize=4) # hideall
+scatter(bot_res.embedding[1, :], bot_res.embedding[2, :], color=fmnist_y, markersize=4) # hideall
 
 # ╔═╡ 4ca6651c-49f5-11eb-2658-07d1d25da74f
 md"""
@@ -111,7 +111,7 @@ opt_params = UMAP.OptimizationParams(300, 1., 1., 5);
 comp_res = @time UMAP.fit((v1=fmnist_x_top, v2=fmnist_x_bot), knn_params, src_params, gbl_params, tgt_params, opt_params);
 
 # ╔═╡ ff1c5ed0-49f6-11eb-01e0-87ba283ed1d4
-scatter(getindex.(comp_res.embedding, 1), getindex.(comp_res.embedding, 2), color=fmnist_y, markersize=4) # hideall
+scatter(comp_res.embedding[1, :], comp_res.embedding[2, :], color=fmnist_y, markersize=4) # hideall
 
 # ╔═╡ Cell order:
 # ╟─6afa3536-49f3-11eb-0f84-b9b08c6c4fd4
