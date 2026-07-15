@@ -9,3 +9,6 @@ PlutoStaticHTML = "359b1769-a58e-495b-9770-312e911026ad"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 StringDistances = "88034a9c-02f8-509d-84a9-84ec65e18404"
 UMAP = "c4f8c510-2410-5be4-91d7-4fbaeb39457e"
+
+[compat]
+Distances = "0.10.12"
