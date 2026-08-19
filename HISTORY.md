@@ -1,5 +1,46 @@
 # Release History
 
+## v0.4.0 (unreleased)
+
+Foundation release: fixes to the embedding-quality diagnostics, an exact-KNN
+backend via a package extension, and expanded test coverage.
+
+### New Features
+
+- **Exact nearest neighbors via NearestNeighbors.jl** (package extension): the new
+  `UMAP.ExactNeighbors(n_neighbors, metric[, kwargs])` params find exact neighbors
+  with a `KDTree` (Euclidean/Cityblock/Chebyshev/Minkowski) or `BallTree` (other
+  metrics), for both `fit` and `transform`, usable through the advanced API and
+  mixable with other backends in multi-view `NamedTuple`s. Requires
+  `import NearestNeighbors` to activate the extension.
+- **`trustworthiness` is now part of the public API** and works on the `Matrix`
+  embeddings returned by `fit` (one point per column) as well as vectors of points.
+
+### Bug Fixes
+
+- **`trustworthiness` computed incorrect scores**: the neighbor rank lookup applied
+  an inverse permutation twice, returning "the point at rank j" instead of "the rank
+  of point j". Scores now match `sklearn.manifold.trustworthiness` exactly
+  (verified against sklearn on reference data). Scores from previous versions
+  should be considered invalid.
+- **`cross_entropy` used the pre-v0.3 embedding format**: it indexed the embedding
+  as a vector of points (`embedding[i]`), which silently computed nonsense for the
+  v0.3 `Matrix` format. It now uses column views.
+- **Multi-view `transform` no longer errors**: `reset_local_connectivity` tried to
+  symmetrize the rectangular query graph (reference points × queries) when
+  coalescing views, raising a `DimensionMismatch`. The symmetrizing fuzzy set
+  union is now only applied to square (fit) graphs. (Known limitation: a
+  multi-view transform with exactly as many queries as reference points is
+  indistinguishable from a fit graph here and will still be symmetrized.)
+
+### Internal Changes
+
+- New end-to-end integration tests: single-view fit/transform on clustered data with
+  trustworthiness and cluster-purity checks, multi-view fit/transform, and
+  `:precomputed` fit/transform.
+- `cross_entropy` and `trustworthiness` now have direct unit tests (hand-computed
+  reference values; sklearn-verified).
+
 ## v0.3.0
 
 Performance-focused release with Float32 graph internals and Matrix embedding format.
