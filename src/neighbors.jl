@@ -47,6 +47,31 @@ end
 PrecomputedNeighbors(n_neighbors::Int, dists::M) where {M <: AbstractMatrix} = PrecomputedNeighbors{M}(n_neighbors, dists)
 PrecomputedNeighbors(n_neighbors::Int, graph::G) where {G <: NND.ApproximateKNNGraph} = PrecomputedNeighbors{G}(n_neighbors, graph)
 
+"""
+    ExactNeighbors{M, K}(n_neighbors, metric::M, kwargs::K)
+
+Parameters for finding exact nearest neighbors using NearestNeighbors.jl.
+This functionality is provided by a package extension: NearestNeighbors must
+be loaded (e.g. `import NearestNeighbors`) for these parameters to be usable.
+
+`metric` must be a `Distances.Metric` supported by NearestNeighbors.jl trees;
+`kwargs` are passed to the tree constructor (e.g. `leafsize`).
+"""
+struct ExactNeighbors{M, K} <: NeighborParams
+    "The number of neighbors to consider as connected. The more neighbors, the more global structure is captured in the data."
+    n_neighbors::Int
+    "A distance function for comparing two points"
+    metric::M
+    "Keyword arguments to pass to the NearestNeighbors.jl tree constructor"
+    kwargs::K
+    function ExactNeighbors{M, K}(n_neighbors, metric, kwargs) where {M, K}
+        # enforce invariants
+        n_neighbors <= 0 ? throw(ArgumentError("n_neighbors must be greater than 0")) : new(n_neighbors, metric, kwargs)
+    end
+end
+ExactNeighbors(n_neighbors::Int, metric::M, kwargs::K) where {M, K} = ExactNeighbors{M, K}(n_neighbors, metric, kwargs)
+ExactNeighbors(n_neighbors, metric=Distances.Euclidean()) = ExactNeighbors(n_neighbors, metric, NamedTuple())
+
 
 # finding neighbors
 """
@@ -150,6 +175,40 @@ end
 """
 function knn_search(_, __, knn_params::PrecomputedNeighbors, ___)
     return _knn_from_dists(knn_params.dists_or_graph, knn_params.n_neighbors; ignore_diagonal=false)
+end
+
+
+# exact neighbors via the NearestNeighbors.jl package extension.
+# `_exact_knn` methods are defined in ext/NearestNeighborsExt.jl; the stub-and-forward
+# pattern lets the base package give a helpful error when the extension isn't loaded.
+function _exact_knn end
+
+function _check_exact_backend()
+    isempty(methods(_exact_knn)) &&
+        error("ExactNeighbors requires NearestNeighbors.jl to be loaded; run `import NearestNeighbors` first")
+    return
+end
+
+"""
+    knn_search(data, knn_params::ExactNeighbors) -> (knns, dists)
+
+(FIT) Find exact nearest neighbors using a NearestNeighbors.jl tree.
+Requires NearestNeighbors.jl to be loaded.
+"""
+function knn_search(data, knn_params::ExactNeighbors)
+    _check_exact_backend()
+    return _exact_knn(data, knn_params)
+end
+
+"""
+    knn_search(data, queries, knn_params::ExactNeighbors, _) -> (knns, dists)
+
+(TRANSFORM) Find the exact nearest neighbors of `queries` in `data` using a
+NearestNeighbors.jl tree. Requires NearestNeighbors.jl to be loaded.
+"""
+function knn_search(data, queries, knn_params::ExactNeighbors, _)
+    _check_exact_backend()
+    return _exact_knn(data, queries, knn_params)
 end
 
 
