@@ -93,4 +93,38 @@
         @test v_copy ≈ v_updated_true
         @test w_copy == w
     end
+
+    @testset "cross_entropy tests" begin
+        # a, b = 1 so ϕ(x, y) = 1 / (1 + sqeuclidean(x, y))
+        ce_tgt_params = UMAP.TargetParams(UMAP._EuclideanManifold(2),
+                                          Distances.SqEuclidean(),
+                                          UMAP.UniformInitialization(),
+                                          UMAP.MembershipFnParams(1., 2., 1., 1.))
+
+        @testset "hand-computed loss" begin
+            # two points at sqeuclidean distance 1, so ν = 1/2 off-diagonal;
+            # graph weights of 1/2 make both off-diagonal terms exactly 0
+            embedding = [0. 1.; 0. 0.]
+            umap_graph = sparse([0. 0.5; 0.5 0.])
+            # each diagonal term has μ = 0 clamped to EPS and ν = ϕ(x, x) = 1 clamped to 1 - EPS
+            EPS = 1e-8
+            diag_term = EPS * log(EPS / (1 - EPS)) + (1 - EPS) * log((1 - EPS) / EPS)
+            @test UMAP.cross_entropy(umap_graph, embedding, ce_tgt_params) ≈ 2 * diag_term
+
+            # moving the points apart increases the loss (μ = 1/2 wants ν = 1/2)
+            far_embedding = [0. 3.; 0. 0.]
+            @test UMAP.cross_entropy(umap_graph, far_embedding, ce_tgt_params) >
+                  UMAP.cross_entropy(umap_graph, embedding, ce_tgt_params)
+        end
+
+        @testset "optimized embedding has lower loss than random" begin
+            Random.seed!(42)
+            data = hcat(randn(5, 50) .- 5, randn(5, 50) .+ 5)
+            result = UMAP.fit(data, 2)
+            random_embedding = 20 .* rand(2, 100) .- 10
+            fit_tgt_params = result.config.tgt_params
+            @test UMAP.cross_entropy(result.graph, result.embedding, fit_tgt_params) <
+                  UMAP.cross_entropy(result.graph, random_embedding, fit_tgt_params)
+        end
+    end
 end

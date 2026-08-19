@@ -218,21 +218,22 @@ end
 """
     cross_entropy(umap_graph, embedding, tgt_params)
 
-Calculate the fuzzy cross entropy loss of the embedding for this umap_graph.
-(NOTE: μ(x, y) = umap_graph[x, y]; ν(x, y) = )
+Calculate the fuzzy set cross entropy loss of the embedding for this umap_graph,
+where μ(i, j) = umap_graph[i, j] and ν(i, j) = ϕ(embedding[:, i], embedding[:, j]).
+
+Note this iterates over all pairs of points, not just the edges of the graph,
+since zero entries of `umap_graph` still contribute repulsive terms to the loss.
+It is a diagnostic (O(n²)) and is not used during optimization.
 """
 function cross_entropy(umap_graph, embedding, tgt_params)
     a, b = tgt_params.memb_params.a, tgt_params.memb_params.b
     EPS = 1e-8
-    loss = zero(eltype(umap_graph))
-    # calculate loss for each edge in the graph
-    for I in eachindex(umap_graph)
-        i, j = Tuple(I)
-        mu_a = clamp(umap_graph[I], EPS, 1 - EPS)
-        nu_a = clamp(_ϕ(embedding[i], embedding[j], tgt_params.metric, a, b), EPS, 1 - EPS)
+    loss = zero(float(eltype(umap_graph)))
+    for j in axes(umap_graph, 2), i in axes(umap_graph, 1)
+        mu_a = clamp(umap_graph[i, j], EPS, 1 - EPS)
+        nu_a = clamp(_ϕ(view(embedding, :, i), view(embedding, :, j), tgt_params.metric, a, b), EPS, 1 - EPS)
 
-        _loss = mu_a * log(mu_a / nu_a) + (1 - mu_a) * log((1 - mu_a) / (1 - nu_a))
-        loss += _loss
+        loss += mu_a * log(mu_a / nu_a) + (1 - mu_a) * log((1 - mu_a) / (1 - nu_a))
     end
     return loss
 end
