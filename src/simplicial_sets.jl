@@ -363,14 +363,21 @@ A FS set may lose this property when combining multiple views of the source
 data; this function restores it.
 """
 function reset_local_connectivity(simplicial_set, reset_local_metric=true)
-    # normalize columns 
+    # normalize columns
     sset = _norm_sparse(simplicial_set)
-    
+
     if reset_local_metric
         sset = reset_local_metrics!(sset)
     end
 
-    sset = _fuzzy_set_union(sset)
+    # re-symmetrizing via fuzzy set union only applies to square (fit) graphs;
+    # transform graphs are rectangular (rows: reference data, columns: queries)
+    # and have no symmetry to restore. NOTE: a multi-view transform where
+    # n_queries == n_data cannot be distinguished from a fit graph here and
+    # will be symmetrized.
+    if size(sset, 1) == size(sset, 2)
+        sset = _fuzzy_set_union(sset)
+    end
 
     return dropzeros(sset)
 
