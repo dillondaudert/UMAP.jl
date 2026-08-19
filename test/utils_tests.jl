@@ -17,15 +17,48 @@ using Distances: euclidean, cityblock, sqeuclidean
             X = [[1.0, 0.0], [2.0, 0.0], [3.0, 0.0], [4.0, 0.0]]
             X_embed = [[1.0], [2.0], [3.0], [4.0]]  # 1D embedding preserves order
 
-            trust = trustworthiness(X, X_embed, 2, euclidean)
+            trust = trustworthiness(X, X_embed, 1, euclidean)
             @test trust ≈ 1.0
         end
 
         @testset "Identity embedding" begin
             # Embedding to same space should be perfect
-            X = [rand(3) for _ in 1:10]
+            X = [rand(3) for _ in 1:12]
             trust = trustworthiness(X, X, 5, euclidean)
-            @test_broken trust ≈ 1.0
+            @test trust ≈ 1.0
+        end
+
+        @testset "Hand-computed reference values" begin
+            # points chosen so no per-point distance comparisons are tied;
+            # expected values derived by hand from the trustworthiness formula
+            # and verified against sklearn.manifold.trustworthiness
+            X = [[0.], [1.], [3.], [7.], [12.]]
+            X_embed = [[0.], [10.], [1.2], [11.], [2.5]]
+
+            @test trustworthiness(X, X_embed, 1, euclidean) ≈ 1 - 7/15
+            @test trustworthiness(X, X_embed, 2, euclidean) ≈ 1 - 10/15
+        end
+
+        @testset "Matrix input" begin
+            # matrices with one point per column (the format returned by fit)
+            # give identical results to vectors of points
+            X = [rand(4) for _ in 1:12]
+            X_embed = [rand(2) for _ in 1:12]
+            X_mat = reduce(hcat, X)
+            X_embed_mat = reduce(hcat, X_embed)
+
+            trust = trustworthiness(X, X_embed, 3, euclidean)
+            @test trustworthiness(X_mat, X_embed_mat, 3, euclidean) == trust
+            @test trustworthiness(X_mat, X_embed, 3, euclidean) == trust
+        end
+
+        @testset "Scrambled embedding scores lower" begin
+            # a deterministic embedding that scrambles all neighborhoods
+            X = [[float(i)] for i in 1:20]
+            X_embed = [[float(mod(7i, 23))] for i in 1:20]
+
+            trust = trustworthiness(X, X_embed, 4, euclidean)
+            @test trust < trustworthiness(X, X, 4, euclidean) == 1.0
         end
 
         @testset "Random embedding" begin
@@ -47,6 +80,16 @@ using Distances: euclidean, cityblock, sqeuclidean
             @test_throws ErrorException trustworthiness(X, X_embed, 3, euclidean)
         end
 
+        @testset "n_neighbors validation" begin
+            X = [rand(3) for _ in 1:10]
+            X_embed = [rand(2) for _ in 1:10]
+
+            @test_throws ArgumentError trustworthiness(X, X_embed, 0, euclidean)
+            # the normalization requires n_neighbors < n_points / 2
+            @test_throws ArgumentError trustworthiness(X, X_embed, 5, euclidean)
+            @test 0 ≤ trustworthiness(X, X_embed, 4, euclidean) ≤ 1
+        end
+
         @testset "Different metrics" begin
             X = [rand(5) for _ in 1:15]
             X_embed = [rand(2) for _ in 1:15]
@@ -57,7 +100,9 @@ using Distances: euclidean, cityblock, sqeuclidean
 
             @test 0 ≤ trust_euc ≤ 1
             @test 0 ≤ trust_sq ≤ 1
-            # Different metrics may give different trustworthiness
+            # squared euclidean preserves per-point distance orderings, so
+            # neighbor ranks - and thus trustworthiness - are identical
+            @test trust_euc == trust_sq
         end
 
         @testset "Different n_neighbors" begin
@@ -66,17 +111,11 @@ using Distances: euclidean, cityblock, sqeuclidean
 
             # Trustworthiness can vary with n_neighbors
             trust_small = trustworthiness(X, X_embed, 3, euclidean)
-            trust_large = trustworthiness(X, X_embed, 10, euclidean)
+            trust_large = trustworthiness(X, X_embed, 9, euclidean)
 
             @test 0 ≤ trust_small ≤ 1
             @test 0 ≤ trust_large ≤ 1
         end
-
-        # SUGGESTIONS FOR ADDITIONAL TESTS:
-        # TODO: Test with known bad embedding (reversed distances)
-        # TODO: Compare with sklearn implementation on same data
-        # TODO: Test computational complexity/performance on large datasets
-        # TODO: Test with different data distributions (clustered, uniform, etc.)
     end
 
     @testset "_pairwise_nn tests" begin
@@ -90,6 +129,9 @@ using Distances: euclidean, cityblock, sqeuclidean
 
             # Each vector should have length 4 (one rank per point)
             @test all(length.(nn_ranks) .== 4)
+
+            # Each rank vector should be a valid permutation of 1:4
+            @test all(isperm.(nn_ranks))
 
             # Self should always be rank 1 (nearest)
             for i in 1:4
@@ -113,6 +155,12 @@ using Distances: euclidean, cityblock, sqeuclidean
             # Point at 1 and point at 3 are equidistant
         end
 
+        @testset "Matrix input" begin
+            X = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [2.0, 0.0]]
+            X_mat = reduce(hcat, X)
+            @test _pairwise_nn(X_mat, euclidean) == _pairwise_nn(X, euclidean)
+        end
+
         @testset "Different metrics" begin
             X = [rand(3) for _ in 1:5]
 
@@ -128,11 +176,6 @@ using Distances: euclidean, cityblock, sqeuclidean
                 @test nn_city[i][i] == 1
             end
         end
-
-        # SUGGESTIONS FOR ADDITIONAL TESTS:
-        # TODO: Test with duplicate points (how are ties handled?)
-        # TODO: Verify that returned ranks are valid permutations
-        # TODO: Test memory efficiency for large datasets
     end
 
 end

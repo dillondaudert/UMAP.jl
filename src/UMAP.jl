@@ -22,6 +22,6 @@ include("fit.jl")
 include("transform.jl")
 
 # `public` is a Julia 1.11+ keyword; @compat makes it a no-op on 1.10 (see Project.toml compat)
-Compat.@compat public fit, transform, UMAPConfig, UMAPResult, UMAPTransformResult
+Compat.@compat public fit, transform, trustworthiness, UMAPConfig, UMAPResult, UMAPTransformResult
 
 end # module
